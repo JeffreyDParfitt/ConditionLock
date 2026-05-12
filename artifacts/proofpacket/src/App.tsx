@@ -1,0 +1,49 @@
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Navigation } from "@/components/Navigation";
+
+import Dashboard from "@/pages/Dashboard";
+import PacketsList from "@/pages/PacketsList";
+import NewPacket from "@/pages/NewPacket";
+import NewPacketForm from "@/pages/NewPacketForm";
+import PacketDetail from "@/pages/PacketDetail";
+import Templates from "@/pages/Templates";
+import Settings from "@/pages/Settings";
+import NotFound from "@/pages/not-found";
+
+const queryClient = new QueryClient();
+
+function Router() {
+  return (
+    <div className="min-h-[100dvh] bg-background pb-20">
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/packets" component={PacketsList} />
+        <Route path="/packets/new" component={NewPacket} />
+        <Route path="/packets/new/:type" component={NewPacketForm} />
+        <Route path="/packets/:id" component={PacketDetail} />
+        <Route path="/templates" component={Templates} />
+        <Route path="/settings" component={Settings} />
+        <Route component={NotFound} />
+      </Switch>
+      <Navigation />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

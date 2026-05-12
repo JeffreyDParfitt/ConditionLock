@@ -1,0 +1,2223 @@
+Build a mobile-first local-only web app called ProofPacket.
+
+Goal:
+ProofPacket helps people create timestamped proof-of-condition packets for rentals, stays, returns, handoffs, leases, claims, sales, as-is transfers, business changeovers, and disputes.
+
+The app should guide users to photograph, inspect, test, open, close, lock, unlock, flip, lift, document, and export property condition before and after use or transfer.
+
+The app should work for:
+- Car rentals
+- Hotel stays
+- Airbnb / short-term rentals
+- Apartment / home rentals
+- Business / commercial leasing spaces
+- Business changeovers
+- Businesses being sold as-is
+- Commercial spaces being transferred
+- Offices
+- Commercial kitchens
+- Retail spaces
+- Studios
+- Salons
+- Warehouses
+- Workshops
+- Moving trucks / storage units
+- Equipment rentals
+- Insurance claim documentation after an accident
+- Property sales
+- Home sales
+- Vehicle sales
+- Used car sales
+- Boat / RV / motorcycle sales
+- Equipment sales
+- Furniture / appliance sales
+- General as-is item sales
+- Custom proof packets
+
+Core positioning:
+ProofPacket does not just tell users to take photos. It tells them what to open, close, lock, unlock, flip, lift, test, inspect, and document before someone blames them.
+
+Tagline:
+Prove the condition before there’s a dispute.
+
+Secondary tagline:
+Take the photos now. Avoid the argument later.
+
+Additional positioning:
+Document the condition before a rental, return, sale, handoff, lease, claim, or as-is transfer.
+
+Privacy promise:
+No account. No cloud. No server. Your proof packets stay on this device unless you export them.
+
+Legal/usage disclaimer:
+ProofPacket is an organization and documentation tool. It does not provide legal, insurance, medical, safety, code-compliance, inspection, appraisal, valuation, or professional advice.
+
+Important constraints:
+- No backend.
+- No server database.
+- No login.
+- No accounts.
+- No paid APIs.
+- No cloud AI.
+- No Firebase.
+- No Supabase.
+- No AWS backend.
+- No external backend services.
+- No required internet connection after loading.
+- Do not upload photos anywhere.
+- Store all user data locally on the device/browser.
+- Prefer IndexedDB for proof packet data and photo storage.
+- Use localStorage only for lightweight settings if needed.
+- The app should be PWA-style and mobile-first.
+- Use React, TypeScript, and Tailwind CSS.
+- Use clean, readable, well-organized code.
+- Use client-side PDF generation.
+- All proof packets, photos, notes, checklists, signatures, and exports should remain local unless the user manually exports them.
+
+Tech stack:
+- React
+- TypeScript
+- Tailwind CSS
+- IndexedDB, preferably through Dexie if available
+- Client-side PDF generation using jsPDF or another browser-compatible PDF library
+- Optional: client-side ZIP export if easy, but PDF export is the priority
+- Optional: PWA manifest and offline support if easy
+
+App name:
+ProofPacket
+
+Main user flow:
+1. User opens app.
+2. User taps “Create New Proof Packet.”
+3. User chooses a packet type.
+4. App creates a guided checklist based on the packet type.
+5. User adds photos, notes, statuses, dates, and reference details.
+6. User can document “Before,” “After,” “At Pickup,” “At Return,” “At Sale,” or “At Transfer” condition depending on packet type.
+7. User can add more checklist items at any time without restarting.
+8. User can add communication logs.
+9. User can capture acknowledgment signatures.
+10. User can export a clean PDF report.
+11. User can back up/export local data manually.
+
+Main navigation:
+- Dashboard
+- New Packet
+- Packets
+- Templates
+- Export
+- Settings
+
+Create New Proof Packet categories:
+
+Personal / Travel:
+- Car Rental
+- Hotel Stay
+- Airbnb / Short-Term Rental
+
+Housing:
+- Apartment / Home Rental
+- Property Sale / Home Sale
+
+Business:
+- Business / Commercial Lease
+- Business Changeover / As-Is Sale
+- Equipment Rental
+- Equipment Sale / As-Is Transfer
+- Moving / Storage
+
+Vehicle:
+- Vehicle Sale / As-Is Transfer
+
+Claims:
+- Accident / Insurance Claim
+
+Other:
+- General Item Sale / As-Is Transfer
+- Custom
+
+Packet types:
+1. Car Rental
+2. Hotel Stay
+3. Airbnb / Short-Term Rental
+4. Apartment / Home Rental
+5. Business / Commercial Lease
+6. Business Changeover / As-Is Sale
+7. Property Sale / Home Sale
+8. Vehicle Sale / As-Is Transfer
+9. Equipment Sale / As-Is Transfer
+10. General Item Sale / As-Is Transfer
+11. Moving / Storage
+12. Equipment Rental
+13. Accident / Insurance Claim
+14. Custom
+
+Data models:
+
+Packet:
+- id: string
+- type: 'car_rental' | 'hotel' | 'airbnb' | 'apartment_home' | 'business_commercial_lease' | 'business_changeover_as_is_sale' | 'property_sale_home_sale' | 'vehicle_sale_as_is_transfer' | 'equipment_sale_as_is_transfer' | 'general_item_sale_as_is_transfer' | 'moving_storage' | 'equipment_rental' | 'accident_claim' | 'custom'
+- title: string
+- location: string
+- companyOrPerson: string
+- referenceNumber: string
+- startDate: string
+- endDate: string
+- phase: 'before' | 'after' | 'both' | 'pickup' | 'return' | 'sale' | 'transfer' | 'handoff'
+- notes: string
+- checklistItems: ChecklistItem[]
+- photos: PhotoItem[]
+- communicationLogs: CommunicationLog[]
+- signatures: SignatureItem[]
+- createdAt: string
+- updatedAt: string
+
+PacketDetails:
+- packetId: string
+- reservationNumber?: string
+- claimNumber?: string
+- roomNumber?: string
+- licensePlate?: string
+- vin?: string
+- mileageStart?: string
+- mileageEnd?: string
+- fuelLevelStart?: string
+- fuelLevelEnd?: string
+
+Business/commercial fields:
+- businessName?: string
+- buyerName?: string
+- sellerName?: string
+- tenantName?: string
+- landlordOrPropertyManager?: string
+- leaseStartDate?: string
+- leaseEndDate?: string
+- unitOrSuiteNumber?: string
+- buildingName?: string
+- propertyAddress?: string
+- permittedUse?: string
+- moveInDate?: string
+- moveOutDate?: string
+- transferDate?: string
+- saleDate?: string
+- closingDate?: string
+- asIsAcknowledgment?: boolean
+- includedAssetsDescription?: string
+- excludedAssetsDescription?: string
+
+Property sale fields:
+- propertyType?: string
+- sellerName?: string
+- buyerName?: string
+- agentOrBroker?: string
+- propertyAddress?: string
+- saleDate?: string
+- closingDate?: string
+- walkthroughDate?: string
+- includedFixtures?: string
+- excludedFixtures?: string
+- keysAccessDevices?: string
+
+Vehicle sale fields:
+- sellerName?: string
+- buyerName?: string
+- vehicleMake?: string
+- vehicleModel?: string
+- vehicleYear?: string
+- vin?: string
+- licensePlate?: string
+- odometerReading?: string
+- saleDate?: string
+- asIsAcknowledgment?: boolean
+- includedAccessories?: string
+- excludedAccessories?: string
+
+Equipment/item sale fields:
+- sellerName?: string
+- buyerName?: string
+- itemName?: string
+- brand?: string
+- modelNumber?: string
+- serialNumber?: string
+- saleDate?: string
+- transferDate?: string
+- asIsAcknowledgment?: boolean
+- includedAccessories?: string
+- excludedAccessories?: string
+
+ChecklistItem:
+- id: string
+- packetId: string
+- section: string
+- label: string
+- description: string
+- phase: 'before' | 'after' | 'both' | 'pickup' | 'return' | 'sale' | 'transfer' | 'handoff'
+- status: 'not_checked' | 'good' | 'damaged' | 'dirty' | 'missing' | 'not_working' | 'works' | 'not_applicable' | 'unknown' | 'not_safe_to_check' | 'included' | 'excluded' | 'present' | 'not_present'
+- notes: string
+- photoIds: string[]
+- addedDuringInspection: boolean
+- createdAt: string
+- updatedAt: string
+
+PhotoItem:
+- id: string
+- packetId: string
+- checklistItemId?: string
+- imageData or blob reference
+- caption: string
+- category: string
+- phase: 'before' | 'after' | 'general' | 'pickup' | 'return' | 'sale' | 'transfer' | 'handoff'
+- dateTaken: string
+- createdAt: string
+
+CommunicationLog:
+- id: string
+- packetId: string
+- date: string
+- personContacted: string
+- method: 'app_message' | 'email' | 'text' | 'phone' | 'in_person' | 'front_desk' | 'portal' | 'letter' | 'other'
+- subject: string
+- summary: string
+- followUpNeeded: boolean
+- photoIds: string[]
+- createdAt: string
+- updatedAt: string
+
+SignatureItem:
+- id: string
+- packetId: string
+- signerName: string
+- signerRole: string
+- signatureData: string
+- signedAt: string
+
+AppSettings:
+- userName: string
+- userEmail: string
+- defaultPdfTitle: string
+- showDisclaimer: boolean
+- watermarkExports: boolean
+- createdAt: string
+- updatedAt: string
+
+Core screens:
+
+1. Dashboard:
+- Show app name, tagline, secondary tagline, and privacy promise.
+- Show “Create New Proof Packet” button.
+- Show recent packets.
+- Show counts:
+  - total packets
+  - open packets
+  - photos stored
+  - PDFs exported if tracked locally
+- Show quick packet type cards:
+  - Car Rental
+  - Hotel Stay
+  - Airbnb
+  - Apartment/Home
+  - Business/Commercial Lease
+  - Business Changeover / As-Is Sale
+  - Property Sale / Home Sale
+  - Vehicle Sale / As-Is Transfer
+  - Equipment Sale / As-Is Transfer
+  - Accident Claim
+  - Custom
+- Show an empty state if there are no packets:
+  “Create your first proof packet before check-in, pickup, move-in, return, handoff, lease start, sale, transfer, or dispute.”
+
+2. New Packet screen:
+- User chooses packet type.
+- Group packet type cards under:
+  - Personal / Travel
+  - Housing
+  - Business
+  - Vehicle
+  - Claims
+  - Other
+- Show short descriptions for each packet type.
+- After packet type is chosen, show form:
+  - title
+  - location
+  - company/person
+  - reference/reservation/claim/sale/transfer number
+  - start date
+  - end date
+  - notes
+
+For Business / Commercial Lease, also show:
+- business name
+- tenant name
+- landlord/property manager
+- unit/suite number
+- building name
+- property address
+- permitted use
+- lease start date
+- lease end date
+- move-in date
+- move-out date
+
+For Business Changeover / As-Is Sale, also show:
+- business name
+- seller name
+- buyer name
+- landlord/property manager if applicable
+- unit/suite number
+- building name
+- property address
+- sale date
+- transfer date
+- closing date
+- permitted use
+- included assets description
+- excluded assets description
+- as-is acknowledgment checkbox
+
+For Property Sale / Home Sale, also show:
+- property address
+- property type
+- seller name
+- buyer name
+- agent/broker
+- sale date
+- closing date
+- walkthrough date
+- included fixtures
+- excluded fixtures
+- keys/access devices
+
+For Vehicle Sale / As-Is Transfer, also show:
+- seller name
+- buyer name
+- vehicle year
+- vehicle make
+- vehicle model
+- VIN
+- license plate
+- odometer reading
+- sale date
+- included accessories
+- excluded accessories
+- as-is acknowledgment checkbox
+
+For Equipment Sale / As-Is Transfer and General Item Sale / As-Is Transfer, also show:
+- seller name
+- buyer name
+- item name
+- brand
+- model number
+- serial number
+- sale date
+- transfer date
+- included accessories
+- excluded accessories
+- as-is acknowledgment checkbox
+
+Button:
+- “Create Packet”
+
+After creation:
+- Route to Packet Detail screen.
+
+3. Packets screen:
+- List all packets sorted newest first.
+- Each packet card should show:
+  - title
+  - packet type
+  - location
+  - date range
+  - number of checklist items completed
+  - number of photos
+  - last updated
+- Add search/filter by packet type.
+- User can open, duplicate, export, or delete a packet.
+- Delete should require confirmation.
+
+4. Packet Detail screen:
+- Show packet header:
+  - title
+  - type
+  - location
+  - company/person
+  - reference number
+  - date range
+- Tabs or sections:
+  - Overview
+  - Checklist
+  - Photos
+  - Communication Log
+  - Signatures
+  - Export
+- Show completion score:
+  - checklist items completed
+  - required photos missing
+  - before/after/sale/transfer coverage if applicable
+- Show phase mode where relevant:
+  - Before
+  - After
+  - Pickup
+  - Return
+  - Sale
+  - Transfer
+  - Handoff
+- Include “Add More Items” button.
+- Include floating “+” button during active inspections that opens the Add More Items menu.
+- Floating button should be reachable on mobile but should not block checklist controls.
+
+5. Checklist screen:
+- Group checklist items by section.
+- Each item should have:
+  - status buttons
+  - notes field
+  - add photo button
+  - attached photo thumbnails
+- Use large mobile-friendly buttons.
+- Allow user to add custom checklist items.
+- Allow user to mark item not applicable.
+- Allow user to filter:
+  - not checked
+  - damaged
+  - missing
+  - not working
+  - needs photos
+  - added during inspection
+  - included/excluded
+- Autosave updates locally.
+- Do not lose data when switching tabs or sections.
+
+6. Add More Items feature:
+Add an “Add More Items” feature that is available at any time during an inspection.
+
+Purpose:
+Users should never have to restart a proof packet if they realize they forgot to inspect something, need to add a new area, need to add another asset, or want to document an unexpected issue.
+
+Where it appears:
+- Packet Detail screen
+- Checklist screen
+- Photos screen
+- Guided inspection flow
+- Before/After flow
+- Sale/Transfer/Handoff flow
+
+Button labels:
+- “Add More Items”
+- “Add Area”
+- “Add Asset”
+- “Add Custom Check”
+- “Add From Template”
+- “Add Unexpected Issue”
+
+Behavior:
+When the user taps “Add More Items,” show a modal or bottom sheet with these options:
+
+A. Add Custom Checklist Item
+Fields:
+- item name
+- section/category
+- description/notes
+- phase: before, after, both, pickup, return, sale, transfer, handoff
+- status
+- attach photos
+
+B. Add Custom Area / Room
+Fields:
+- area name
+- area type
+- notes
+- automatically create basic checklist items:
+  - wide shot
+  - close-up of any damage
+  - open/close check if applicable
+  - lock/hinge check if applicable
+  - test it if applicable
+  - hidden damage check if applicable
+  - flip/lift/look under check if applicable
+
+C. Add Custom Asset / Item
+For sale, business changeover, equipment sale, and as-is transfer packets.
+Fields:
+- asset/item name
+- category
+- brand
+- model number
+- serial number
+- included/excluded status
+- working/not working status
+- condition notes
+- accessories included
+- attach photos
+
+D. Add Items From Existing Templates
+Allow the user to pull checklist items from other packet templates without changing the packet type.
+
+Examples:
+- A Hotel Stay packet can add Parking Garage, Balcony, Laundry Room, Business Center, Pool, Gym, Minibar, Safe, or Conference Room.
+- An Airbnb packet can add Hot Tub, Pool, Garage, Fire Pit, Grill, Outdoor Furniture, Patio, Yard, Basement, Attic, or Storage Area.
+- A Car Rental packet can add Child Seat, Roof Rack, EV Charging Cable, Spare Tire, Toll Transponder, Snow Chains, Cargo Area, or Bike Rack.
+- An Apartment/Home Rental packet can add Garage, Storage Unit, Yard, Patio, Mailbox, Parking Space, Basement, Attic, Shed, or Utility Closet.
+- A Business/Commercial Lease packet can add Kitchen, Warehouse Area, Office Area, Restroom, Utility Closet, IT Closet, Loading Dock, Outdoor Signage, Break Room, Reception Area, Waiting Area, Studio, Salon Area, Medical Room, Storage Room, or Workshop Area.
+- A Business Changeover / As-Is Sale packet can add POS System, Inventory, Walk-In Cooler, Kitchen Equipment, Furniture, Fixtures, Shelving, Office Equipment, Signage, Licenses/Permits Photo, Keys/Access Cards, Safe, Security Cameras, or IT Equipment.
+- A Property Sale / Home Sale packet can add Garage, Shed, Attic, Basement, Appliances, Fixtures, Yard, Fence, HVAC, Water Heater, Electrical Panel, Included Furniture, or Keys/Access Devices.
+- A Vehicle Sale / As-Is Transfer packet can add Spare Key, Spare Tire, Jack, Charging Cable, Roof Rack, Child Seat, Service Records, Title Photo, Bill of Sale Photo, or Accessories.
+
+E. Add Unexpected Issue
+Quick form:
+- issue title
+- what happened / what was found
+- where it was found
+- status: damaged, dirty, missing, not working, unsafe, unknown
+- attach photos
+- notes
+- whether it was reported to someone
+
+After adding:
+- New items should appear immediately in the current checklist.
+- Added items should be clearly labeled as “Added during inspection.”
+- Added items should be included in the PDF report.
+- Added items should be included in the completion score.
+- Added items should be editable and deletable.
+- Added items should not erase or reset existing progress.
+- The app should autosave added items locally.
+
+PDF behavior:
+In the exported PDF, include a section called “Additional Items Added During Inspection.”
+For each added item, show:
+- item name
+- section/category
+- phase
+- status
+- notes
+- photos
+- date/time added
+
+UX requirement:
+The user should be able to add more checklist items, areas, rooms, assets, or unexpected issues in the middle of an inspection without leaving the current packet or losing progress.
+
+Important:
+Do not force the user to restart the packet.
+Do not force the user to change packet type.
+Do not erase existing checklist progress.
+
+7. Photos screen:
+- Show all photos in the packet.
+- Group by phase:
+  - before
+  - after
+  - pickup
+  - return
+  - sale
+  - transfer
+  - handoff
+  - general
+- Show thumbnails.
+- User can add caption.
+- User can assign photo to checklist item.
+- User can delete photo after confirmation.
+- User can add photo category.
+
+Useful photo categories:
+- wide shot
+- close-up
+- existing damage
+- receipt/agreement
+- bill of sale
+- contract
+- title
+- lease
+- closing/walkthrough form
+- inventory
+- included asset
+- excluded asset
+- serial number
+- model number
+- odometer
+- VIN
+- keys/access
+- interior
+- exterior
+- open/inspect
+- lock/hinge
+- flip/lift/look under
+- test result
+- appliance interior
+- cabinet/drawer interior
+- bathroom deep check
+- kitchen deep check
+- business/commercial
+- property sale
+- vehicle sale
+- equipment sale
+- other
+
+8. Communication Log screen:
+- Add communication log entries.
+- Fields:
+  - date
+  - person contacted
+  - method
+  - subject
+  - summary
+  - follow-up needed
+  - attach screenshot/photo
+- Sort newest first.
+- Communication logs must appear in PDF.
+- Include common method options:
+  - app message
+  - email
+  - text
+  - phone
+  - in person
+  - front desk
+  - portal
+  - letter
+  - other
+
+9. Signatures screen:
+- Simple signature capture using canvas if possible.
+- Fields:
+  - signer name
+  - signer role
+  - signature
+  - date/time
+- Save locally.
+- Include signatures in PDF.
+- Do not overstate legal validity.
+- Label as “Acknowledgment Signature.”
+- For sale/as-is transfer packets, allow two suggested signer roles:
+  - seller
+  - buyer
+- For lease/business packets, allow:
+  - tenant
+  - landlord/property manager
+  - buyer
+  - seller
+  - witness
+  - other
+
+10. Export screen:
+- Show export options:
+  - PDF report
+  - JSON backup
+  - optional ZIP of photos if easy
+- For PDF, allow user to choose sections:
+  - Cover page
+  - Packet summary
+  - Checklist
+  - Photos
+  - Communication log
+  - Signatures
+  - Additional items added during inspection
+  - Disclaimer
+- Generate PDF locally.
+- PDF title default:
+  “ProofPacket Condition Report”
+- Include:
+  - app name
+  - packet title
+  - packet type
+  - generated date/time
+  - location
+  - company/person
+  - reference/reservation/claim/lease/sale/transfer number
+  - date range
+  - notes
+  - checklist results
+  - photos with captions and timestamps
+  - before/after/pickup/return/sale/transfer/handoff labels where applicable
+  - communication logs
+  - signatures
+  - disclaimer
+
+Packet-specific PDF titles:
+- Car Rental: “Car Rental Condition Report”
+- Hotel Stay: “Hotel Stay Condition Report”
+- Airbnb / Short-Term Rental: “Short-Term Rental Condition Report”
+- Apartment / Home Rental: “Apartment / Home Rental Condition Report”
+- Business / Commercial Lease: “Business / Commercial Lease Condition Report”
+- Business Changeover / As-Is Sale: “Business Changeover / As-Is Condition Report”
+- Property Sale / Home Sale: “Property Sale Condition Report”
+- Vehicle Sale / As-Is Transfer: “Vehicle Sale / As-Is Condition Report”
+- Equipment Sale / As-Is Transfer: “Equipment Sale / As-Is Condition Report”
+- General Item Sale / As-Is Transfer: “As-Is Item Transfer Condition Report”
+- Moving / Storage: “Moving / Storage Condition Report”
+- Equipment Rental: “Equipment Rental Condition Report”
+- Accident / Insurance Claim: “Accident / Insurance Documentation Packet”
+- Custom: “ProofPacket Condition Report”
+
+Add page numbers if possible.
+Add watermark if watermarkExports is true.
+PDF should be readable, organized, and useful.
+
+11. Settings screen:
+- User name
+- user email
+- default PDF title
+- toggle show disclaimer
+- toggle watermark exports
+- JSON export/backup
+- JSON import/restore
+- clear all local data with confirmation
+- privacy statement:
+  “Your data is stored locally on this device. ProofPacket does not use accounts, servers, or cloud storage.”
+- fake Upgrade placeholder:
+  “Free version idea: limited packets and watermarked exports.”
+  “Pro version idea: unlimited packets, no watermark, custom templates, side-by-side photo comparison, ZIP export, and more.”
+- Do not implement real payments yet.
+
+Template requirements:
+
+General required sections for most packet types:
+1. Overview
+2. Required Photos
+3. Open / Close / Lock / Hinge Check
+4. Test It
+5. Hidden / Easy-to-Miss Issues
+6. Communication Log
+7. Before / After / Sale / Transfer Notes
+8. Additional Items Added During Inspection
+
+Open / Close / Lock / Hinge Check:
+For anything that opens, closes, slides, swings, rolls, locks, latches, or has hinges, prompt the user to check:
+- Opens smoothly
+- Closes fully
+- Latches properly
+- Locks properly
+- Unlocks properly
+- Hinges secure
+- Handle/knob secure
+- Door closer works, if applicable
+- Track works, if sliding/rolling
+- No scraping/sticking
+- No loose screws
+- No cracks around frame
+- Interior clean
+- No odor
+- No pest evidence
+- No water damage
+- No missing parts
+
+For apartment/home rentals, hotels, Airbnbs, business/commercial leases, business changeovers, and property sales, include an “Open & Inspect” checklist section. The app must remind users to open and photograph the inside of anything that opens or closes, including:
+- cabinets
+- drawers
+- closets
+- refrigerator
+- freezer
+- oven
+- microwave
+- dishwasher
+- washer/dryer
+- medicine cabinet
+- vanity
+- pantry
+- safe
+- minibar
+- desk drawers
+- nightstands
+- windows
+- doors
+- storage areas
+- utility closets
+- IT/server closets where applicable
+- electrical panels if safe/accessibly visible
+- roll-up/loading doors where applicable
+
+Each item should allow the user to mark whether it:
+- opens/closes normally
+- locks/unlocks properly
+- has secure hinges
+- has loose hinges
+- has broken hardware
+- is dirty inside
+- has damage
+- has missing items
+- has odor
+- has water damage
+- shows pest evidence
+- is not safe to check
+- is not applicable
+
+Flip / Lift / Look Under Check:
+For apartments, homes, hotels, Airbnbs, furnished commercial spaces, business changeovers, and property sales, prompt users to flip or lift items where reasonable and safe.
+
+Include:
+- couch cushions
+- chair cushions
+- patio furniture cushions
+- removable rugs/mats
+- pillows
+- blankets
+- comforters
+- mattress corners
+- sofa beds
+- ottomans
+- storage benches
+- under beds
+- under couches
+- behind curtains
+- behind movable furniture if safe
+
+Each item should have status options:
+- Clean/normal
+- Stained
+- Torn
+- Broken
+- Odor
+- Pest evidence
+- Missing item
+- Not safe to move
+- Not applicable
+
+Bathroom Deep Check:
+For apartments, homes, hotels, Airbnbs, business/commercial leases, business changeovers, and property sales with bathrooms/restrooms, include:
+- toilet flush
+- toilet seat/lid hinges
+- toilet base leaks
+- water damage around toilet
+- inside toilet bowl
+- inside toilet tank if safe and accessible
+- tank lid cracks
+- visible tank components
+- sink hot/cold water
+- under-sink leaks
+- shower/tub drain
+- shower pressure
+- shower door/curtain
+- bathroom fan
+- towel bars/hooks
+- medicine cabinet hinges/interior
+- vanity drawers/cabinets
+- mirror cracks
+- tiles/grout/caulk
+- mold/mildew
+- odor
+
+Add this safety note near the toilet tank item:
+“Only inspect inside a toilet tank if it is safe, accessible, and does not require tools.”
+
+Kitchen Deep Check:
+For apartments, homes, hotels with kitchenettes, Airbnbs, commercial kitchens, business changeovers, and property sales, include:
+- every cabinet
+- every drawer
+- cabinet hinges
+- drawer slides
+- handles/pulls
+- under-sink leaks
+- garbage disposal if present
+- refrigerator interior
+- freezer interior
+- fridge/freezer seals
+- oven interior
+- oven door seal
+- stovetop burners
+- microwave interior
+- dishwasher interior
+- dishwasher racks
+- pantry shelves
+- pest evidence
+- water damage
+- odor
+- included dishes/cookware if applicable
+
+Test It checklist:
+For homes, apartments, hotels, Airbnbs, business/commercial spaces, business changeovers, and property sales, include:
+- lights
+- outlets
+- faucets
+- hot water
+- toilet flush
+- shower drain
+- sink drain
+- AC/heat
+- windows
+- locks
+- appliances
+- remote controls
+- Wi-Fi if applicable
+- refrigerator/freezer temperature
+- smoke detectors where applicable
+- carbon monoxide detectors where applicable
+- fans/ventilation where applicable
+
+For car rentals and vehicle sales, include:
+- headlights
+- turn signals
+- brake lights
+- wipers
+- horn
+- AC/heat
+- windows
+- locks
+- seatbelts
+- tires
+- warning lights
+- odometer
+- fuel/battery level
+
+Car Rental template:
+
+Fields:
+- rental company
+- reservation number
+- vehicle make/model
+- license plate
+- VIN optional
+- pickup date/time
+- return date/time
+- pickup location
+- return location
+- starting mileage
+- ending mileage
+- fuel level at pickup
+- fuel level at return
+
+Checklist sections:
+1. Required exterior photos:
+- front exterior
+- rear exterior
+- driver side
+- passenger side
+- roof
+- wheels/rims
+- windshield
+- mirrors
+- bumpers
+- license plate
+- existing scratches/dents
+
+2. Required interior photos:
+- driver seat
+- passenger seat
+- back seats
+- dashboard
+- odometer
+- fuel/battery level
+- trunk/cargo area
+- floor mats
+- center console
+- glove box if appropriate
+- rental agreement/receipt
+
+3. Test It:
+- headlights
+- turn signals
+- brake lights
+- wipers
+- horn
+- AC/heat
+- windows
+- locks
+- seatbelts
+- warning lights
+- tire condition
+- EV charging cable if applicable
+- spare tire area if applicable
+
+4. Add optional items:
+- child seat
+- roof rack
+- toll transponder
+- snow chains
+- charging cable
+- bike rack
+- cargo accessories
+
+Hotel Stay template:
+
+Fields:
+- hotel name
+- room number
+- reservation number
+- check-in date
+- checkout date
+
+Checklist sections:
+1. Required photos:
+- room door/room number
+- bed
+- bathroom
+- closet
+- desk/furniture
+- TV/remote
+- minibar if present
+- safe if present
+- windows
+- checkout condition
+- folio/receipt if applicable
+
+2. Open & Inspect:
+- closet
+- drawers
+- desk drawers
+- nightstand drawers
+- minibar
+- safe
+- windows
+- doors
+- bathroom vanity
+- medicine cabinet if present
+
+3. Flip / Lift / Look Under:
+- bed linens
+- pillows
+- mattress corners
+- under bed
+- chair cushions
+- sofa cushions if present
+- rugs/mats
+- curtains
+
+4. Bathroom Deep Check:
+Use Bathroom Deep Check section.
+
+5. Test It:
+- lights
+- outlets
+- faucets
+- hot water
+- toilet
+- shower drain
+- AC/heat
+- TV/remote
+- Wi-Fi
+- locks
+- safe if present
+
+Airbnb / Short-Term Rental template:
+
+Fields:
+- platform: Airbnb, Vrbo, Booking, direct, other
+- reservation number
+- host name
+- property nickname/address
+- check-in date
+- checkout date
+
+Checklist sections:
+1. Required photos:
+- entry/front door
+- living room
+- kitchen
+- bathroom
+- each bedroom
+- appliances
+- cabinets/drawers
+- linens/towels
+- checkout condition
+- existing damage
+- house rules screenshots
+- host communication screenshots
+
+2. Open & Inspect:
+- cabinets
+- drawers
+- closets
+- pantry
+- refrigerator
+- freezer
+- oven
+- microwave
+- dishwasher
+- washer/dryer
+- medicine cabinet
+- vanity
+- windows
+- doors
+- storage areas
+- safe if present
+
+3. Flip / Lift / Look Under:
+- couch cushions
+- chair cushions
+- mattress corners
+- pillows
+- blankets
+- comforters
+- sofa bed
+- ottomans
+- rugs/mats
+- under beds
+- under couches
+- behind curtains
+
+4. Bathroom Deep Check:
+Use Bathroom Deep Check section.
+
+5. Kitchen Deep Check:
+Use Kitchen Deep Check section.
+
+6. Test It:
+- lights
+- outlets
+- faucets
+- hot water
+- toilets
+- drains
+- AC/heat
+- locks
+- appliances
+- Wi-Fi
+- TV/remotes
+- smoke/CO detectors where applicable
+
+7. Optional add-ons:
+- hot tub
+- pool
+- garage
+- fire pit
+- grill
+- patio
+- yard
+- outdoor furniture
+- balcony
+- parking space
+
+Apartment / Home Rental template:
+
+Fields:
+- property address
+- landlord/property manager
+- lease start date
+- lease end date
+- move-in date
+- move-out date
+- unit number
+- tenant name
+
+Checklist sections:
+1. Required photos:
+- exterior/entry
+- each room wide shot
+- walls
+- floors
+- windows
+- doors
+- cabinets/drawers
+- appliances interior/exterior
+- bathroom fixtures
+- under sinks
+- HVAC/utility closet
+- existing damage
+- keys/access cards
+- move-in/move-out forms
+
+2. Rooms:
+- living room
+- kitchen
+- bedroom
+- bathroom
+- hallway
+- laundry
+- exterior
+- garage
+- storage
+- custom room
+
+3. Open & Inspect:
+Use Open & Inspect section.
+
+4. Flip / Lift / Look Under:
+Use Flip / Lift / Look Under section for furnished rentals.
+
+5. Bathroom Deep Check:
+Use Bathroom Deep Check section.
+
+6. Kitchen Deep Check:
+Use Kitchen Deep Check section.
+
+7. Test It:
+- lights
+- outlets
+- faucets
+- hot water
+- toilets
+- drains
+- AC/heat
+- windows
+- locks
+- appliances
+- smoke/CO detectors where applicable
+
+8. Hidden / Easy-to-Miss:
+- under sinks
+- around windows
+- ceiling stains
+- baseboards
+- carpet stains
+- odors
+- pest evidence
+- cracked tiles
+- loose handles
+- broken blinds
+- filters/vents
+
+Business / Commercial Lease template:
+
+Purpose:
+This packet type is for documenting the condition of leased business spaces, including offices, retail spaces, commercial kitchens, studios, salons, warehouses, workshops, medical/dental suites, storage spaces, and other commercial units.
+
+Fields:
+- business name
+- tenant name
+- landlord/property manager
+- lease start date
+- lease end date
+- unit/suite number
+- building name
+- property address
+- permitted use
+- reference number
+- move-in date
+- move-out date
+
+Checklist sections:
+
+1. Entry / Exterior:
+- main entrance door
+- door locks
+- door hinges
+- door closer
+- door frame
+- glass/front windows
+- signage area
+- exterior lighting
+- mailbox/mail slot
+- loading door if applicable
+- roll-up door if applicable
+- parking area if applicable
+
+2. Walls / Floors / Ceilings:
+- walls
+- floors
+- baseboards
+- ceiling tiles
+- ceiling stains
+- cracks
+- paint condition
+- carpet condition
+- tile condition
+- concrete condition
+- water damage
+- odors
+- pest evidence
+
+3. Office / Retail Interior:
+- built-in desks/counters
+- shelving
+- display fixtures
+- cabinets
+- drawers
+- closets/storage rooms
+- conference rooms
+- break room
+- reception area
+- waiting area
+- interior doors
+- windows/blinds
+
+4. Electrical / Lighting:
+- light fixtures
+- switches
+- outlets
+- dedicated circuits
+- breaker panel if accessible
+- emergency lighting
+- exit signs
+- data/ethernet ports
+- phone jacks
+- server/IT closet if present
+- visible exposed wiring
+- GFCI outlets where applicable
+
+5. HVAC / Ventilation:
+- heating
+- air conditioning
+- thermostat
+- vents/registers
+- air filters if accessible
+- exhaust fans
+- vent hoods if applicable
+- odors
+- noise
+- leaks/condensation
+
+6. Plumbing:
+- sinks
+- faucets
+- hot water
+- drains
+- toilets
+- toilet tank if safe and accessible
+- floor drains
+- water heater if accessible
+- under-sink leaks
+- pipe leaks
+- water pressure
+- sewer odors
+
+7. Restrooms:
+- toilet
+- toilet seat/lid hinges
+- toilet base
+- toilet tank if safe and accessible
+- sink
+- mirror
+- soap/towel dispensers
+- hand dryer
+- stall doors/locks/hinges
+- grab bars
+- ventilation
+- tile/grout/caulk
+- odors
+- water damage
+- pest evidence
+
+8. Commercial Kitchen, if applicable:
+- hood/ventilation
+- hood filters
+- fire suppression system visible condition
+- gas lines visible condition
+- stove/range
+- oven
+- flat top/griddle
+- fryer area
+- prep tables
+- three-compartment sink
+- handwashing sink
+- mop sink
+- floor drains
+- walk-in cooler
+- walk-in freezer
+- reach-in refrigerator/freezer
+- shelving
+- grease trap area if accessible
+- walls/floors behind equipment if visible
+- pest evidence
+- odors
+- water damage
+- electrical outlets/GFCI
+- appliance doors, hinges, seals, handles
+- interior of appliances
+
+9. Warehouse / Workshop / Industrial, if applicable:
+- loading dock
+- roll-up doors
+- bay doors
+- door tracks
+- door motors/openers
+- concrete floor cracks
+- floor stains
+- floor drains
+- racking/shelving
+- workbenches
+- utility sinks
+- compressed air lines if present
+- ventilation
+- electrical panels
+- high-bay lights
+- safety bollards
+- fire extinguishers visible/present
+- sprinkler heads visible condition
+- exit paths
+- storage areas
+
+10. Safety / Compliance Visible Items:
+- smoke detectors where applicable
+- carbon monoxide detectors where applicable
+- fire extinguishers visible/present
+- sprinkler heads visible condition
+- exit signs
+- emergency lights
+- exit doors
+- panic bars
+- ADA access items if present
+- handrails
+- trip hazards
+- exposed wiring
+- leaks
+- mold/mildew
+- pest evidence
+
+11. Open / Close / Lock / Hinge Check:
+Apply this to:
+- entry doors
+- interior doors
+- office doors
+- restroom stall doors
+- cabinet doors
+- drawers
+- closets
+- storage rooms
+- roll-up doors
+- loading doors
+- appliance doors
+- refrigerator/freezer doors
+- commercial kitchen equipment doors
+- electrical/utility closets
+- IT/server closets
+
+12. Required Photo Prompts:
+Prompt the user to capture:
+- wide shot of each room/area
+- entrance/exterior
+- unit/suite number
+- existing damage close-ups
+- floors/walls/ceilings
+- restrooms
+- electrical panel if accessible
+- HVAC/thermostat/vents
+- plumbing under sinks
+- kitchen equipment if applicable
+- loading/storage areas if applicable
+- keys/access cards if applicable
+- lease/condition form screenshots or photos
+- communication with landlord/property manager about existing issues
+
+Business / Commercial Lease PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes. It does not verify code compliance, safety compliance, health department compliance, ADA compliance, fire code compliance, insurance coverage, or lease rights. Consult qualified professionals where needed.”
+
+Business Changeover / As-Is Sale template:
+
+Purpose:
+This packet type is for documenting the visible condition of a business, commercial space, assets, fixtures, furniture, equipment, inventory, keys, access devices, and included/excluded items during a sale, handoff, transition, or as-is business transfer.
+
+Fields:
+- business name
+- seller name
+- buyer name
+- landlord/property manager if applicable
+- unit/suite number
+- building name
+- property address
+- sale date
+- transfer date
+- closing date
+- permitted use
+- included assets description
+- excluded assets description
+- as-is acknowledgment checkbox
+
+Checklist sections:
+
+1. Business Overview:
+- business name
+- address/location
+- transfer date
+- sale/closing date
+- seller
+- buyer
+- permitted use if known
+- included assets summary
+- excluded assets summary
+- keys/access devices summary
+
+2. Exterior / Entry:
+- storefront/exterior
+- signage
+- windows/glass
+- entry door
+- door locks
+- door hinges
+- door closer
+- mailbox/mail slot
+- loading door if applicable
+- parking area if applicable
+- exterior lighting
+
+3. Interior Condition:
+- walls
+- floors
+- ceilings
+- baseboards
+- built-in fixtures
+- counters
+- shelving
+- storage areas
+- restrooms
+- break room
+- office area
+- reception/waiting area
+- warehouse/workshop area if applicable
+- odors
+- water damage
+- pest evidence
+
+4. Included Assets:
+- furniture
+- fixtures
+- equipment
+- POS system
+- computers/tablets
+- phones
+- printers
+- security cameras
+- safe
+- shelving/racks
+- kitchen equipment
+- appliances
+- tools
+- inventory
+- supplies
+- signage
+- keys
+- access cards
+- remote controls
+- manuals
+- licenses/permits photos if relevant
+- contracts/documents photos if relevant
+
+5. Excluded Assets:
+- items seller is removing
+- personal property
+- leased equipment
+- vendor-owned equipment
+- landlord-owned fixtures
+- missing items
+- disputed items
+
+6. Equipment / Appliance Condition:
+- brand/model/serial number where visible
+- powers on if safe to test
+- visible damage
+- missing parts
+- accessories included
+- doors/hinges/seals/handles
+- interior condition
+- cleanliness
+- odor
+- leaks
+- unusual noise
+
+7. Commercial Kitchen, if applicable:
+Use Commercial Kitchen section from Business / Commercial Lease.
+
+8. Warehouse / Workshop, if applicable:
+Use Warehouse / Workshop / Industrial section from Business / Commercial Lease.
+
+9. Open / Close / Lock / Hinge Check:
+Use Open / Close / Lock / Hinge Check section.
+
+10. Test It:
+- lights
+- outlets
+- switches
+- HVAC
+- appliances
+- equipment power-on if safe
+- POS/electronics power-on if appropriate
+- doors
+- locks
+- roll-up doors
+- plumbing
+- fans/ventilation
+- refrigerators/freezers temperature if applicable
+
+11. Required Photos:
+- exterior/storefront
+- entrance
+- wide shot of each room/area
+- included assets
+- excluded assets
+- equipment serial/model numbers
+- keys/access devices
+- POS/electronics
+- kitchen equipment if applicable
+- inventory areas
+- existing damage
+- sale/transfer documents if appropriate
+- communication about included/excluded items
+
+Business Changeover / As-Is Sale PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes for organization purposes only. It does not verify ownership, liens, lease rights, licenses, permits, health department compliance, code compliance, equipment functionality, business valuation, or legal enforceability. Consult qualified professionals where needed.”
+
+Property Sale / Home Sale template:
+
+Purpose:
+This packet type is for documenting visible condition during a property sale, home sale, final walkthrough, as-is transfer, fixture handoff, or buyer/seller condition record.
+
+Fields:
+- property address
+- property type
+- seller name
+- buyer name
+- agent/broker
+- sale date
+- closing date
+- walkthrough date
+- included fixtures
+- excluded fixtures
+- keys/access devices
+
+Checklist sections:
+
+1. Property Overview:
+- address
+- property type
+- seller
+- buyer
+- agent/broker
+- walkthrough date
+- closing date
+- included fixtures
+- excluded fixtures
+- keys/access devices
+
+2. Exterior:
+- front exterior
+- rear exterior
+- roof visible from ground
+- gutters/downspouts visible condition
+- siding/brick/stucco
+- windows
+- doors
+- garage door
+- driveway
+- walkway
+- porch/deck/patio
+- fence/gate
+- yard/landscaping
+- mailbox
+- exterior lighting
+
+3. Interior Rooms:
+- living room
+- kitchen
+- bedrooms
+- bathrooms
+- hallways
+- closets
+- laundry
+- basement
+- attic if accessible
+- garage
+- storage areas
+- utility rooms
+- custom rooms
+
+4. Fixtures / Included Items:
+- appliances
+- light fixtures
+- ceiling fans
+- window treatments/blinds
+- built-in shelving
+- attached TVs/mounts if included
+- smart home devices if included
+- garage remotes
+- keys
+- access cards
+- mailbox keys
+- pool/hot tub equipment if applicable
+- furniture if included
+
+5. Open & Inspect:
+Use Open & Inspect section.
+
+6. Flip / Lift / Look Under:
+Use Flip / Lift / Look Under section if furnished or items are included.
+
+7. Bathroom Deep Check:
+Use Bathroom Deep Check section.
+
+8. Kitchen Deep Check:
+Use Kitchen Deep Check section.
+
+9. Systems / Test It:
+- lights
+- outlets
+- faucets
+- hot water
+- toilets
+- drains
+- AC/heat
+- thermostat
+- windows
+- locks
+- appliances
+- garage door opener
+- smoke/CO detectors where applicable
+- fans/ventilation
+
+10. Hidden / Easy-to-Miss:
+- under sinks
+- around windows
+- ceiling stains
+- water damage
+- baseboards
+- carpet stains
+- odors
+- pest evidence
+- cracked tiles
+- loose handles
+- broken blinds
+- HVAC/filters/vents if visible
+- water heater visible condition
+- electrical panel if accessible
+- attic/basement visible issues if accessible
+
+11. Required Photos:
+- front exterior
+- rear exterior
+- each room wide shot
+- major systems if accessible
+- appliances
+- included fixtures
+- keys/access devices
+- existing damage
+- final walkthrough form if applicable
+- communication about included/excluded fixtures
+
+Property Sale / Home Sale PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes. It is not a home inspection, appraisal, title review, survey, legal document, or professional condition certification. Consult qualified professionals where needed.”
+
+Vehicle Sale / As-Is Transfer template:
+
+Purpose:
+This packet type is for documenting the condition of a vehicle being sold, bought, transferred, or accepted as-is.
+
+Fields:
+- seller name
+- buyer name
+- vehicle year
+- vehicle make
+- vehicle model
+- VIN
+- license plate
+- odometer reading
+- sale date
+- included accessories
+- excluded accessories
+- as-is acknowledgment checkbox
+
+Checklist sections:
+
+1. Vehicle Overview:
+- seller
+- buyer
+- year/make/model
+- VIN
+- license plate
+- odometer
+- sale date
+- as-is acknowledgment
+- included accessories
+- excluded accessories
+
+2. Exterior Photos:
+- front
+- rear
+- driver side
+- passenger side
+- roof
+- hood
+- trunk/hatch
+- bumpers
+- windshield
+- windows
+- mirrors
+- wheels/rims
+- tires
+- visible dents/scratches/rust
+- license plate
+
+3. Interior Photos:
+- driver seat
+- passenger seat
+- rear seats
+- dashboard
+- odometer
+- warning lights
+- center console
+- glove box
+- trunk/cargo area
+- floor mats
+- headliner
+- infotainment screen
+- keys/fobs
+
+4. Test It:
+- engine starts if applicable
+- headlights
+- turn signals
+- brake lights
+- hazard lights
+- wipers
+- horn
+- AC/heat
+- windows
+- locks
+- seatbelts
+- radio/infotainment
+- backup camera if present
+- power seats if present
+- sunroof if present
+- warning lights
+- EV charging if applicable
+
+5. Documents / Accessories:
+- title photo if appropriate
+- bill of sale photo if appropriate
+- service records
+- owner’s manual
+- spare key
+- spare tire
+- jack
+- charging cable
+- roof rack
+- child seat if included
+- other accessories
+
+Vehicle Sale / As-Is PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes. It does not verify title status, liens, mechanical condition, emissions compliance, safety compliance, value, or legal rights. Consult qualified professionals where needed.”
+
+Equipment Sale / As-Is Transfer template:
+
+Purpose:
+This packet type is for documenting equipment, tools, appliances, electronics, machines, furniture, or other assets being sold, bought, transferred, or accepted as-is.
+
+Fields:
+- seller name
+- buyer name
+- item name
+- brand
+- model number
+- serial number
+- sale date
+- transfer date
+- included accessories
+- excluded accessories
+- as-is acknowledgment checkbox
+
+Checklist sections:
+1. Item Overview:
+- item name
+- brand
+- model number
+- serial number
+- seller
+- buyer
+- sale/transfer date
+- included accessories
+- excluded accessories
+- as-is acknowledgment
+
+2. Required Photos:
+- front
+- back
+- sides
+- top/bottom if safe
+- serial/model number plate
+- accessories
+- power cord/charger
+- case/container
+- visible damage
+- wear marks
+- missing parts
+
+3. Condition:
+- exterior damage
+- interior condition if accessible
+- moving parts
+- doors/hinges/latches
+- wheels/casters
+- handles
+- screens/buttons
+- cables
+- seals/gaskets
+- rust/corrosion
+- odor
+- leaks
+- cleanliness
+
+4. Test It:
+- powers on if safe
+- basic function test if safe
+- display works if applicable
+- buttons/switches work if applicable
+- motor runs if applicable
+- lights/indicators work if applicable
+- unusual noise
+- accessories tested if applicable
+
+5. Included / Excluded:
+- included accessories
+- excluded accessories
+- missing items
+- manuals/documents
+- receipts
+- warranty cards if applicable
+
+Equipment Sale / As-Is PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes. It does not verify ownership, liens, warranty status, safety, compliance, functionality, value, or legal rights. Consult qualified professionals where needed.”
+
+General Item Sale / As-Is Transfer template:
+
+Purpose:
+This packet type is for documenting the condition of any item being sold, bought, borrowed, lent, transferred, or accepted as-is.
+
+Fields:
+- seller name
+- buyer name
+- item name
+- brand
+- model number
+- serial number
+- sale date
+- transfer date
+- included accessories
+- excluded accessories
+- as-is acknowledgment checkbox
+
+Checklist sections:
+1. Item Overview:
+- item name
+- seller
+- buyer
+- sale/transfer date
+- as-is acknowledgment
+- included accessories
+- excluded accessories
+
+2. Required Photos:
+- front
+- back
+- sides
+- close-ups
+- serial/model number if any
+- included accessories
+- defects/damage
+- packaging if relevant
+- receipt/bill of sale if relevant
+
+3. Condition:
+- scratches
+- dents
+- stains
+- tears
+- missing parts
+- broken parts
+- odor
+- cleanliness
+- powers on if applicable
+- opens/closes if applicable
+- hinges/latches if applicable
+- included accessories
+
+General Item Sale / As-Is PDF disclaimer:
+“ProofPacket documents visible condition and user-entered notes. It does not verify ownership, authenticity, value, warranty status, safety, functionality, or legal rights. Consult qualified professionals where needed.”
+
+Moving / Storage template:
+
+Fields:
+- company name
+- reservation/reference number
+- unit/truck number
+- pickup/move-in date
+- return/move-out date
+- location
+
+Checklist sections:
+- truck exterior
+- truck interior/cargo area
+- mileage/fuel if truck
+- storage unit door
+- storage unit lock
+- storage unit interior
+- floor/walls/ceiling
+- water damage
+- pest evidence
+- odors
+- existing damage
+- items loaded
+- items removed
+- return condition
+
+Equipment Rental template:
+
+Fields:
+- company/person
+- item name
+- serial number
+- model number
+- rental/reference number
+- pickup date
+- return date
+
+Checklist sections:
+- exterior condition
+- serial/model number
+- accessories included
+- cables/chargers
+- case/container
+- moving parts
+- hinges/latches
+- wheels/casters
+- power test
+- visible damage
+- return condition
+
+Accident / Insurance Claim template:
+
+Safety disclaimer:
+“Only document the scene if it is safe to do so. Do not block traffic or place yourself in danger. Seek medical, emergency, legal, or insurance assistance when needed.”
+
+Fields:
+- date/time
+- location
+- claim number
+- insurance company
+- adjuster contact
+- police report number
+- vehicles involved
+- notes
+
+Checklist sections:
+- your vehicle damage
+- other vehicle damage
+- vehicle positions if safe
+- license plates
+- insurance card photo
+- driver info photo if appropriate
+- road conditions
+- traffic signs/lights
+- weather
+- witness info
+- police report number
+- tow/repair receipts
+- communication log
+- claim documents
+
+Do not include medical advice.
+Do not ask for detailed medical diagnosis.
+Keep it to documentation.
+
+PDF behavior:
+For every packet type, the exported PDF should include:
+- cover page
+- packet title
+- packet type
+- generated date/time
+- privacy/disclaimer
+- packet details
+- checklist items grouped by section
+- status of each item
+- notes
+- photos with captions and timestamps
+- before/after/pickup/return/sale/transfer/handoff labels where applicable
+- communication logs
+- signatures
+- additional items added during inspection
+- final disclaimer
+
+Status buttons:
+Use clear status buttons:
+- Not checked
+- Good
+- Works
+- Damaged
+- Dirty
+- Missing
+- Not working
+- Unknown
+- Not safe to check
+- Not applicable
+- Included
+- Excluded
+- Present
+- Not present
+
+UX requirements:
+- Mobile-first.
+- Large touch targets.
+- Clear cards.
+- Rounded corners.
+- Generous spacing.
+- Minimal clutter.
+- Autosave as much as practical.
+- Confirm before deleting.
+- Friendly empty states.
+- User should never lose progress.
+- User should be able to add photos quickly.
+- User should be able to continue an existing packet.
+- User should be able to add more items during an inspection.
+- User should not have to restart an inspection because they forgot an item.
+- User should not be forced to use every checklist item.
+- User should be able to mark items not applicable.
+- User should be able to create a useful packet even with partial completion.
+
+Design:
+- Clean, trustworthy, practical.
+- Not flashy.
+- Calm color palette.
+- App should feel like a serious documentation tool.
+- Use cards, badges, and progress indicators.
+- Use plain language.
+- Avoid legalistic or scary wording except for disclaimers.
+
+Marketing copy to include in app:
+“Most people take photos. ProofPacket tells you what people forget to document.”
+“Open it. Close it. Lock it. Flip it. Test it. Photograph it.”
+“No account. No cloud. No server.”
+“Export a clean proof packet when you need it.”
+“Document the condition before a rental, return, sale, handoff, lease, claim, or as-is transfer.”
+
+Seed data:
+Include a button in Settings or Developer Tools called “Load Sample Data.”
+
+Sample data should create:
+- one car rental packet
+- one hotel packet
+- one apartment/home rental packet
+- one business/commercial lease packet
+- one business changeover/as-is sale packet
+- one property sale packet
+- one vehicle sale packet
+
+Each should have a few checklist items, notes, and placeholder photo entries if real image seed data is hard.
+
+Code organization:
+Use a clean structure:
+- src/components
+- src/pages
+- src/templates
+- src/storage
+- src/types
+- src/utils
+- src/pdf
+- src/styles
+
+Template architecture:
+- Create packet templates as reusable TypeScript objects.
+- Each template should generate checklist sections and items.
+- The Add More Items feature should be able to pull sections/items from any template.
+- Do not hardcode everything only inside UI components.
+
+Required developer deliverables:
+- Working app.
+- All source code.
+- README with:
+  - how to run
+  - app purpose
+  - local-only privacy model
+  - no-backend architecture
+  - how data is stored
+  - how PDF export works
+  - known limitations
+  - future improvements
+
+Future improvements to mention in README:
+- Native mobile version with Expo
+- optional encrypted local storage
+- custom PDF templates
+- side-by-side before/after photo comparison
+- ZIP export of original photos
+- OCR for receipts/documents
+- manual iCloud/Google Drive export
+- in-app purchase unlock
+- custom user-created templates
+- blur/dark photo warning
+- checklist completion recommendations
+- shareable read-only exported packet file
+- optional local passcode lock
+- optional device biometric unlock if made native later
+
+Important final instruction:
+Build the MVP as a functional local-first app. Prioritize creating packets, using templates, adding checklist statuses, adding notes/photos, adding more items during inspection, documenting sales/as-is transfers, capturing signatures, and exporting a PDF. Do not spend time building a backend, auth system, or cloud sync.
