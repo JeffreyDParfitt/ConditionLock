@@ -1,203 +1,350 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Packet, AppSettings, PhotoItem } from '../types';
+import type { Packet, AppSettings } from '../types';
 import { db } from '../storage/db';
-import { format } from 'date-fns';
+import { blobToDataURL } from '../utils/photo';
 
-export async function generatePDF(packet: Packet, settings: AppSettings, options: {
-  includeCover: boolean;
-  includeSummary: boolean;
-  includeChecklist: boolean;
-  includePhotos: boolean;
-  includeCommLog: boolean;
-  includeSignatures: boolean;
-  includeDisclaimer: boolean;
-}) {
-  const doc = new jsPDF();
+function formatDate(iso: string) {
+  try { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)); }
+  catch { return iso; }
+}
+
+const PDF_TITLES: Record<string, string> = {
+  car_rental: 'Car Rental Condition Report',
+  hotel: 'Hotel Stay Condition Report',
+  airbnb: 'Short-Term Rental Condition Report',
+  apartment_home: 'Apartment / Home Rental Condition Report',
+  business_commercial_lease: 'Business / Commercial Lease Condition Report',
+  business_changeover_as_is_sale: 'Business Changeover / As-Is Condition Report',
+  property_sale_home_sale: 'Property Sale Condition Report',
+  vehicle_sale_as_is_transfer: 'Vehicle Sale / As-Is Condition Report',
+  equipment_sale_as_is_transfer: 'Equipment Sale / As-Is Condition Report',
+  general_item_sale_as_is_transfer: 'As-Is Item Transfer Condition Report',
+  moving_storage: 'Moving / Storage Condition Report',
+  equipment_rental: 'Equipment Rental Condition Report',
+  accident_claim: 'Accident / Insurance Documentation Packet',
+  custom: 'ProofPacket Condition Report',
+};
+
+export async function generatePDF(
+  packet: Packet,
+  settings: AppSettings,
+  options: {
+    includeCover: boolean;
+    includeSummary: boolean;
+    includeChecklist: boolean;
+    includePhotos: boolean;
+    includeCommLog: boolean;
+    includeSignatures: boolean;
+    includeDisclaimer: boolean;
+  }
+) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const photos = await db.photos.where('packetId').equals(packet.id).toArray();
-  
-  const title = settings.defaultPdfTitle || 'Condition Report';
-  let yPos = 20;
 
-  // Helper for adding new page
-  const checkPageBreak = (needed: number) => {
-    if (yPos + needed > 280) {
-      doc.addPage();
-      yPos = 20;
-      return true;
-    }
-    return false;
+  const packetTitle = PDF_TITLES[packet.type] ?? settings.defaultPdfTitle ?? 'Condition Report';
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  let y = margin;
+
+  const navy: [number, number, number] = [15, 30, 55];
+  const slate: [number, number, number] = [51, 65, 85];
+  const muted: [number, number, number] = [120, 130, 145];
+
+  const newPage = () => {
+    doc.addPage();
+    y = margin;
   };
 
-  // 1. Cover Page
+  const checkBreak = (needed: number) => {
+    if (y + needed > pageH - 20) newPage();
+  };
+
+  const sectionHeading = (text: string) => {
+    checkBreak(12);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...navy);
+    doc.text(text, margin, y);
+    doc.setDrawColor(...slate);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+  };
+
+  const addFooter = () => {
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text(`Page ${i} of ${pages}`, pageW / 2, pageH - 8, { align: 'center' });
+      if (options.includeDisclaimer || settings.showDisclaimer) {
+        const disclaimer = 'ProofPacket is an organization and documentation tool. It does not provide legal, insurance, medical, safety, code-compliance, inspection, appraisal, valuation, or professional advice.';
+        doc.text(disclaimer, pageW / 2, pageH - 4, { align: 'center', maxWidth: pageW - margin * 2 });
+      }
+      doc.setTextColor(0, 0, 0);
+    }
+  };
+
+  // ── WATERMARK ──────────────────────────────────────────────────────
+  const addWatermarks = () => {
+    if (!settings.watermarkExports) return;
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(52);
+      doc.setTextColor(220, 225, 232);
+      doc.text('ProofPacket', pageW / 2, pageH / 2, { align: 'center', angle: 45 });
+      doc.setTextColor(0, 0, 0);
+    }
+  };
+
+  // ── 1. COVER PAGE ──────────────────────────────────────────────────
   if (options.includeCover) {
-    doc.setFontSize(24);
-    doc.text('ProofPacket', 105, yPos, { align: 'center' });
-    yPos += 15;
-    
-    doc.setFontSize(18);
-    doc.text(title, 105, yPos, { align: 'center' });
-    yPos += 20;
-
+    doc.setFillColor(...navy);
+    doc.rect(0, 0, pageW, 50, 'F');
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('ProofPacket', margin, 22);
     doc.setFontSize(12);
-    doc.text(`Packet: ${packet.title}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 20, yPos);
-    yPos += 10;
-    if (packet.location) {
-      doc.text(`Location: ${packet.location}`, 20, yPos);
-      yPos += 10;
-    }
-    if (packet.companyOrPerson) {
-      doc.text(`Company/Person: ${packet.companyOrPerson}`, 20, yPos);
-      yPos += 10;
-    }
+    doc.setFont('helvetica', 'normal');
+    doc.text('Prove the condition before there\'s a dispute.', margin, 32);
+    doc.setFontSize(9);
+    doc.setTextColor(180, 195, 215);
+    doc.text('No account. No cloud. No server.', margin, 42);
 
-    doc.addPage();
-    yPos = 20;
-  }
+    y = 62;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(packetTitle, margin, y);
+    y += 10;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...slate);
+    doc.text(packet.title, margin, y);
+    y += 14;
 
-  // 2. Summary
-  if (options.includeSummary) {
-    doc.setFontSize(16);
-    doc.text('Packet Summary', 20, yPos);
-    yPos += 10;
-
-    const summaryData = [
-      ['Title', packet.title],
-      ['Type', packet.type.replace(/_/g, ' ')],
-      ['Date Range', `${packet.startDate} to ${packet.endDate}`],
-      ['Reference', packet.referenceNumber || 'N/A'],
-      ['Notes', packet.notes || 'None']
+    const meta: [string, string][] = [
+      ['Generated', formatDate(new Date().toISOString())],
+      ['Packet Type', packet.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())],
     ];
+    if (packet.location) meta.push(['Location', packet.location]);
+    if (packet.companyOrPerson) meta.push(['Company / Person', packet.companyOrPerson]);
+    if (packet.referenceNumber) meta.push(['Reference #', packet.referenceNumber]);
+    if (packet.startDate) meta.push(['Start Date', packet.startDate]);
+    if (packet.endDate) meta.push(['End Date', packet.endDate]);
 
+    doc.setTextColor(0, 0, 0);
     autoTable(doc, {
-      startY: yPos,
-      head: [['Field', 'Details']],
-      body: summaryData,
-      theme: 'grid',
-      headStyles: { fillColor: [30, 41, 59] } // slate-800
+      startY: y,
+      body: meta,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 2 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45, textColor: slate }, 1: { cellWidth: pageW - margin * 2 - 45 } },
     });
-
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    y = (doc as any).lastAutoTable.finalY + 10;
+    newPage();
   }
 
-  // 3. Checklist
-  if (options.includeChecklist && packet.checklistItems.length > 0) {
-    checkPageBreak(30);
-    doc.setFontSize(16);
-    doc.text('Checklist', 20, yPos);
-    yPos += 10;
+  // ── 2. SUMMARY ─────────────────────────────────────────────────────
+  if (options.includeSummary) {
+    sectionHeading('Packet Summary');
+    const rows: [string, string][] = [
+      ['Title', packet.title],
+      ['Type', packet.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())],
+      ['Location', packet.location || '—'],
+      ['Company / Person', packet.companyOrPerson || '—'],
+      ['Reference #', packet.referenceNumber || '—'],
+      ['Date Range', [packet.startDate, packet.endDate].filter(Boolean).join(' to ') || '—'],
+      ['Notes', packet.notes || '—'],
+    ];
+    // Additional type-specific details
+    if (packet.details) {
+      Object.entries(packet.details).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') {
+          const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+          rows.push([label, typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)]);
+        }
+      });
+    }
+    autoTable(doc, {
+      startY: y,
+      body: rows,
+      theme: 'striped',
+      styles: { fontSize: 9, cellPadding: 2.5 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55, textColor: slate }, 1: {} },
+      headStyles: { fillColor: navy },
+    });
+    y = (doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // ── 3. CHECKLIST ───────────────────────────────────────────────────
+  if (options.includeChecklist && packet.checklistItems?.length > 0) {
+    checkBreak(20);
+    sectionHeading('Checklist');
 
     const sections = Array.from(new Set(packet.checklistItems.map(i => i.section)));
-    
+    const addedItems = packet.checklistItems.filter(i => i.addedDuringInspection);
+
     sections.forEach(section => {
-      const items = packet.checklistItems.filter(i => i.section === section);
-      
+      const items = packet.checklistItems.filter(i => i.section === section && !i.addedDuringInspection);
+      if (items.length === 0) return;
+      checkBreak(16);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...slate);
+      doc.text(section, margin, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
       autoTable(doc, {
-        startY: yPos,
-        head: [[section, 'Status', 'Notes']],
+        startY: y,
+        head: [['Item', 'Status', 'Notes']],
         body: items.map(item => [
           item.label,
           item.status.replace(/_/g, ' '),
-          item.notes || '-'
+          item.notes || '—',
         ]),
         theme: 'grid',
-        headStyles: { fillColor: [51, 65, 85] } // slate-700
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: slate, fontSize: 8 },
+        columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 30 }, 2: {} },
+        margin: { left: margin, right: margin },
       });
-      
-      yPos = (doc as any).lastAutoTable.finalY + 10;
-      checkPageBreak(20);
+      y = (doc as any).lastAutoTable.finalY + 6;
     });
+
+    if (addedItems.length > 0) {
+      checkBreak(16);
+      sectionHeading('Additional Items Added During Inspection');
+      autoTable(doc, {
+        startY: y,
+        head: [['Item', 'Section', 'Status', 'Notes', 'Added']],
+        body: addedItems.map(item => [
+          item.label,
+          item.section,
+          item.status.replace(/_/g, ' '),
+          item.notes || '—',
+          formatDate(item.createdAt),
+        ]),
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [80, 100, 130] as [number,number,number], fontSize: 8 },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 12;
+    }
   }
 
-  // 4. Photos
+  // ── 4. PHOTOS ──────────────────────────────────────────────────────
   if (options.includePhotos && photos.length > 0) {
-    doc.addPage();
-    yPos = 20;
-    doc.setFontSize(16);
-    doc.text('Photos', 20, yPos);
-    yPos += 15;
+    newPage();
+    sectionHeading('Photos');
 
-    let xPos = 20;
-    const imgWidth = 80;
-    const imgHeight = 60;
+    const imgW = (pageW - margin * 2 - 8) / 2;
+    const imgH = imgW * 0.75;
+    let col = 0;
+    let rowY = y;
 
     for (const photo of photos) {
-      if (yPos + imgHeight + 20 > 280) {
-        doc.addPage();
-        yPos = 20;
-        xPos = 20;
+      if (col === 0 && rowY + imgH + 20 > pageH - 20) {
+        newPage();
+        rowY = y;
       }
-
+      const xPos = margin + col * (imgW + 8);
       try {
-        doc.addImage(photo.imageData, 'JPEG', xPos, yPos, imgWidth, imgHeight);
-        doc.setFontSize(10);
-        doc.text(photo.caption || photo.category, xPos, yPos + imgHeight + 5);
-        doc.text(format(new Date(photo.dateTaken), 'PPp'), xPos, yPos + imgHeight + 10);
-        
-        xPos += imgWidth + 10;
-        if (xPos > 120) {
-          xPos = 20;
-          yPos += imgHeight + 20;
+        let dataUrl: string;
+        if (photo.originalBlob instanceof Blob) {
+          dataUrl = await blobToDataURL(photo.originalBlob);
+        } else {
+          // Legacy fallback: photo might have thumbnailData
+          dataUrl = photo.thumbnailData || '';
         }
-      } catch (e) {
-        console.error("Failed to add image to PDF", e);
+        if (dataUrl) {
+          const imgType = (photo.mimeType === 'image/png' ? 'PNG' : 'JPEG') as 'PNG' | 'JPEG';
+          doc.addImage(dataUrl, imgType, xPos, rowY, imgW, imgH);
+        }
+      } catch {
+        doc.setFillColor(230, 235, 240);
+        doc.rect(xPos, rowY, imgW, imgH, 'F');
+        doc.setFontSize(7);
+        doc.setTextColor(...muted);
+        doc.text('[Photo unavailable]', xPos + imgW / 2, rowY + imgH / 2, { align: 'center' });
+        doc.setTextColor(0, 0, 0);
+      }
+      doc.setFontSize(7);
+      doc.setTextColor(...slate);
+      const label = [photo.caption, photo.category, photo.phase, photo.dateTaken ? formatDate(photo.dateTaken) : ''].filter(Boolean).join(' · ');
+      doc.text(label, xPos, rowY + imgH + 4, { maxWidth: imgW });
+      col++;
+      if (col >= 2) {
+        col = 0;
+        rowY += imgH + 16;
       }
     }
+    y = col === 0 ? rowY : rowY + imgH + 16;
+    y += 4;
   }
 
-  // 5. Signatures
-  if (options.includeSignatures && packet.signatures && packet.signatures.length > 0) {
-    doc.addPage();
-    yPos = 20;
-    doc.setFontSize(16);
-    doc.text('Signatures', 20, yPos);
-    yPos += 15;
+  // ── 5. COMMUNICATION LOG ───────────────────────────────────────────
+  if (options.includeCommLog && packet.communicationLogs?.length > 0) {
+    checkBreak(20);
+    sectionHeading('Communication Log');
+    autoTable(doc, {
+      startY: y,
+      head: [['Date', 'Person', 'Method', 'Subject', 'Summary', 'Follow-up']],
+      body: packet.communicationLogs.map(log => [
+        formatDate(log.date),
+        log.personContacted,
+        log.method.replace(/_/g, ' '),
+        log.subject || '—',
+        log.summary,
+        log.followUpNeeded ? 'Yes' : 'No',
+      ]),
+      theme: 'grid',
+      styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: navy, fontSize: 8 },
+      margin: { left: margin, right: margin },
+    });
+    y = (doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // ── 6. SIGNATURES ──────────────────────────────────────────────────
+  if (options.includeSignatures && packet.signatures?.length > 0) {
+    checkBreak(70);
+    sectionHeading('Acknowledgment Signatures');
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text('These are documentation records, not legally binding signatures. Consult an attorney for legal requirements.', margin, y);
+    y += 7;
+    doc.setTextColor(0, 0, 0);
 
     for (const sig of packet.signatures) {
-      checkPageBreak(60);
+      checkBreak(60);
       try {
-        doc.addImage(sig.signatureData, 'PNG', 20, yPos, 80, 40);
-        yPos += 45;
-        doc.setFontSize(12);
-        doc.text(`Name: ${sig.signerName}`, 20, yPos);
-        yPos += 6;
-        doc.text(`Role: ${sig.signerRole}`, 20, yPos);
-        yPos += 6;
-        doc.text(`Date: ${format(new Date(sig.signedAt), 'PPpp')}`, 20, yPos);
-        yPos += 15;
-      } catch (e) {
-        console.error("Failed to add signature to PDF", e);
-      }
-    }
-  }
-
-  // Watermark
-  if (settings.watermarkExports) {
-    const pages = doc.getNumberOfPages();
-    for (let i = 1; i <= pages; i++) {
-      doc.setPage(i);
-      doc.setTextColor(200);
-      doc.setFontSize(60);
-      // add rotated text
-      doc.text('ProofPacket', 105, 150, { align: 'center', angle: 45, opacity: 0.1 } as any);
-      doc.setTextColor(0); // reset
-    }
-  }
-
-  // Disclaimer
-  if (options.includeDisclaimer || settings.showDisclaimer) {
-    const pages = doc.getNumberOfPages();
-    for (let i = 1; i <= pages; i++) {
-      doc.setPage(i);
+        doc.addImage(sig.signatureData, 'PNG', margin, y, 80, 35);
+        y += 38;
+      } catch { y += 5; }
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(sig.signerName, margin, y);
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.setTextColor(150);
-      const text = "ProofPacket is an organization and documentation tool. It does not provide legal, insurance, medical, safety, code-compliance, inspection, appraisal, valuation, or professional advice.";
-      doc.text(text, 105, 290, { align: 'center', maxWidth: 180 });
-      doc.setTextColor(0);
+      doc.setTextColor(...slate);
+      doc.text(`${sig.signerRole} · ${formatDate(sig.signedAt)}`, margin, y + 5);
+      doc.setTextColor(0, 0, 0);
+      y += 18;
     }
   }
 
-  doc.save(`${title.replace(/ /g, '_')}_${packet.id.substring(0,6)}.pdf`);
+  addWatermarks();
+  addFooter();
+
+  doc.save(`ProofPacket_${packet.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40)}_${new Date().toISOString().split('T')[0]}.pdf`);
 }

@@ -1,0 +1,37 @@
+Photo storage quality requirement:
+When a user captures or imports a photo, ProofPacket must preserve the original image quality by storing the original image Blob/File in IndexedDB without compression, resizing, or quality reduction.
+
+Do not convert the original evidence photo into a lower-quality compressed image for permanent storage.
+
+The app may create a separate small thumbnail for faster gallery display, but the original-quality image must remain stored and must be used for:
+- full photo viewing
+- PDF export when possible
+- ZIP photo export
+- full packet backup
+
+Photo storage behavior:
+- Store the original image as a Blob in IndexedDB.
+- Store metadata separately, including filename if available, MIME type, file size, date added, packet ID, checklist item ID, phase, category, and caption.
+- Do not only store a reference to the original file path or photo library asset.
+- Do not rely on the device photo album as the only copy.
+- Do not upload photos anywhere.
+- Do not compress original evidence photos by default.
+
+Optional performance behavior:
+- Create a separate thumbnail version for UI display only.
+- Clearly label thumbnails as display-only.
+- Never replace the original-quality photo with the thumbnail.
+- If a user chooses a future “reduce storage size” option, require explicit confirmation before creating compressed copies.
+
+User-facing copy near photo capture/import:
+“ProofPacket stores an original-quality local copy of each photo on this device. Photos are not uploaded. Export a backup when the packet is important.”
+
+Storage warning:
+Because original-quality photos can use significant space, show a local storage warning when a packet contains many photos:
+“Original-quality photos can take up storage space. Export a backup before clearing browser/app data or switching devices.”
+
+Export requirements:
+- PDF export should use original-quality photos when possible, but may scale display size visually inside the PDF without permanently reducing the stored original.
+- ZIP photo export should include the original-quality photo files.
+- JSON/full packet backup should preserve original-quality photos or include them in a bundled backup format if possible.
+Store original-quality photo blobs in IndexedDB. Generate thumbnails only for display. Never replace or compress the original evidence photos.

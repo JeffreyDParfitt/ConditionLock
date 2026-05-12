@@ -292,89 +292,183 @@ function ChecklistTab({ packet }: { packet: any }) {
 // ------------------------------------------------------------------
 function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [viewingPhoto, setViewingPhoto] = useState<any>(null);
+  const [viewUrl, setViewUrl] = useState<string>('');
+  const [editCaption, setEditCaption] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const PHOTO_CATEGORIES = [
+    'wide shot', 'close-up', 'existing damage', 'receipt/agreement', 'bill of sale',
+    'contract', 'title', 'lease', 'serial number', 'odometer', 'VIN', 'keys/access',
+    'interior', 'exterior', 'open/inspect', 'lock/hinge', 'flip/lift/look under',
+    'test result', 'appliance interior', 'cabinet/drawer interior', 'general'
+  ];
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      await storage.addPhoto({
+        packetId: packet.id,
+        originalBlob: file,
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name || 'photo.jpg',
+        fileSize: file.size,
+        caption: '',
+        category: 'general',
+        phase: 'general',
+        dateTaken: new Date().toISOString()
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const max = 1200;
-
-        if (width > height && width > max) {
-          height *= max / width;
-          width = max;
-        } else if (height > max) {
-          width *= max / height;
-          height = max;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        
-        await storage.addPhoto({
-          packetId: packet.id,
-          imageData: dataUrl,
-          caption: '',
-          category: 'general',
-          phase: 'both',
-          dateTaken: new Date().toISOString()
-        });
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    await handleFile(file);
+    e.target.value = '';
   };
+
+  const openPhoto = (photo: any) => {
+    setViewingPhoto(photo);
+    setEditCaption(photo.caption || '');
+    setEditCategory(photo.category || 'general');
+    const url = URL.createObjectURL(photo.originalBlob);
+    setViewUrl(url);
+  };
+
+  const closePhoto = () => {
+    if (viewUrl) URL.revokeObjectURL(viewUrl);
+    setViewingPhoto(null);
+    setViewUrl('');
+  };
+
+  const savePhotoEdits = async () => {
+    if (!viewingPhoto) return;
+    await storage.updatePhoto(viewingPhoto.id, { caption: editCaption, category: editCategory });
+    toast({ title: 'Photo updated' });
+    closePhoto();
+  };
+
+  const deletePhoto = async (photo: any) => {
+    if (!confirm('Delete this photo? This cannot be undone.')) return;
+    await storage.deletePhoto(photo.id);
+    closePhoto();
+  };
+
+  const totalMB = photos.reduce((sum: number, p: any) => sum + (p.fileSize || 0), 0) / (1024 * 1024);
+  const showStorageWarning = photos.length > 20 || totalMB > 200;
 
   return (
     <div className="space-y-4 pb-12">
-      <input 
-        type="file" 
-        accept="image/*" 
-        capture="environment" 
-        className="hidden" 
-        ref={fileInputRef}
-        onChange={handleCapture}
-      />
-      <Button className="w-full h-14" onClick={() => fileInputRef.current?.click()}>
-        <Camera className="w-5 h-5 mr-2" /> Take Photo
-      </Button>
+      <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handleCapture} />
+      <input type="file" accept="image/*" multiple className="hidden" ref={galleryInputRef} onChange={async (e) => {
+        const files = Array.from(e.target.files || []);
+        for (const f of files) await handleFile(f);
+        e.target.value = '';
+      }} />
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button className="h-14" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
+          <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving...' : 'Camera'}
+        </Button>
+        <Button variant="outline" className="h-14" onClick={() => galleryInputRef.current?.click()} disabled={uploading} data-testid="button-add-from-gallery">
+          <ImageIcon className="w-5 h-5 mr-2" /> Gallery
+        </Button>
+      </div>
+
+      <div className="text-[11px] text-muted-foreground bg-primary/5 border border-primary/10 rounded-md px-3 py-2 leading-relaxed">
+        ProofPacket stores an original-quality local copy of each photo on this device. Photos are not uploaded. Export a backup when the packet is important.
+      </div>
+
+      {showStorageWarning && (
+        <div className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 leading-relaxed">
+          Original-quality photos can take up storage space. Export a backup before clearing browser data or switching devices.
+          {totalMB > 0 && <span className="block mt-0.5 font-medium">{totalMB.toFixed(1)} MB used by photos in this packet.</span>}
+        </div>
+      )}
 
       {photos.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
           <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p className="text-sm">No photos yet.</p>
+          <p className="text-xs mt-1 opacity-60">Tap Camera or Gallery to add your first photo.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {photos.map(photo => (
-            <div key={photo.id} className="relative aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 group">
-              <img src={photo.imageData} className="object-cover w-full h-full" alt={photo.caption || 'Photo'} />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <Button 
-                  variant="destructive" 
-                  size="icon" 
-                  className="w-10 h-10 rounded-full"
-                  onClick={async () => {
-                    if(confirm('Delete this photo?')) await storage.deletePhoto(photo.id);
-                  }}
-                >
-                  <Trash2 className="w-5 h-5" />
+        <>
+          <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? 's' : ''} — tap to view or edit</p>
+          <div className="grid grid-cols-2 gap-2">
+            {photos.map((photo: any) => (
+              <button
+                key={photo.id}
+                className="relative aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 group text-left"
+                onClick={() => openPhoto(photo)}
+                data-testid={`photo-thumb-${photo.id}`}
+              >
+                <img
+                  src={photo.thumbnailData}
+                  className="object-cover w-full h-full"
+                  alt={photo.caption || 'Photo'}
+                />
+                {photo.caption && (
+                  <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1">
+                    <p className="text-white text-[10px] truncate">{photo.caption}</p>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Full-size photo viewer */}
+      <Dialog open={!!viewingPhoto} onOpenChange={(open) => { if (!open) closePhoto(); }}>
+        <DialogContent className="sm:max-w-lg w-[95vw] p-0 overflow-hidden">
+          <DialogHeader className="px-4 pt-4 pb-0">
+            <DialogTitle className="text-sm">Photo</DialogTitle>
+          </DialogHeader>
+          {viewingPhoto && (
+            <div className="flex flex-col gap-3 p-4">
+              {viewUrl && (
+                <div className="rounded-lg overflow-hidden bg-black max-h-64 flex items-center justify-center">
+                  <img src={viewUrl} alt="Full size" className="max-h-64 w-full object-contain" />
+                </div>
+              )}
+              <div className="text-[10px] text-muted-foreground">
+                Original quality — {viewingPhoto.fileName || 'photo'} · {viewingPhoto.fileSize ? (viewingPhoto.fileSize / 1024).toFixed(0) + ' KB' : ''}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Caption</Label>
+                <Input
+                  value={editCaption}
+                  onChange={e => setEditCaption(e.target.value)}
+                  placeholder="Add a caption..."
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Category</Label>
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PHOTO_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button variant="destructive" size="sm" className="flex-1" onClick={() => deletePhoto(viewingPhoto)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete
                 </Button>
+                <Button size="sm" className="flex-1" onClick={savePhotoEdits}>Save</Button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

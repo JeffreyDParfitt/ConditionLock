@@ -44,10 +44,16 @@ export const storage = {
   },
 
   // Photos
-  async addPhoto(photo: Omit<PhotoItem, 'id' | 'createdAt'>) {
+  async addPhoto(photo: Omit<PhotoItem, 'id' | 'createdAt' | 'thumbnailData'> & { thumbnailData?: string }) {
     const id = crypto.randomUUID();
+    let thumbnailData = photo.thumbnailData ?? '';
+    if (!thumbnailData && photo.originalBlob) {
+      const { generateThumbnail } = await import('../utils/photo');
+      thumbnailData = await generateThumbnail(photo.originalBlob);
+    }
     const newPhoto: PhotoItem = {
       ...photo,
+      thumbnailData,
       id,
       createdAt: new Date().toISOString()
     };
@@ -57,6 +63,10 @@ export const storage = {
 
   async getPhotosByPacket(packetId: string) {
     return await db.photos.where('packetId').equals(packetId).toArray();
+  },
+
+  async updatePhoto(id: string, changes: Partial<Pick<PhotoItem, 'caption' | 'category' | 'phase' | 'checklistItemId'>>) {
+    await db.photos.update(id, changes);
   },
 
   async deletePhoto(id: string) {

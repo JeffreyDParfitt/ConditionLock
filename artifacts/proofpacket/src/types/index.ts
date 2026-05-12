@@ -43,7 +43,11 @@ export interface PhotoItem {
   id: string;
   packetId: string;
   checklistItemId?: string;
-  imageData: string;
+  originalBlob: Blob;
+  thumbnailData: string;
+  mimeType: string;
+  fileName: string;
+  fileSize: number;
   caption: string;
   category: string;
   phase: Phase;

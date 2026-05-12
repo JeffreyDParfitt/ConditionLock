@@ -32,15 +32,30 @@ export default function Settings() {
   };
 
   const handleExportData = async () => {
+    toast({ title: "Preparing backup...", description: "Serializing photos. This may take a moment." });
     const allPackets = await db.packets.toArray();
     const allPhotos = await db.photos.toArray();
     const allSettings = await db.settings.toArray();
-    
+
+    // Serialize blobs to base64 for JSON portability
+    const photosForExport = await Promise.all(allPhotos.map(async (p) => {
+      try {
+        const { blobToBase64 } = await import('@/utils/photo');
+        const base64 = p.originalBlob instanceof Blob ? await blobToBase64(p.originalBlob) : '';
+        const { originalBlob: _, ...rest } = p as any;
+        return { ...rest, originalBase64: base64 };
+      } catch {
+        const { originalBlob: _, ...rest } = p as any;
+        return { ...rest, originalBase64: '' };
+      }
+    }));
+
     const exportObj = {
+      version: 2,
+      exportDate: new Date().toISOString(),
       packets: allPackets,
-      photos: allPhotos,
+      photos: photosForExport,
       settings: allSettings,
-      exportDate: new Date().toISOString()
     };
 
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
@@ -52,6 +67,7 @@ export default function Settings() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast({ title: "Backup exported", description: "Original-quality photos are included." });
   };
 
   const handleLoadSampleData = async () => {
@@ -85,7 +101,6 @@ export default function Settings() {
       phase: "pickup",
       notes: "Sample data packet.",
       checklistItems,
-      photos: [],
       communicationLogs: [],
       signatures: [],
       details: {},

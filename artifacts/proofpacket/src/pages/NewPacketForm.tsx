@@ -83,7 +83,6 @@ export default function NewPacketForm() {
       phase: "before",
       notes: values.notes || "",
       checklistItems,
-      photos: [],
       communicationLogs: [],
       signatures: [],
       details: values.details || {},

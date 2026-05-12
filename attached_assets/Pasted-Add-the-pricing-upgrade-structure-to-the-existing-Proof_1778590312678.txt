@@ -1,0 +1,66 @@
+Add the pricing/upgrade structure to the existing ProofPacket app without implementing real payments yet.
+
+Create a Pricing / Upgrade screen and add links to it from Settings and any upgrade prompts.
+
+Tiers:
+
+Free:
+- $0
+- 1 active proof packet
+- 15 original-quality photos max
+- basic PDF export
+- watermarked PDF
+- basic templates: Car Rental, Hotel Stay, Apartment / Home Rental, Custom
+- local-only storage
+- basic notes
+- basic checklist statuses
+- Add More Items
+- basic communication log
+
+ProofPacket Pro:
+- $14.99 one-time
+- unlimited proof packets
+- higher photo capacity
+- no PDF watermark
+- all personal/travel/housing templates
+- Airbnb / Short-Term Rental
+- Property Sale / Home Sale
+- Vehicle Sale / As-Is Transfer
+- Moving / Storage
+- Accident / Insurance Claim
+- General Item Sale / As-Is Transfer
+- acknowledgment signatures
+- JSON backup/export
+- import/restore backup
+- all deep checklists
+
+Business Pro:
+- $39.99 one-time
+- everything in Pro
+- Business / Commercial Lease template
+- Business Changeover / As-Is Sale template
+- Equipment Sale / As-Is Transfer template
+- advanced asset inventory
+- included/excluded asset tracking
+- serial/model number fields
+- commercial kitchen checklist
+- office/retail/warehouse/workshop checklists
+- keys/access-card tracking
+- POS/electronics checklist
+- ZIP export of original-quality photos
+- business-specific PDF titles and disclaimers
+
+Paywall behavior:
+- Do not block users before they understand the app.
+- Free users can create one packet, add photos, use checklists, and generate a watermarked PDF preview.
+- Show upgrade prompts when a Free user tries to create a second packet, add more than 15 photos, remove the watermark, use signatures, use JSON backup/import, export ZIP photos, use business templates, or use sale/as-is transfer templates.
+- Since real payments are not implemented yet, add local developer toggles in Settings:
+  - Simulate Pro Unlock
+  - Simulate Business Pro Unlock
+- Store unlock simulation locally.
+- Make sure the upgrade screen looks polished and mobile-friendly.
+
+
+
+
+Before changing pricing, verify photo storage behavior: original-quality photos must be stored as original Blobs in IndexedDB. Do not compress or resize original evidence photos. Thumbnails may be generated only for UI display, but PDF/ZIP/full backup should use the original-quality files.
