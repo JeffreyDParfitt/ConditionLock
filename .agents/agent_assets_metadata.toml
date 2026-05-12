@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "r9gvGBRh3rxBgMd_WG9hO"
+uri = "file://ProofPacket_Launch_Guide.md"
+type = "text"
+title = "ProofPacket — App Store Launch Guide"
