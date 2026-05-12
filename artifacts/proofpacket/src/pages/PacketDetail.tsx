@@ -14,11 +14,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock } from "lucide-react";
 import { format } from "date-fns";
 import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
 import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, CommunicationLog } from "@/types";
+import { useTier } from "@/hooks/useTier";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 export default function PacketDetail() {
   const params = useParams();
@@ -298,7 +300,9 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
   const [editCaption, setEditCaption] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [photoUpgradeOpen, setPhotoUpgradeOpen] = useState(false);
   const { toast } = useToast();
+  const { limits } = useTier();
 
   const PHOTO_CATEGORIES = [
     'wide shot', 'close-up', 'existing damage', 'receipt/agreement', 'bill of sale',
@@ -308,6 +312,10 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
   ];
 
   const handleFile = async (file: File) => {
+    if (limits.maxPhotosPerPacket !== Infinity && photos.length >= limits.maxPhotosPerPacket) {
+      setPhotoUpgradeOpen(true);
+      return;
+    }
     setUploading(true);
     try {
       await storage.addPhoto({
@@ -362,6 +370,7 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
 
   const totalMB = photos.reduce((sum: number, p: any) => sum + (p.fileSize || 0), 0) / (1024 * 1024);
   const showStorageWarning = photos.length > 20 || totalMB > 200;
+  const atPhotoLimit = limits.maxPhotosPerPacket !== Infinity && photos.length >= limits.maxPhotosPerPacket;
 
   return (
     <div className="space-y-4 pb-12">
@@ -372,18 +381,42 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
         e.target.value = '';
       }} />
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button className="h-14" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
-          <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving...' : 'Camera'}
-        </Button>
-        <Button variant="outline" className="h-14" onClick={() => galleryInputRef.current?.click()} disabled={uploading} data-testid="button-add-from-gallery">
-          <ImageIcon className="w-5 h-5 mr-2" /> Gallery
-        </Button>
-      </div>
+      {atPhotoLimit ? (
+        <button
+          className="w-full rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 flex items-center justify-between gap-3"
+          onClick={() => setPhotoUpgradeOpen(true)}
+          data-testid="button-photo-limit-upgrade"
+        >
+          <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> Free plan limit: {limits.maxPhotosPerPacket} photos per packet</span>
+          <span className="text-xs font-semibold underline underline-offset-2 shrink-0">Upgrade</span>
+        </button>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button className="h-14" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
+            <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving...' : 'Camera'}
+          </Button>
+          <Button variant="outline" className="h-14" onClick={() => galleryInputRef.current?.click()} disabled={uploading} data-testid="button-add-from-gallery">
+            <ImageIcon className="w-5 h-5 mr-2" /> Gallery
+          </Button>
+        </div>
+      )}
+
+      {limits.maxPhotosPerPacket !== Infinity && !atPhotoLimit && (
+        <div className="text-[11px] text-muted-foreground text-right">
+          {photos.length} / {limits.maxPhotosPerPacket} photos used
+        </div>
+      )}
 
       <div className="text-[11px] text-muted-foreground bg-primary/5 border border-primary/10 rounded-md px-3 py-2 leading-relaxed">
         ProofPacket stores an original-quality local copy of each photo on this device. Photos are not uploaded. Export a backup when the packet is important.
       </div>
+
+      <UpgradePrompt
+        open={photoUpgradeOpen}
+        onClose={() => setPhotoUpgradeOpen(false)}
+        requiredTier="pro"
+        reason={`Free plan is limited to ${limits.maxPhotosPerPacket} photos per packet. Upgrade for unlimited original-quality photos.`}
+      />
 
       {showStorageWarning && (
         <div className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 leading-relaxed">
@@ -591,10 +624,12 @@ function CommLogTab({ packet }: { packet: any }) {
 // ------------------------------------------------------------------
 function SignaturesTab({ packet }: { packet: any }) {
   const [open, setOpen] = useState(false);
+  const [sigUpgradeOpen, setSigUpgradeOpen] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("Signer");
   const padRef = useRef<SignaturePad | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { limits } = useTier();
 
   useEffect(() => {
     if (open && canvasRef.current) {
@@ -631,6 +666,23 @@ function SignaturesTab({ packet }: { packet: any }) {
 
   return (
     <div className="space-y-4 pb-12">
+      <UpgradePrompt
+        open={sigUpgradeOpen}
+        onClose={() => setSigUpgradeOpen(false)}
+        requiredTier="pro"
+        reason="Acknowledgment signatures require ProofPacket Pro."
+      />
+
+      {!limits.hasSignatures ? (
+        <button
+          className="w-full h-14 rounded-md border-2 border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center gap-2 text-blue-700 dark:text-blue-400 text-sm font-medium"
+          onClick={() => setSigUpgradeOpen(true)}
+          data-testid="button-add-signature-locked"
+        >
+          <Lock className="w-4 h-4" /> Add Signature
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 uppercase ml-1">Pro</span>
+        </button>
+      ) : (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button className="w-full h-14"><PenTool className="w-5 h-5 mr-2" /> Add Signature</Button>
@@ -661,6 +713,7 @@ function SignaturesTab({ packet }: { packet: any }) {
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {(!packet.signatures || packet.signatures.length === 0) ? (
         <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">

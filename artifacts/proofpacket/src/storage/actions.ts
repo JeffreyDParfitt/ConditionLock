@@ -73,21 +73,35 @@ export const storage = {
     await db.photos.delete(id);
   },
 
-  // Settings
+  // Settings — pure read, never writes (safe inside liveQuery)
   async getSettings() {
-    let settings = await db.settings.get(1);
+    const settings = await db.settings.get(1);
     if (!settings) {
-      settings = {
-        id: 1,
+      return {
+        id: 1 as const,
         userName: '',
         userEmail: '',
         defaultPdfTitle: 'Condition Report',
         showDisclaimer: true,
         watermarkExports: false
       };
-      await db.settings.add(settings);
     }
     return settings;
+  },
+
+  // Call once at startup to create the settings row if missing
+  async ensureSettings() {
+    const existing = await db.settings.get(1);
+    if (!existing) {
+      await db.settings.add({
+        id: 1,
+        userName: '',
+        userEmail: '',
+        defaultPdfTitle: 'Condition Report',
+        showDisclaimer: true,
+        watermarkExports: false
+      });
+    }
   },
 
   async updateSettings(changes: Partial<Omit<import('../types').AppSettings, 'id'>>) {

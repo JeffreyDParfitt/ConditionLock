@@ -11,6 +11,7 @@ import NewPacketForm from "@/pages/NewPacketForm";
 import PacketDetail from "@/pages/PacketDetail";
 import Templates from "@/pages/Templates";
 import Settings from "@/pages/Settings";
+import Pricing from "@/pages/Pricing";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/packets/:id" component={PacketDetail} />
         <Route path="/templates" component={Templates} />
         <Route path="/settings" component={Settings} />
+        <Route path="/pricing" component={Pricing} />
         <Route component={NotFound} />
       </Switch>
       <Navigation />
