@@ -60,10 +60,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="space-y-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight text-primary">ProofPacket</h1>
-          </div>
+          <img src="/logo.png" alt="ProofPacket" className="h-9 w-auto" />
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${badge.bg} ${badge.color}`}>
             {badge.label}
           </span>
