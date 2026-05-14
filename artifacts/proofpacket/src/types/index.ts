@@ -105,6 +105,20 @@ export interface AppSettings {
   watermarkExports: boolean;
 }
 
+export interface ActivityLog {
+  id: string;
+  packetId: string;
+  activityType:
+    | 'packet_created' | 'packet_edited' | 'photo_added' | 'photo_deleted'
+    | 'checklist_updated' | 'damage_noted' | 'comm_log_added' | 'signature_added'
+    | 'export_pdf' | 'export_verified' | 'export_archive' | 'export_photos_zip'
+    | 'verification_run' | 'dispute_summary_generated' | 'travel_summary_generated'
+    | 'archive_imported' | 'custom';
+  description: string;
+  relatedItemId?: string;
+  timestamp: string;
+}
+
 export type VerificationStatus = 'passed' | 'warning' | 'failed';
 
 export interface VerificationPhotoResult {

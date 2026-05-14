@@ -1,11 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import type { Packet, PhotoItem, AppSettings, VerificationResult } from '../types';
+import type { Packet, PhotoItem, AppSettings, VerificationResult, ActivityLog } from '../types';
 
 export class ProofPacketDB extends Dexie {
   packets!: Table<Packet, string>;
   photos!: Table<PhotoItem, string>;
   settings!: Table<AppSettings, number>;
   verificationResults!: Table<VerificationResult, string>;
+  activityLog!: Table<ActivityLog, string>;
 
   constructor() {
     super('ProofPacketDB');
@@ -19,6 +20,13 @@ export class ProofPacketDB extends Dexie {
       photos: 'id, packetId, phase, createdAt',
       settings: 'id',
       verificationResults: 'id, packetId, verifiedAt, resultStatus'
+    });
+    this.version(3).stores({
+      packets: 'id, createdAt, updatedAt, type',
+      photos: 'id, packetId, phase, createdAt',
+      settings: 'id',
+      verificationResults: 'id, packetId, verifiedAt, resultStatus',
+      activityLog: 'id, packetId, timestamp, activityType'
     });
   }
 }

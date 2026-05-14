@@ -71,6 +71,21 @@ export const templates: Record<PacketType, PacketTemplate> = {
           { label: 'Seatbelts', description: 'Latch and retract properly', phase: 'pickup', status: 'not_checked' },
           { label: 'Warning Lights', description: 'No unexpected dash lights on', phase: 'pickup', status: 'not_checked' },
         ]
+      },
+      {
+        name: 'Return Documentation',
+        items: [
+          { label: 'Return lane / location photo', description: 'Photo of the return area, lot row, or parking spot', phase: 'return', status: 'not_checked' },
+          { label: 'Key drop photo', description: 'Photo of key drop box or slot if after-hours return', phase: 'return', status: 'not_checked' },
+          { label: 'Return receipt', description: 'Photo of printed or digital return receipt', phase: 'return', status: 'not_checked' },
+          { label: 'Return confirmation email/app screenshot', description: 'Screenshot of emailed or in-app return confirmation if available', phase: 'return', status: 'not_checked' },
+          { label: 'Final odometer', description: 'Clear photo of odometer at return', phase: 'return', status: 'not_checked' },
+          { label: 'Final fuel gauge', description: 'Clear photo of fuel gauge at return', phase: 'return', status: 'not_checked' },
+          { label: 'Final EV battery level', description: 'Photo of battery display at return if electric vehicle', phase: 'return', status: 'not_checked' },
+          { label: 'Fuel receipt', description: 'Photo of fuel receipt if refueled before return', phase: 'return', status: 'not_checked' },
+          { label: 'Charging receipt', description: 'Photo of EV charging receipt if applicable', phase: 'return', status: 'not_checked' },
+          { label: 'Timestamped return summary', description: 'Screenshot showing timestamp of return time', phase: 'return', status: 'not_checked' },
+        ]
       }
     ]
   },
@@ -128,6 +143,21 @@ export const templates: Record<PacketType, PacketTemplate> = {
           { label: 'Cargo door operation', description: 'Rolls up and down smoothly', phase: 'pickup', status: 'not_checked' },
           { label: 'Ramp deploy / retract', description: 'Ramp or lift gate operates correctly', phase: 'pickup', status: 'not_checked' },
           { label: 'Warning lights', description: 'No unexpected dash lights on', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Return Documentation',
+        items: [
+          { label: 'Return location photo', description: 'Photo of truck in return area or designated spot', phase: 'return', status: 'not_checked' },
+          { label: 'Key drop photo', description: 'Photo of key drop if returning after hours', phase: 'return', status: 'not_checked' },
+          { label: 'Return receipt', description: 'Photo of printed or digital return receipt', phase: 'return', status: 'not_checked' },
+          { label: 'Return confirmation email/app screenshot', description: 'Screenshot of emailed or in-app return confirmation if available', phase: 'return', status: 'not_checked' },
+          { label: 'Final odometer', description: 'Clear photo of odometer at return', phase: 'return', status: 'not_checked' },
+          { label: 'Final fuel gauge', description: 'Clear photo of fuel gauge at return', phase: 'return', status: 'not_checked' },
+          { label: 'Fuel receipt', description: 'Photo of fuel receipt if refueled before return', phase: 'return', status: 'not_checked' },
+          { label: 'Equipment accounted for', description: 'All rented equipment (dolly, blankets, etc.) loaded and returned', phase: 'return', status: 'not_checked' },
+          { label: 'Weight ticket', description: 'Photo of weight ticket if required for PPM/reimbursement', phase: 'return', status: 'not_checked' },
+          { label: 'Timestamped return summary', description: 'Screenshot or photo showing timestamp of return', phase: 'return', status: 'not_checked' },
         ]
       }
     ]

@@ -80,6 +80,23 @@ const schema = z.object({
   evBatteryPickup: z.string().optional(),
   accessories: z.string().optional(),
 
+  // Fuel / receipt
+  fuelStation: z.string().optional(),
+  fuelAmountPaid: z.string().optional(),
+  fuelReceiptDate: z.string().optional(),
+  evChargingCableIncluded: z.string().optional(),
+
+  // Military / government travel
+  travelContext: z.string().optional(),
+  travelOrderNumber: z.string().optional(),
+  dtsVoucherNumber: z.string().optional(),
+  dutyStation: z.string().optional(),
+  officialTravelNotes: z.string().optional(),
+  isPCS: z.string().optional(),
+  isPersonallyProcuredMove: z.string().optional(),
+  moveOrigin: z.string().optional(),
+  moveDestination: z.string().optional(),
+
   // Company vehicle specific
   department: z.string().optional(),
   driverName: z.string().optional(),
@@ -182,6 +199,19 @@ export default function NewPacketForm() {
       keysIssued: "",
       fuelCardIssued: "",
       transponderIssued: "",
+      fuelStation: "",
+      fuelAmountPaid: "",
+      fuelReceiptDate: "",
+      evChargingCableIncluded: "",
+      travelContext: "",
+      travelOrderNumber: "",
+      dtsVoucherNumber: "",
+      dutyStation: "",
+      officialTravelNotes: "",
+      isPCS: "",
+      isPersonallyProcuredMove: "",
+      moveOrigin: "",
+      moveDestination: "",
     },
   });
 
@@ -227,6 +257,19 @@ export default function NewPacketForm() {
       if (values.fuelLevelPickup) details.fuelLevelPickup = values.fuelLevelPickup;
       if (values.evBatteryPickup) details.evBatteryPickup = values.evBatteryPickup;
       if (values.accessories) details.accessories = values.accessories;
+      if (values.fuelStation) details.fuelStation = values.fuelStation;
+      if (values.fuelAmountPaid) details.fuelAmountPaid = values.fuelAmountPaid;
+      if (values.fuelReceiptDate) details.fuelReceiptDate = values.fuelReceiptDate;
+      if (values.evChargingCableIncluded) details.evChargingCableIncluded = values.evChargingCableIncluded;
+      if (values.travelContext) details.travelContext = values.travelContext;
+      if (values.travelOrderNumber) details.travelOrderNumber = values.travelOrderNumber;
+      if (values.dtsVoucherNumber) details.dtsVoucherNumber = values.dtsVoucherNumber;
+      if (values.dutyStation) details.dutyStation = values.dutyStation;
+      if (values.officialTravelNotes) details.officialTravelNotes = values.officialTravelNotes;
+      if (values.isPCS) details.isPCS = values.isPCS;
+      if (values.isPersonallyProcuredMove) details.isPersonallyProcuredMove = values.isPersonallyProcuredMove;
+      if (values.moveOrigin) details.moveOrigin = values.moveOrigin;
+      if (values.moveDestination) details.moveDestination = values.moveDestination;
     }
 
     if (isCompanyVehicle) {
@@ -252,6 +295,17 @@ export default function NewPacketForm() {
       if (values.fuelCardIssued) details.fuelCardIssued = values.fuelCardIssued;
       if (values.transponderIssued) details.transponderIssued = values.transponderIssued;
       if (values.accessories) details.accessories = values.accessories;
+      if (values.fuelStation) details.fuelStation = values.fuelStation;
+      if (values.fuelAmountPaid) details.fuelAmountPaid = values.fuelAmountPaid;
+      if (values.travelContext) details.travelContext = values.travelContext;
+      if (values.travelOrderNumber) details.travelOrderNumber = values.travelOrderNumber;
+      if (values.dtsVoucherNumber) details.dtsVoucherNumber = values.dtsVoucherNumber;
+      if (values.dutyStation) details.dutyStation = values.dutyStation;
+      if (values.officialTravelNotes) details.officialTravelNotes = values.officialTravelNotes;
+      if (values.isPCS) details.isPCS = values.isPCS;
+      if (values.isPersonallyProcuredMove) details.isPersonallyProcuredMove = values.isPersonallyProcuredMove;
+      if (values.moveOrigin) details.moveOrigin = values.moveOrigin;
+      if (values.moveDestination) details.moveDestination = values.moveDestination;
     }
 
     const companyForPacket = isCompanyVehicle
@@ -473,6 +527,21 @@ export default function NewPacketForm() {
                   <FormControl><Input {...field} placeholder="e.g. 82%" /></FormControl>
                 </FormItem>
               )} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="fuelStation" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fuel / Charge Station <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Shell on Main St" /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="fuelAmountPaid" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount Paid <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. $48.20" /></FormControl>
+                  </FormItem>
+                )} />
+              </div>
 
               <FormField control={form.control} name="accessories" render={({ field }) => (
                 <FormItem>
@@ -747,6 +816,108 @@ export default function NewPacketForm() {
                   <FormControl><Input {...field} /></FormControl>
                 </FormItem>
               )} />
+            </>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────────
+              MILITARY / GOVERNMENT TRAVEL (optional, vehicle packets only)
+          ───────────────────────────────────────────────────────────────── */}
+          {isVehicle && (
+            <>
+              <SectionDivider label="Travel Context (Optional)" />
+              <Card className="bg-muted/30 border-muted">
+                <CardContent className="p-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Fill in travel context if this packet is for military, government, or company travel. Leave blank for personal rentals. ProofPacket does not connect to DTS, government travel systems, or employer systems.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Travel Context</label>
+                <NativeSelect
+                  value={form.watch('travelContext') || ''}
+                  onChange={v => form.setValue('travelContext', v)}
+                  options={[
+                    'Personal',
+                    'Business',
+                    'Military TDY / TAD',
+                    'PCS Move',
+                    'Government Travel',
+                    'Contractor Travel',
+                    'Company Vehicle',
+                    'Other',
+                  ]}
+                  placeholder="Select travel context… (optional)"
+                />
+              </div>
+
+              {form.watch('travelContext') && !['Personal', ''].includes(form.watch('travelContext') || '') && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="travelOrderNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Travel Order / Auth # <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g. 12345678" /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="dtsVoucherNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>DTS / Voucher Ref <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g. DTS-2024-001" /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="dutyStation" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duty Station / Destination <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                      <FormControl><Input {...field} placeholder="e.g. Fort Bragg, NC" /></FormControl>
+                    </FormItem>
+                  )} />
+
+                  {form.watch('travelContext') === 'PCS Move' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="moveOrigin" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Origin</FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. Camp Pendleton, CA" /></FormControl>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="moveDestination" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Destination</FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. Fort Hood, TX" /></FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Personally Procured Move (PPM)?</label>
+                        <NativeSelect
+                          value={form.watch('isPersonallyProcuredMove') || ''}
+                          onChange={v => form.setValue('isPersonallyProcuredMove', v)}
+                          options={[
+                            'Yes — I arranged and paid for my own move',
+                            'No — Government arranged',
+                          ]}
+                          placeholder="Select…"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <FormField control={form.control} name="officialTravelNotes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Official Travel Notes <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                      <FormControl>
+                        <Textarea {...field} className="resize-none" rows={2} placeholder="e.g. Weight ticket on file, receipts attached, leave dates..." />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                </>
+              )}
             </>
           )}
 

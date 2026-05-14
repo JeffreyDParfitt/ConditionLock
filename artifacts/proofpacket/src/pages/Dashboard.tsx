@@ -117,6 +117,7 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground mt-1 leading-snug">
             Create verified pickup and return condition packets for rental cars, moving trucks, cargo vans, trailers, and car-sharing trips.
           </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Most people take photos. ProofPacket tells you what they forget to document.</p>
         </div>
 
         <div className="grid gap-3">

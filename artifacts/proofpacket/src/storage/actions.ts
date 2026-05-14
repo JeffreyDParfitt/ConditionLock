@@ -1,5 +1,7 @@
 import { db } from './db';
-import type { Packet, ChecklistItem, PhotoItem, CommunicationLog, SignatureItem, PacketType, VerificationResult } from '../types';
+import type { Packet, ChecklistItem, PhotoItem, CommunicationLog, SignatureItem, PacketType, VerificationResult, ActivityLog } from '../types';
+
+export const APP_VERSION = '1.1.0';
 
 export const storage = {
   // Packets
@@ -19,9 +21,22 @@ export const storage = {
       id,
       createdAt: now,
       updatedAt: now,
-      exportCount: 0
+      exportCount: 0,
+      details: {
+        ...packet.details,
+        appVersion: APP_VERSION,
+        templateVersion: '1.0',
+        manifestVersion: '1.0',
+      },
     };
     await db.packets.add(newPacket);
+    await db.activityLog.add({
+      id: crypto.randomUUID(),
+      packetId: id,
+      activityType: 'packet_created',
+      description: `Packet created: "${packet.title}"`,
+      timestamp: now,
+    });
     return id;
   },
 
@@ -33,13 +48,10 @@ export const storage = {
   },
 
   async deletePacket(id: string) {
-    await db.transaction('rw', db.packets, db.photos, async () => {
+    await db.transaction('rw', db.packets, db.photos, db.activityLog, async () => {
       await db.packets.delete(id);
-      const photos = await db.photos.where('packetId').equals(id).toArray();
-      const photoIds = photos.map(p => p.id);
-      if (photoIds.length > 0) {
-        await db.photos.bulkDelete(photoIds);
-      }
+      await db.photos.where('packetId').equals(id).delete();
+      await db.activityLog.where('packetId').equals(id).delete();
     });
   },
 
@@ -124,5 +136,33 @@ export const storage = {
 
   async deleteVerificationResult(id: string) {
     await db.verificationResults.delete(id);
+  },
+
+  // Activity Log
+  async logActivity(entry: Omit<ActivityLog, 'id'>) {
+    const id = crypto.randomUUID();
+    await db.activityLog.add({ ...entry, id });
+    return id;
+  },
+
+  async getActivityLog(packetId: string) {
+    return await db.activityLog
+      .where('packetId')
+      .equals(packetId)
+      .reverse()
+      .sortBy('timestamp');
+  },
+
+  async deleteActivityLog(packetId: string) {
+    await db.activityLog.where('packetId').equals(packetId).delete();
+  },
+
+  // Storage estimate
+  async getStorageEstimate(): Promise<{ packetCount: number; photoCount: number; estimatedBytes: number }> {
+    const packetCount = await db.packets.count();
+    const photos = await db.photos.toArray();
+    const photoCount = photos.length;
+    const estimatedBytes = photos.reduce((sum, p) => sum + (p.fileSize || 0), 0);
+    return { packetCount, photoCount, estimatedBytes };
   },
 };

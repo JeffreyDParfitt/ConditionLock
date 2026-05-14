@@ -45,6 +45,14 @@ A mobile-first, fully local web app for documenting property condition before re
 - **Archive format**: JSZip ZIP with packet-data.json, verification-manifest.json, original photos, checksums.txt, README.txt.
 - **SHA-256 matching**: Hash-first matching (filename not required to match), with fallback to filename-based mismatch detection.
 
+## Positioning
+
+ProofPacket creates verified condition records for physical handoffs, starting with rental vehicles. Most people take photos. ProofPacket tells you what they forget to document.
+
+ProofPacket launches first with rental vehicle proof packets, including rental cars, moving trucks, cargo vans, trailers, car-sharing trips, company vehicle handoffs, and military/government travel documentation. The broader system also supports hotels, Airbnbs, apartments, business handoffs, property sales, equipment transfers, and more.
+
+Military and government travel workflows are designed for local organization and manual export only. ProofPacket does not integrate with DTS, military claims systems, government travel systems, or agency systems.
+
 ## Product
 
 **Rental Vehicle focus** (primary launch use case):

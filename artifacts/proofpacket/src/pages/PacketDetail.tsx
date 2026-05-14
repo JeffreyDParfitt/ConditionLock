@@ -14,14 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock } from "lucide-react";
+import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock, Activity, Copy } from "lucide-react";
 import { format } from "date-fns";
 import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
 import { exportVerifiedPacket, exportFullArchive, exportPhotosZip } from "@/utils/manifest";
 import { isCryptoAvailable } from "@/utils/crypto";
 import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, CommunicationLog } from "@/types";
-import { useTier } from "@/hooks/useTier";
+import { useTier, isRentalVehicleType } from "@/hooks/useTier";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 export default function PacketDetail() {
@@ -37,6 +37,8 @@ export default function PacketDetail() {
   const [activeTab, setActiveTab] = useState("overview");
 
   if (!packet || !settings) return <div className="p-8 text-center flex flex-col items-center justify-center min-h-[100dvh]">Loading...</div>;
+
+  const isVehicle = isRentalVehicleType(packet.type) || packet.type === 'company_vehicle_handoff';
 
   return (
     <div className="flex flex-col w-full max-w-lg mx-auto min-h-[100dvh] bg-gray-50 dark:bg-gray-950 pb-20">
@@ -61,6 +63,7 @@ export default function PacketDetail() {
             <TabsTrigger value="comm" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Comm. Log</TabsTrigger>
             <TabsTrigger value="signatures" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Signatures</TabsTrigger>
             <TabsTrigger value="export" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Export</TabsTrigger>
+            <TabsTrigger value="activity" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Activity</TabsTrigger>
           </TabsList>
         </div>
 
@@ -95,6 +98,14 @@ export default function PacketDetail() {
                 </CardContent>
               </Card>
             </div>
+
+            {isVehicle && (
+              <div className="space-y-3">
+                <VehicleDetailsCard packet={packet} />
+                <RequiredShotScore packet={packet} />
+                <MileageCard packet={packet} />
+              </div>
+            )}
             
             <Button variant="destructive" className="w-full mt-8" onClick={async () => {
               if (confirm('Are you sure you want to delete this packet and all its photos? This cannot be undone.')) {
@@ -125,6 +136,10 @@ export default function PacketDetail() {
 
           <TabsContent value="export" className="mt-0">
             <ExportTab packet={packet} settings={settings} photos={photos} />
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-0">
+            <ActivityTab packetId={id} />
           </TabsContent>
         </div>
       </Tabs>
@@ -696,7 +711,7 @@ function SignaturesTab({ packet }: { packet: any }) {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Signer Name</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} />
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" />
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
@@ -764,6 +779,10 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
     includePhotos: true, includeCommLog: true, includeSignatures: true, includeDisclaimer: true
   });
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeText, setDisputeText] = useState('');
+  const [travelOpen, setTravelOpen] = useState(false);
+  const [travelText, setTravelText] = useState('');
   const cryptoOk = isCryptoAvailable();
 
   const showUpgrade = (reason: string, required: 'pro' | 'business') => {
@@ -782,6 +801,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
   const handlePDF = () => withBusy('pdf', async () => {
     await generatePDF(packet, settings, opts);
     await storage.updatePacket(packet.id, { exportCount: (packet.exportCount || 0) + 1 });
+    await storage.logActivity({ packetId: packet.id, activityType: 'export_pdf', description: 'PDF report exported', timestamp: new Date().toISOString() });
     toast({ title: "PDF exported", description: "Check your downloads folder." });
   });
 
@@ -791,6 +811,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
     withBusy('verified', async () => {
       const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
       await exportVerifiedPacket(packet, photos, exportedBy);
+      await storage.logActivity({ packetId: packet.id, activityType: 'export_verified', description: 'Verified Packet exported (manifest + summary)', timestamp: new Date().toISOString() });
       toast({ title: "Verified Packet exported", description: "Manifest JSON and summary downloaded." });
     });
   };
@@ -805,6 +826,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
       if (!confirmed) return;
       const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
       await exportFullArchive(packet, photos, exportedBy);
+      await storage.logActivity({ packetId: packet.id, activityType: 'export_archive', description: 'Full Packet Archive exported (ZIP)', timestamp: new Date().toISOString() });
       toast({ title: "Archive exported", description: "Full packet archive ZIP downloaded." });
     });
   };
@@ -814,14 +836,55 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
     if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available.", variant: "destructive" }); return; }
     withBusy('photos', async () => {
       await exportPhotosZip(packet, photos);
+      await storage.logActivity({ packetId: packet.id, activityType: 'export_photos_zip', description: `Photos ZIP exported (${photos.length} photos)`, timestamp: new Date().toISOString() });
       toast({ title: "Photos ZIP exported", description: "Original-quality photos downloaded." });
     });
   };
 
+  const handleDisputeSummary = () => {
+    const text = buildDisputeText(packet);
+    setDisputeText(text);
+    setDisputeOpen(true);
+    storage.logActivity({ packetId: packet.id, activityType: 'dispute_summary_generated', description: 'Dispute summary generated', timestamp: new Date().toISOString() });
+  };
+
+  const handleTravelSummary = () => {
+    const text = buildTravelSummaryText(packet);
+    setTravelText(text);
+    setTravelOpen(true);
+    storage.logActivity({ packetId: packet.id, activityType: 'travel_summary_generated', description: 'Travel documentation summary generated', timestamp: new Date().toISOString() });
+  };
+
   const busy = (key: string) => busyAction === key;
+  const d = packet.details || {};
+  const hasTravelContext = d.travelContext && !['Personal', ''].includes(d.travelContext);
 
   return (
     <div className="space-y-5 pb-12">
+
+      {/* Dispute / Travel Summary */}
+      <Card className="border-amber-200 dark:border-amber-800">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Create Text Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Generate a plain-text factual summary you can copy into dispute forms, insurance portals, emails, or supporting documentation.
+          </p>
+          <Button variant="outline" className="w-full" onClick={handleDisputeSummary}>
+            <FileText className="w-4 h-4 mr-2" /> Create Dispute Summary
+          </Button>
+          {hasTravelContext && (
+            <Button variant="outline" className="w-full" onClick={handleTravelSummary}>
+              <FileText className="w-4 h-4 mr-2" /> Create Travel Documentation Summary
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            ProofPacket does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney for your situation.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* PDF options */}
       <Card>
         <CardHeader className="pb-3">
@@ -909,12 +972,410 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
       <Card className="bg-muted/30 border-muted">
         <CardContent className="p-4">
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            <strong>Export disclaimer:</strong> Verified Packet export helps receivers check whether files match the exported manifest. It does not create legal certification or replace professional advice.
+            <strong>Disclaimer:</strong> Verified Packet export helps receivers check whether files match the exported manifest. It does not create legal certification or replace professional advice. Company names are provided only to help organize your packet. ProofPacket is not affiliated with or endorsed by any rental company, car-sharing platform, hotel, property manager, insurer, government agency, military branch, or other listed entity.
           </p>
         </CardContent>
       </Card>
 
       <UpgradePrompt open={upgradeOpen} onClose={() => setUpgradeOpen(false)} requiredTier={upgradeTier} reason={upgradeReason} />
+
+      {/* Dispute Summary Dialog */}
+      <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
+        <DialogContent className="sm:max-w-lg w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Dispute Summary</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Copy this text and paste it into a dispute form, email, rental company portal, car-sharing dispute flow, or insurance claim.
+            </p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-3 max-h-64 overflow-y-auto border">
+              <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{disputeText}</pre>
+            </div>
+            <Button className="w-full" onClick={() => {
+              navigator.clipboard.writeText(disputeText).then(() => toast({ title: 'Copied to clipboard' }));
+            }}>
+              <Copy className="w-4 h-4 mr-2" /> Copy to Clipboard
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Travel Summary Dialog */}
+      <Dialog open={travelOpen} onOpenChange={setTravelOpen}>
+        <DialogContent className="sm:max-w-lg w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Travel Documentation Summary</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Copy this text for supporting documentation. This does not replace DTS, finance office guidance, or official travel instructions.
+            </p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-3 max-h-64 overflow-y-auto border">
+              <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{travelText}</pre>
+            </div>
+            <Button className="w-full" onClick={() => {
+              navigator.clipboard.writeText(travelText).then(() => toast({ title: 'Copied to clipboard' }));
+            }}>
+              <Copy className="w-4 h-4 mr-2" /> Copy to Clipboard
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+// ------------------------------------------------------------------
+// VEHICLE DETAILS CARD
+// ------------------------------------------------------------------
+function VehicleDetailsCard({ packet }: { packet: any }) {
+  const d = packet.details || {};
+  const vehicleParts = [d.vehicleYear, d.vehicleMake, d.vehicleModel].filter(Boolean);
+
+  const rows: Array<[string, string]> = [];
+  if (vehicleParts.length > 0) rows.push(['Vehicle', vehicleParts.join(' ')]);
+  if (d.vehicleType) rows.push(['Type', d.vehicleType]);
+  if (d.licensePlate) rows.push(['License Plate', d.licensePlate]);
+  if (d.unitNumber) rows.push(['Unit #', d.unitNumber]);
+  if (d.vin) rows.push(['VIN', d.vin]);
+  if (d.rentalCompany) rows.push(['Company', d.rentalCompany]);
+  if (d.rentalAgreementNumber) rows.push(['Agreement #', d.rentalAgreementNumber]);
+  if (d.fuelLevelPickup) rows.push(['Fuel at pickup', d.fuelLevelPickup]);
+  if (d.fuelLevelReturn) rows.push(['Fuel at return', d.fuelLevelReturn]);
+  if (d.evBatteryPickup) rows.push(['Battery at pickup', d.evBatteryPickup]);
+  if (d.evBatteryReturn) rows.push(['Battery at return', d.evBatteryReturn]);
+  if (d.returnLocation) rows.push(['Return location', d.returnLocation]);
+  if (d.fuelStation) rows.push(['Fuel / charge station', d.fuelStation]);
+  if (d.fuelAmountPaid) rows.push(['Fuel amount paid', d.fuelAmountPaid]);
+  if (d.accessories) rows.push(['Accessories', d.accessories]);
+  if (d.travelContext && !['Personal', ''].includes(d.travelContext)) rows.push(['Travel context', d.travelContext]);
+  if (d.travelOrderNumber) rows.push(['Order / Auth #', d.travelOrderNumber]);
+  if (d.dtsVoucherNumber) rows.push(['DTS / Voucher #', d.dtsVoucherNumber]);
+  if (d.dutyStation) rows.push(['Duty station', d.dutyStation]);
+  if (d.driverName) rows.push(['Driver', d.driverName]);
+  if (d.driverId) rows.push(['Employee ID', d.driverId]);
+  if (d.supervisorName) rows.push(['Supervisor', d.supervisorName]);
+  if (d.department) rows.push(['Department', d.department]);
+  if (d.keysIssued) rows.push(['Keys issued', d.keysIssued]);
+  if (d.fuelCardIssued) rows.push(['Fuel card issued', d.fuelCardIssued]);
+  if (d.transponderIssued) rows.push(['Transponder issued', d.transponderIssued]);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Vehicle Details</CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm space-y-1.5">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <span className="text-muted-foreground shrink-0 text-xs">{label}</span>
+            <span className="text-right text-xs">{value}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------
+// REQUIRED SHOT SCORE
+// ------------------------------------------------------------------
+function RequiredShotScore({ packet }: { packet: any }) {
+  const items = packet.checklistItems || [];
+  const requiredItems = items.filter((i: any) =>
+    i.section?.toLowerCase().includes('required') ||
+    i.section?.toLowerCase().includes('return documentation')
+  );
+
+  if (requiredItems.length === 0) return null;
+
+  const checked = requiredItems.filter((i: any) => i.status !== 'not_checked');
+  const missing = requiredItems.filter((i: any) => i.status === 'not_checked');
+  const pct = Math.round((checked.length / requiredItems.length) * 100);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center justify-between">
+          Proof Score
+          <span className={`text-sm font-bold ${pct === 100 ? 'text-green-600' : pct >= 70 ? 'text-amber-600' : 'text-destructive'}`}>
+            {pct}%
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground">Required items checked</span>
+          <span className="font-semibold">{checked.length} of {requiredItems.length}</span>
+        </div>
+        <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-green-500' : pct >= 70 ? 'bg-amber-500' : 'bg-destructive'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {missing.length > 0 && (
+          <div className="text-[11px] text-muted-foreground leading-relaxed">
+            <span className="font-medium">Not yet checked:</span>{' '}
+            {missing.slice(0, 3).map((i: any) => i.label).join(', ')}
+            {missing.length > 3 ? ` +${missing.length - 3} more` : ''}
+          </div>
+        )}
+        {pct < 100 && (
+          <p className="text-[10px] text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 leading-relaxed">
+            Some recommended proof shots are missing. You can still export, but your packet may be less complete.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------
+// MILEAGE CARD
+// ------------------------------------------------------------------
+function MileageCard({ packet }: { packet: any }) {
+  const d = packet.details || {};
+  if (!d.startingOdometer && !d.endingOdometer) return null;
+
+  const parse = (s: string) => parseInt(s.replace(/[^0-9]/g, ''));
+  const start = d.startingOdometer ? parse(d.startingOdometer) : NaN;
+  const end = d.endingOdometer ? parse(d.endingOdometer) : NaN;
+  const driven = !isNaN(start) && !isNaN(end) ? end - start : null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Odometer / Mileage</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-1.5 text-sm">
+        {d.startingOdometer && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground text-xs">At pickup / checkout</span>
+            <span className="text-xs">{d.startingOdometer}</span>
+          </div>
+        )}
+        {d.endingOdometer && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground text-xs">At return / check-in</span>
+            <span className="text-xs">{d.endingOdometer}</span>
+          </div>
+        )}
+        {driven !== null && driven >= 0 && (
+          <div className="flex justify-between font-semibold border-t pt-1.5 mt-1">
+            <span className="text-xs">Miles driven</span>
+            <span className="text-xs">{driven.toLocaleString()} mi</span>
+          </div>
+        )}
+        {driven !== null && driven < 0 && (
+          <p className="text-[11px] text-amber-600">Ending odometer is less than starting — check entries.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------
+// ACTIVITY TAB
+// ------------------------------------------------------------------
+function ActivityTab({ packetId }: { packetId: string }) {
+  const entries = useDexieQuery(() => storage.getActivityLog(packetId), [packetId]) || [];
+
+  const ICONS: Record<string, string> = {
+    packet_created: '📄',
+    packet_edited: '✏️',
+    photo_added: '📷',
+    photo_deleted: '🗑',
+    export_pdf: '📑',
+    export_verified: '✅',
+    export_archive: '📦',
+    export_photos_zip: '🖼',
+    verification_run: '🔍',
+    dispute_summary_generated: '📝',
+    travel_summary_generated: '✈️',
+    comm_log_added: '💬',
+    signature_added: '✍️',
+    archive_imported: '📥',
+  };
+
+  if (entries.length === 0) {
+    return (
+      <div className="space-y-4 pb-12">
+        <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
+          <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-sm">No activity recorded yet.</p>
+          <p className="text-xs mt-1 opacity-60">Exports, summaries, and other actions are recorded here.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 pb-12">
+      <p className="text-[11px] text-muted-foreground">Activity is recorded locally on this device only.</p>
+      {entries.map((entry) => (
+        <Card key={entry.id} className="shadow-xs border-muted">
+          <CardContent className="p-3 flex items-start gap-3">
+            <span className="text-base shrink-0 mt-0.5">{ICONS[entry.activityType] || '•'}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm leading-snug">{entry.description}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {format(new Date(entry.timestamp), 'MMM d, yyyy h:mm a')}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------
+// TEXT SUMMARY BUILDERS
+// ------------------------------------------------------------------
+function buildDisputeText(packet: any): string {
+  const d = packet.details || {};
+  const lines: string[] = [
+    'PROOFPACKET DISPUTE SUMMARY',
+    `Generated: ${new Date().toLocaleString()}`,
+    '',
+    `Packet: ${packet.title}`,
+  ];
+  if (packet.companyOrPerson) lines.push(`Company / Platform: ${packet.companyOrPerson}`);
+  if (packet.referenceNumber) lines.push(`Reservation / Reference #: ${packet.referenceNumber}`);
+  if (d.rentalAgreementNumber) lines.push(`Agreement #: ${d.rentalAgreementNumber}`);
+  if (packet.startDate) lines.push(`Start Date: ${packet.startDate}`);
+  if (packet.endDate) lines.push(`End Date: ${packet.endDate}`);
+  if (packet.location) lines.push(`Pickup Location: ${packet.location}`);
+  if (d.returnLocation) lines.push(`Return Location: ${d.returnLocation}`);
+
+  const vehicleParts = [d.vehicleYear, d.vehicleMake, d.vehicleModel].filter(Boolean);
+  if (vehicleParts.length > 0 || d.licensePlate || d.unitNumber) {
+    lines.push('');
+    lines.push('VEHICLE');
+    if (vehicleParts.length > 0) lines.push(`  ${vehicleParts.join(' ')}`);
+    if (d.vehicleType) lines.push(`  Type: ${d.vehicleType}`);
+    if (d.licensePlate) lines.push(`  License Plate: ${d.licensePlate}`);
+    if (d.unitNumber) lines.push(`  Unit #: ${d.unitNumber}`);
+    if (d.vin) lines.push(`  VIN: ${d.vin}`);
+  }
+
+  if (d.startingOdometer || d.endingOdometer) {
+    lines.push('');
+    lines.push('ODOMETER / MILEAGE');
+    if (d.startingOdometer) lines.push(`  At pickup: ${d.startingOdometer}`);
+    if (d.endingOdometer) lines.push(`  At return: ${d.endingOdometer}`);
+    const s = d.startingOdometer ? parseInt(d.startingOdometer.replace(/[^0-9]/g, '')) : NaN;
+    const e = d.endingOdometer ? parseInt(d.endingOdometer.replace(/[^0-9]/g, '')) : NaN;
+    if (!isNaN(s) && !isNaN(e) && e >= s) lines.push(`  Miles driven: ${(e - s).toLocaleString()}`);
+  }
+
+  if (d.fuelLevelPickup || d.fuelLevelReturn || d.evBatteryPickup || d.evBatteryReturn) {
+    lines.push('');
+    lines.push('FUEL / BATTERY');
+    if (d.fuelLevelPickup) lines.push(`  Fuel at pickup: ${d.fuelLevelPickup}`);
+    if (d.fuelLevelReturn) lines.push(`  Fuel at return: ${d.fuelLevelReturn}`);
+    if (d.evBatteryPickup) lines.push(`  EV battery at pickup: ${d.evBatteryPickup}`);
+    if (d.evBatteryReturn) lines.push(`  EV battery at return: ${d.evBatteryReturn}`);
+    if (d.fuelStation) lines.push(`  Fuel / charge station: ${d.fuelStation}`);
+    if (d.fuelAmountPaid) lines.push(`  Amount paid: ${d.fuelAmountPaid}`);
+  }
+
+  const issues = (packet.checklistItems || []).filter((i: any) =>
+    ['damaged', 'dirty', 'missing', 'not_working'].includes(i.status)
+  );
+  if (issues.length > 0) {
+    lines.push('');
+    lines.push('DOCUMENTED ISSUES');
+    issues.forEach((i: any) => {
+      lines.push(`  • ${i.label} — ${i.status.replace('_', ' ')}${i.notes ? ': ' + i.notes : ''}`);
+    });
+  }
+
+  const commLogs = packet.communicationLogs || [];
+  if (commLogs.length > 0) {
+    lines.push('');
+    lines.push('COMMUNICATION LOG');
+    commLogs.slice(0, 5).forEach((c: any) => {
+      lines.push(`  • ${new Date(c.date).toLocaleDateString()} — ${c.method.replace('_', ' ')}: ${c.personContacted}${c.subject ? ' — ' + c.subject : ''}`);
+      if (c.summary) lines.push(`    ${c.summary}`);
+    });
+    if (commLogs.length > 5) lines.push(`  ... and ${commLogs.length - 5} more entries`);
+  }
+
+  lines.push('');
+  lines.push('STATEMENT');
+  lines.push('I am disputing this charge/issue. My ProofPacket documents the condition at pickup and return. It includes odometer/fuel or battery records, exterior/interior photos, documented damage, communication logs, receipts where available, and a verification manifest with SHA-256 hashes for the original photo files.');
+  lines.push('');
+  lines.push('DISCLAIMER');
+  lines.push('This summary was generated by ProofPacket. ProofPacket is not a legal service and does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney regarding your specific situation.');
+
+  return lines.join('\n');
+}
+
+function buildTravelSummaryText(packet: any): string {
+  const d = packet.details || {};
+  const ctx = d.travelContext || 'official travel';
+  const lines: string[] = [
+    'PROOFPACKET TRAVEL DOCUMENTATION SUMMARY',
+    `Generated: ${new Date().toLocaleString()}`,
+    '',
+    `Packet: ${packet.title}`,
+    `Travel context: ${ctx}`,
+  ];
+  if (packet.companyOrPerson) lines.push(`Company / Organization: ${packet.companyOrPerson}`);
+  if (d.travelOrderNumber) lines.push(`Travel order / authorization #: ${d.travelOrderNumber}`);
+  if (d.dtsVoucherNumber) lines.push(`DTS / voucher reference: ${d.dtsVoucherNumber}`);
+  if (d.dutyStation) lines.push(`Duty station / destination: ${d.dutyStation}`);
+  if (d.officialTravelNotes) lines.push(`Official travel notes: ${d.officialTravelNotes}`);
+  if (packet.startDate) lines.push(`Start date: ${packet.startDate}`);
+  if (packet.endDate) lines.push(`End date: ${packet.endDate}`);
+  if (packet.location) lines.push(`Pickup / start location: ${packet.location}`);
+  if (d.returnLocation) lines.push(`Return / end location: ${d.returnLocation}`);
+  if (d.isPCS && d.isPCS !== 'No') lines.push(`PCS move: ${d.isPCS}`);
+  if (d.isPersonallyProcuredMove && d.isPersonallyProcuredMove !== 'No') lines.push(`Personally procured move (PPM): ${d.isPersonallyProcuredMove}`);
+  if (d.moveOrigin) lines.push(`Origin: ${d.moveOrigin}`);
+  if (d.moveDestination) lines.push(`Destination: ${d.moveDestination}`);
+
+  const vehicleParts = [d.vehicleYear, d.vehicleMake, d.vehicleModel].filter(Boolean);
+  if (vehicleParts.length > 0 || d.licensePlate || d.unitNumber) {
+    lines.push('');
+    lines.push('VEHICLE');
+    if (vehicleParts.length > 0) lines.push(`  ${vehicleParts.join(' ')}`);
+    if (d.licensePlate) lines.push(`  License Plate: ${d.licensePlate}`);
+    if (d.unitNumber) lines.push(`  Unit #: ${d.unitNumber}`);
+  }
+
+  if (d.startingOdometer || d.endingOdometer) {
+    lines.push('');
+    lines.push('ODOMETER');
+    if (d.startingOdometer) lines.push(`  At pickup: ${d.startingOdometer}`);
+    if (d.endingOdometer) lines.push(`  At return: ${d.endingOdometer}`);
+    const s = d.startingOdometer ? parseInt(d.startingOdometer.replace(/[^0-9]/g, '')) : NaN;
+    const e = d.endingOdometer ? parseInt(d.endingOdometer.replace(/[^0-9]/g, '')) : NaN;
+    if (!isNaN(s) && !isNaN(e) && e >= s) lines.push(`  Miles driven: ${(e - s).toLocaleString()}`);
+  }
+
+  const issues = (packet.checklistItems || []).filter((i: any) =>
+    ['damaged', 'dirty', 'missing', 'not_working'].includes(i.status)
+  );
+  if (issues.length > 0) {
+    lines.push('');
+    lines.push('DOCUMENTED ISSUES');
+    issues.forEach((i: any) => {
+      lines.push(`  • ${i.label} — ${i.status.replace('_', ' ')}${i.notes ? ': ' + i.notes : ''}`);
+    });
+  }
+
+  lines.push('');
+  lines.push('STATEMENT');
+  lines.push(`This ProofPacket documents vehicle / rental / lodging condition and supporting receipts for ${ctx}. It includes pickup/return condition, odometer/fuel or battery records where applicable, photos, receipts, communication logs, and a verification manifest with SHA-256 hashes for original photo files.`);
+  lines.push('');
+  lines.push('DISCLAIMER');
+  lines.push('ProofPacket helps organize supporting documentation. It does not replace DTS, travel office guidance, claims office guidance, finance office guidance, JTR rules, rental company policies, insurance policies, employer policies, or official instructions. Military, government, and company names are provided only to help organize your packet. ProofPacket is not affiliated with or endorsed by the Department of Defense, any military branch, government agency, or other listed entity.');
+
+  return lines.join('\n');
 }
