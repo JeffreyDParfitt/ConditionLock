@@ -20,6 +20,7 @@ import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
 import { exportVerifiedPacket, exportFullArchive, exportPhotosZip } from "@/utils/manifest";
 import { isCryptoAvailable } from "@/utils/crypto";
+import { InAppCamera } from "@/components/InAppCamera";
 import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, CommunicationLog } from "@/types";
 import { useTier, isRentalVehicleType } from "@/hooks/useTier";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -224,7 +225,7 @@ export default function PacketDetail() {
             )}
 
             <Button variant="destructive" className="w-full mt-4" onClick={async () => {
-              if (confirm('Are you sure you want to delete this packet and all its photos? This cannot be undone.')) {
+              if (confirm('Delete this packet?\n\nThis will permanently delete the packet, all in-app evidence photos, and all checklist data. This cannot be undone.')) {
                 await storage.deletePacket(packet.id);
                 setLocation('/packets');
                 toast({title: 'Packet deleted'});
@@ -270,7 +271,7 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
   packetId: string; checklistItemId: string; evidence: any; photos: any[];
   isIssue: boolean; onUpdate: (c: any) => void; onPhotoAdded: (id: string) => void; onPhotoDeleted: (id: string) => void;
 }) {
-  const cameraRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [viewUrl, setViewUrl] = useState('');
   const [viewPhoto, setViewPhoto] = useState<any>(null);
@@ -282,19 +283,17 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
   const missingPhoto = isIssue && photos.length === 0;
   const missingNote = needsNote && !String(evidence.note || '').trim();
 
-  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCapture = async (blob: Blob, fileName: string) => {
     setCapturing(true);
     try {
       const now = new Date().toISOString();
       const id = await storage.addPhoto({
         packetId, checklistItemId,
         conditionEvidenceId: evidence.id,
-        originalBlob: file,
-        mimeType: file.type || 'image/jpeg',
-        fileName: `ev-${evidence.status}-${Date.now()}.jpg`,
-        fileSize: file.size,
+        originalBlob: blob,
+        mimeType: blob.type || 'image/jpeg',
+        fileName,
+        fileSize: blob.size,
         caption: displayLabel,
         category: String(evidence.status),
         phase: 'general' as any,
@@ -305,7 +304,7 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
         capturedAt: now,
       });
       onPhotoAdded(id);
-    } finally { setCapturing(false); e.target.value = ''; }
+    } finally { setCapturing(false); }
   };
 
   const openPhoto = (photo: any) => { setViewPhoto(photo); setViewUrl(URL.createObjectURL(photo.originalBlob)); };
@@ -313,7 +312,7 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
 
   return (
     <div className={`rounded-lg border px-3 py-2.5 space-y-2 ${isIssue ? 'border-destructive/40 bg-destructive/5 dark:bg-destructive/10' : 'border-green-500/30 bg-green-50/50 dark:bg-green-950/10'}`}>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
+      <InAppCamera open={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={handleCapture} />
 
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <p className={`text-[11px] font-semibold ${isIssue ? 'text-destructive' : 'text-green-700 dark:text-green-400'}`}>
@@ -373,7 +372,7 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
       />
 
       <Button size="sm" variant={isIssue ? 'destructive' : 'default'} className="w-full h-8 text-xs"
-        onClick={() => cameraRef.current?.click()} disabled={capturing}>
+        onClick={() => setCameraOpen(true)} disabled={capturing}>
         <Camera className="w-3 h-3 mr-1.5" />
         {capturing ? 'Saving…' : photos.length > 0 ? 'Add Another Photo' : 'Take Photo'}
       </Button>
@@ -804,7 +803,7 @@ function ChecklistTab({ packet, photos }: { packet: any; photos: any[] }) {
 // PHOTOS TAB
 // ------------------------------------------------------------------
 function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const [viewingPhoto, setViewingPhoto] = useState<any>(null);
   const [viewUrl, setViewUrl] = useState<string>('');
@@ -825,12 +824,9 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
   const evidencePhotos = photos.filter((p: any) => p.source !== 'imported_document');
   const importedDocs = photos.filter((p: any) => p.source === 'imported_document');
 
-  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCapture = async (blob: Blob, fileName: string) => {
     if (limits.maxPhotosPerPacket !== Infinity && photos.length >= limits.maxPhotosPerPacket) {
       setPhotoUpgradeOpen(true);
-      e.target.value = '';
       return;
     }
     setUploading(true);
@@ -838,10 +834,10 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
       const now = new Date().toISOString();
       await storage.addPhoto({
         packetId: packet.id,
-        originalBlob: file,
-        mimeType: file.type || 'image/jpeg',
-        fileName: file.name || 'photo.jpg',
-        fileSize: file.size,
+        originalBlob: blob,
+        mimeType: blob.type || 'image/jpeg',
+        fileName,
+        fileSize: blob.size,
         caption: '',
         category: 'general',
         phase: 'general',
@@ -853,7 +849,6 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
       });
     } finally {
       setUploading(false);
-      e.target.value = '';
     }
   };
 
@@ -932,14 +927,14 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
 
   return (
     <div className="space-y-4 pb-12">
-      <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraInputRef} onChange={handleCapture} />
-      <input type="file" accept="image/*,application/pdf,.pdf,.doc,.docx,.txt" multiple className="hidden" ref={documentInputRef} onChange={handleDocumentImport} />
+      <InAppCamera open={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={handleCapture} />
+      <input type="file" accept="application/pdf,.pdf,.doc,.docx,.txt" multiple className="hidden" ref={documentInputRef} onChange={handleDocumentImport} />
 
       {/* Evidence photos section */}
       <div className="space-y-3">
         <div className="text-[11px] bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-2 leading-relaxed text-green-800 dark:text-green-300">
-          <span className="font-semibold block mb-0.5">Evidence photos must be taken inside ProofPacket.</span>
-          Gallery uploads are disabled for evidence photos. In-app capture helps reduce disputes about photo origin and supports stronger documentation.
+          <span className="font-semibold block mb-0.5">Photos stay inside ProofPacket — not saved to your camera roll.</span>
+          Gallery import is not available for evidence photos. ProofPacket uses in-app capture only, keeping photos tied to the inspection record and harder to dispute.
         </div>
 
         {atPhotoLimit ? (
@@ -952,13 +947,13 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
             <span className="text-xs font-semibold underline underline-offset-2 shrink-0">Upgrade</span>
           </button>
         ) : (
-          <Button className="w-full h-14" onClick={() => cameraInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
+          <Button className="w-full h-14" onClick={() => setCameraOpen(true)} disabled={uploading} data-testid="button-take-photo">
             <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving…' : 'Take Photo'}
           </Button>
         )}
 
         <p className="text-[10px] text-muted-foreground text-center">
-          Camera access is required for evidence photos. If prompted, allow camera access in your browser or device settings.
+          Photos are stored inside ProofPacket only — not in your camera roll or photo library. Camera permission required.
         </p>
       </div>
 
