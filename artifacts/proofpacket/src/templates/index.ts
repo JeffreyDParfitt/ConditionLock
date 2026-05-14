@@ -28,6 +28,19 @@ export const templates: Record<PacketType, PacketTemplate> = {
     category: 'Rental Vehicle',
     sections: [
       {
+        name: 'Before You Leave the Lot',
+        items: [
+          { label: 'Odometer at pickup', description: 'Clear photo of odometer before driving off the lot', phase: 'pickup', status: 'not_checked' },
+          { label: 'Fuel or battery level at pickup', description: 'Photo of fuel gauge or EV battery display', phase: 'pickup', status: 'not_checked' },
+          { label: 'Exterior walk-around — all four sides', description: 'Front, rear, driver side, and passenger side before driving', phase: 'pickup', status: 'not_checked' },
+          { label: 'Wheels and rims checked', description: 'Check all four wheels for curb rash or damage', phase: 'pickup', status: 'not_checked' },
+          { label: 'Windshield and glass checked', description: 'Look for chips, cracks, or pits — photo any found', phase: 'pickup', status: 'not_checked' },
+          { label: 'Existing damage noted in photos', description: 'Close-up photos of any pre-existing dents, scratches, or damage', phase: 'pickup', status: 'not_checked' },
+          { label: 'Pre-existing damage reported to company', description: 'Pointed out to agent or noted on rental agreement before driving', phase: 'pickup', status: 'not_checked' },
+          { label: 'Rental agreement captured', description: 'Photo of the signed rental agreement or contract', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
         name: 'Required Exterior Photos',
         items: [
           { label: 'Front of vehicle', description: 'Wide shot showing front bumper and hood', phase: 'both', status: 'not_checked' },
@@ -96,6 +109,20 @@ export const templates: Record<PacketType, PacketTemplate> = {
     description: 'Document truck or cargo van condition at pickup and return. Works with U-Haul, Penske, Budget Truck, Enterprise, Ryder, and others.',
     category: 'Rental Vehicle',
     sections: [
+      {
+        name: 'Before You Leave the Lot',
+        items: [
+          { label: 'Odometer at pickup', description: 'Clear photo of odometer before driving off', phase: 'pickup', status: 'not_checked' },
+          { label: 'Fuel level at pickup', description: 'Photo of fuel gauge', phase: 'pickup', status: 'not_checked' },
+          { label: 'Exterior walk-around — all four sides', description: 'Front, rear, driver side, passenger side before driving', phase: 'pickup', status: 'not_checked' },
+          { label: 'Top of cargo box checked', description: 'Check for overhead clearance damage before leaving the lot', phase: 'pickup', status: 'not_checked' },
+          { label: 'Wheels and tires checked', description: 'All tires including duals — look for damage or low inflation', phase: 'pickup', status: 'not_checked' },
+          { label: 'Windshield and glass checked', description: 'Look for chips, cracks, or pits', phase: 'pickup', status: 'not_checked' },
+          { label: 'Existing damage noted in photos', description: 'Close-up photos of any pre-existing dents, scrapes, or damage', phase: 'pickup', status: 'not_checked' },
+          { label: 'Pre-existing damage reported to company', description: 'Reported to agent or noted on rental agreement before driving', phase: 'pickup', status: 'not_checked' },
+          { label: 'Rental agreement captured', description: 'Photo of the signed rental agreement or contract', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
       {
         name: 'Required Exterior Photos',
         items: [

@@ -34,6 +34,12 @@ export default function VerifyPacket() {
   const { limits } = useTier();
 
   const [step, setStep] = useState<Step>('upload');
+  const [expandedHashes, setExpandedHashes] = useState<Set<number>>(new Set());
+  const toggleHash = (i: number) => setExpandedHashes(prev => {
+    const next = new Set(prev);
+    if (next.has(i)) next.delete(i); else next.add(i);
+    return next;
+  });
   const [manifestFile, setManifestFile] = useState<File | null>(null);
   const [manifest, setManifest] = useState<VerificationManifest | null>(null);
   const [manifestError, setManifestError] = useState<string | null>(null);
@@ -533,9 +539,18 @@ export default function VerifyPacket() {
             {result.photoResults.map((r, i) => {
               const cfg = STATUS_CONFIG[r.status];
               const Icon = cfg.icon;
+              const hashExpanded = expandedHashes.has(i);
+              const plainEnglish =
+                r.status === 'verified'
+                  ? (r.appCaptured === true ? 'File matches original — captured in ProofPacket.' : 'File received and hash matches the original.')
+                  : r.status === 'missing'
+                  ? 'This file was not provided or could not be matched.'
+                  : r.status === 'mismatch'
+                  ? 'A file with this name was found, but its hash does not match the original.'
+                  : 'This file was uploaded but is not listed in the manifest.';
               return (
                 <Card key={i} className={`${cfg.bg} ${cfg.border} border`}>
-                  <CardContent className="p-3 space-y-1">
+                  <CardContent className="p-3 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Icon className={`w-3.5 h-3.5 ${cfg.color}`} />
@@ -560,23 +575,29 @@ export default function VerifyPacket() {
                       </span>
                     )}
                     {r.caption && <p className="text-xs text-muted-foreground italic">{r.caption}</p>}
-                    <div className="text-[10px] text-muted-foreground space-y-0.5 font-mono">
-                      {r.expectedHash && (
-                        <div className="flex gap-1">
-                          <span className="shrink-0">Expected:  </span>
-                          <span className="truncate">{r.expectedHash}</span>
-                        </div>
-                      )}
-                      {r.calculatedHash && r.status !== 'verified' && (
-                        <div className="flex gap-1">
-                          <span className="shrink-0">Calculated:</span>
-                          <span className="truncate">{r.calculatedHash}</span>
-                        </div>
-                      )}
-                      {r.status === 'verified' && (
-                        <span className="text-green-600 dark:text-green-400">✓ Hash matches</span>
-                      )}
-                    </div>
+                    <p className="text-xs text-muted-foreground">{plainEnglish}</p>
+                    {(r.expectedHash || r.calculatedHash) && (
+                      <button
+                        className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        onClick={() => toggleHash(i)}
+                      >
+                        <span className="font-mono opacity-60">{hashExpanded ? '▲' : '▼'}</span>
+                        {hashExpanded ? 'Hide hash details' : 'Show hash details'}
+                      </button>
+                    )}
+                    {hashExpanded && (
+                      <div className="text-[10px] font-mono space-y-0.5 bg-black/5 dark:bg-white/5 rounded p-2 break-all">
+                        {r.expectedHash && (
+                          <div><span className="text-muted-foreground">Expected:   </span>{r.expectedHash}</div>
+                        )}
+                        {r.calculatedHash && r.status !== 'verified' && (
+                          <div><span className="text-muted-foreground">Calculated: </span>{r.calculatedHash}</div>
+                        )}
+                        {r.status === 'verified' && (
+                          <div className="text-green-600 dark:text-green-400">✓ Exact hash match</div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );

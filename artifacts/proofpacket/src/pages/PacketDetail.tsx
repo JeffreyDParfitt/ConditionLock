@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock, Activity, Copy, Upload } from "lucide-react";
+import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock, Activity, Copy, Upload, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
@@ -173,15 +173,42 @@ export default function PacketDetail() {
               </Card>
             </div>
 
+            {photos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {photos.filter((p: any) => p.appCaptured === true).length > 0 && (
+                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-800">
+                    ✓ {photos.filter((p: any) => p.appCaptured === true).length} captured in ProofPacket
+                  </span>
+                )}
+                {photos.filter((p: any) => p.sha256Hash).length > 0 && (
+                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-800">
+                    ✓ SHA-256 hashes created
+                  </span>
+                )}
+                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  ✓ Original-quality stored
+                </span>
+                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  ✓ Included in verified export
+                </span>
+              </div>
+            )}
+
             {isVehicle && (
               <div className="space-y-3">
                 <VehicleDetailsCard packet={packet} />
-                <RequiredShotScore packet={packet} />
+                <PacketReadinessCard packet={packet} photos={photos} />
                 <MileageCard packet={packet} />
               </div>
             )}
-            
-            <Button variant="destructive" className="w-full mt-8" onClick={async () => {
+
+            {isVehicle && (
+              <Button variant="outline" className="w-full" onClick={() => setActiveTab('export')}>
+                <FileText className="w-4 h-4 mr-2" /> Create Dispute Summary
+              </Button>
+            )}
+
+            <Button variant="destructive" className="w-full mt-4" onClick={async () => {
               if (confirm('Are you sure you want to delete this packet and all its photos? This cannot be undone.')) {
                 await storage.deletePacket(packet.id);
                 setLocation('/packets');
@@ -233,6 +260,17 @@ function ChecklistTab({ packet }: { packet: any }) {
   const [newItemSection, setNewItemSection] = useState("Additional Items");
   const [newItemLabel, setNewItemLabel] = useState("");
 
+  const [damageOpen, setDamageOpen] = useState(false);
+  const [dLoc, setDLoc] = useState('');
+  const [dType, setDType] = useState('scratch');
+  const [dSeverity, setDSeverity] = useState('minor');
+  const [dAtPickup, setDAtPickup] = useState('unknown');
+  const [dReported, setDReported] = useState('unknown');
+  const [dPerson, setDPerson] = useState('');
+  const [dMethod, setDMethod] = useState('in_person');
+  const [dDateTime, setDDateTime] = useState('');
+  const [dNotes, setDNotes] = useState('');
+
   const updateItemStatuses = async (item: any, newStatuses: string[]) => {
     const primary = getPrimaryStatus(newStatuses) as ChecklistStatus;
     const newItems = items.map((i: any) =>
@@ -272,6 +310,42 @@ function ChecklistTab({ packet }: { packet: any }) {
     setNewItemOpen(false);
   };
 
+  const handleAddDamage = async () => {
+    if (!dLoc.trim()) return;
+    const statuses: string[] = ['damaged'];
+    if (dReported === 'yes') statuses.push('reported');
+    else if (dReported === 'no') statuses.push('not_reported');
+    const noteParts = [
+      `Type: ${dType}`,
+      `Severity: ${dSeverity}`,
+      `At pickup: ${dAtPickup}`,
+      dReported !== 'unknown' ? `Reported: ${dReported}` : null,
+      dPerson ? `Notified: ${dPerson}${dMethod ? ' via ' + dMethod.replace('_', ' ') : ''}` : null,
+      dDateTime ? `Time: ${dDateTime}` : null,
+      dNotes || null,
+    ].filter(Boolean).join(' | ');
+    const newItem: ChecklistItem = {
+      id: crypto.randomUUID(),
+      packetId: packet.id,
+      section: 'Damage Reports',
+      label: dLoc,
+      description: `${dType} — ${dSeverity} severity`,
+      phase: 'both',
+      status: 'damaged',
+      statuses,
+      notes: noteParts,
+      photoIds: [],
+      addedDuringInspection: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await storage.updatePacket(packet.id, { checklistItems: [...items, newItem] });
+    setDLoc(''); setDType('scratch'); setDSeverity('minor');
+    setDAtPickup('unknown'); setDReported('unknown');
+    setDPerson(''); setDMethod('in_person'); setDDateTime(''); setDNotes('');
+    setDamageOpen(false);
+  };
+
   const filterItem = (item: any) => {
     if (filter === 'not_checked') return !isItemChecked(item);
     if (filter === 'issues') return hasIssueStatus(item);
@@ -279,7 +353,11 @@ function ChecklistTab({ packet }: { packet: any }) {
   };
 
   return (
-    <div className="space-y-6 pb-20 relative">
+    <div className="space-y-4 pb-20 relative">
+      <Button variant="outline" className="w-full h-11 border-destructive/40 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => setDamageOpen(true)}>
+        <AlertTriangle className="w-4 h-4 mr-2" /> Quick Damage Entry
+      </Button>
+
       <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
         <Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('all')} className="rounded-full">All</Button>
         <Button variant={filter === 'not_checked' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('not_checked')} className="rounded-full">Not Checked</Button>
@@ -365,6 +443,104 @@ function ChecklistTab({ packet }: { packet: any }) {
           </div>
         );
       })}
+
+      {/* Damage Report Dialog */}
+      <Dialog open={damageOpen} onOpenChange={setDamageOpen}>
+        <DialogContent className="sm:max-w-md w-[90vw] max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quick Damage Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label>Location / description (required)</Label>
+              <Input value={dLoc} onChange={e => setDLoc(e.target.value)} placeholder="e.g. Front bumper, passenger corner" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={dType} onValueChange={setDType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['scratch', 'dent', 'chip', 'crack', 'stain', 'tear', 'odor', 'missing piece', 'other'].map(t => (
+                      <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Severity</Label>
+                <Select value={dSeverity} onValueChange={setDSeverity}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="minor">Minor</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="major">Major</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Present at pickup?</Label>
+                <Select value={dAtPickup} onValueChange={setDAtPickup}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="unknown">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Reported to company?</Label>
+                <Select value={dReported} onValueChange={setDReported}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="unknown">Not sure</SelectItem>
+                    <SelectItem value="not_applicable">N/A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {dReported === 'yes' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Person notified</Label>
+                  <Input value={dPerson} onChange={e => setDPerson(e.target.value)} placeholder="Name or title (e.g. Counter agent)" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Method</Label>
+                    <Select value={dMethod} onValueChange={setDMethod}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_person">In person</SelectItem>
+                        <SelectItem value="phone">Phone</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="app">App / portal</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date / time</Label>
+                    <Input value={dDateTime} onChange={e => setDDateTime(e.target.value)} placeholder="e.g. June 1, 10:30am" />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea value={dNotes} onChange={e => setDNotes(e.target.value)} placeholder="Additional details about the damage…" rows={2} />
+            </div>
+            <p className="text-[11px] text-muted-foreground">A checklist item will be added to "Damage Reports". Add photos from the Photos tab.</p>
+            <Button className="w-full" onClick={handleAddDamage} disabled={!dLoc.trim()}>Add Damage Report</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={newItemOpen} onOpenChange={setNewItemOpen}>
         <DialogTrigger asChild>
@@ -962,6 +1138,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
     includePhotos: true, includeCommLog: true, includeSignatures: true, includeDisclaimer: true
   });
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [showPdfOpts, setShowPdfOpts] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [disputeText, setDisputeText] = useState('');
   const [travelOpen, setTravelOpen] = useState(false);
@@ -1068,22 +1245,30 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
         </CardContent>
       </Card>
 
-      {/* PDF options */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">PDF Options</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {Object.entries(opts).map(([key, val]) => (
-            <div key={key} className="flex items-center space-x-3">
-              <Checkbox id={key} checked={val} onCheckedChange={(c) => setOpts(prev => ({...prev, [key]: !!c}))} className="w-5 h-5" />
-              <Label htmlFor={key} className="text-sm font-medium leading-none cursor-pointer">
-                {key.replace('include', '').replace(/([A-Z])/g, ' $1').trim()}
-              </Label>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      {/* PDF options (collapsible) */}
+      <div>
+        <button
+          className="flex items-center justify-between w-full text-sm text-muted-foreground hover:text-foreground py-2 px-1 border-b border-muted"
+          onClick={() => setShowPdfOpts(p => !p)}
+        >
+          <span className="font-medium">PDF Options</span>
+          <span className="text-xs font-mono opacity-50">{showPdfOpts ? '▲ hide' : '▼ show'}</span>
+        </button>
+        {showPdfOpts && (
+          <Card className="mt-2">
+            <CardContent className="space-y-3 pt-4">
+              {Object.entries(opts).map(([key, val]) => (
+                <div key={key} className="flex items-center space-x-3">
+                  <Checkbox id={key} checked={val} onCheckedChange={(c) => setOpts(prev => ({...prev, [key]: !!c}))} className="w-5 h-5" />
+                  <Label htmlFor={key} className="text-sm font-medium leading-none cursor-pointer">
+                    {key.replace('include', '').replace(/([A-Z])/g, ' $1').trim()}
+                  </Label>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Export actions */}
       <div className="space-y-3">
@@ -1264,52 +1449,89 @@ function VehicleDetailsCard({ packet }: { packet: any }) {
 }
 
 // ------------------------------------------------------------------
-// REQUIRED SHOT SCORE
+// PACKET READINESS CARD
 // ------------------------------------------------------------------
-function RequiredShotScore({ packet }: { packet: any }) {
+function PacketReadinessCard({ packet, photos }: { packet: any; photos: any[] }) {
   const items = packet.checklistItems || [];
+  const d = packet.details || {};
+
   const requiredItems = items.filter((i: any) =>
     i.section?.toLowerCase().includes('required') ||
+    i.section?.toLowerCase().includes('before you leave') ||
     i.section?.toLowerCase().includes('return documentation')
   );
+  const requiredChecked = requiredItems.filter((i: any) => isItemChecked(i));
+  const requiredScore = requiredItems.length > 0
+    ? Math.round((requiredChecked.length / requiredItems.length) * 50)
+    : 0;
 
-  if (requiredItems.length === 0) return null;
+  const odometerScore = d.startingOdometer ? 10 : 0;
+  const fuelScore = (d.fuelLevelPickup || d.evBatteryPickup) ? 10 : 0;
+  const photoScore = photos.length >= 10 ? 15 : photos.length >= 5 ? 10 : photos.length >= 1 ? 5 : 0;
+  const damageItems = items.filter((i: any) => hasIssueStatus(i));
+  const reportedItems = damageItems.filter((i: any) => getEffectiveStatuses(i).some((s: string) => s === 'reported'));
+  const damageScore = damageItems.length === 0 ? 15
+    : reportedItems.length >= damageItems.length ? 15
+    : reportedItems.length > 0 ? 8 : 0;
 
-  const checked = requiredItems.filter((i: any) => isItemChecked(i));
+  const total = requiredScore + odometerScore + fuelScore + photoScore + damageScore;
+  const label = total >= 85 ? 'Strong' : total >= 65 ? 'Good' : total >= 40 ? 'Partial' : 'Weak';
+  const labelColor = total >= 85 ? 'text-green-600 dark:text-green-400'
+    : total >= 65 ? 'text-amber-600 dark:text-amber-400'
+    : 'text-destructive';
+  const barColor = total >= 85 ? 'bg-green-500' : total >= 65 ? 'bg-amber-500' : 'bg-destructive';
   const missing = requiredItems.filter((i: any) => !isItemChecked(i));
-  const pct = Math.round((checked.length / requiredItems.length) * 100);
+
+  if (requiredItems.length === 0 && photos.length === 0 && !d.startingOdometer) return null;
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center justify-between">
-          Proof Score
-          <span className={`text-sm font-bold ${pct === 100 ? 'text-green-600' : pct >= 70 ? 'text-amber-600' : 'text-destructive'}`}>
-            {pct}%
-          </span>
+          Packet Readiness
+          <span className={`text-base font-bold ${labelColor}`}>{label}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">Required items checked</span>
-          <span className="font-semibold">{checked.length} of {requiredItems.length}</span>
+      <CardContent className="space-y-3">
+        <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${total}%` }} />
         </div>
-        <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-green-500' : pct >= 70 ? 'bg-amber-500' : 'bg-destructive'}`}
-            style={{ width: `${pct}%` }}
-          />
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+          <div className={`flex items-center gap-1.5 ${requiredScore >= 35 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${requiredScore >= 35 ? 'bg-green-500' : 'bg-gray-400'}`} />
+            Checklist ({requiredChecked.length}/{requiredItems.length})
+          </div>
+          <div className={`flex items-center gap-1.5 ${odometerScore > 0 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${odometerScore > 0 ? 'bg-green-500' : 'bg-gray-400'}`} />
+            Odometer recorded
+          </div>
+          <div className={`flex items-center gap-1.5 ${fuelScore > 0 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${fuelScore > 0 ? 'bg-green-500' : 'bg-gray-400'}`} />
+            Fuel / battery recorded
+          </div>
+          <div className={`flex items-center gap-1.5 ${photoScore >= 10 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${photoScore >= 10 ? 'bg-green-500' : 'bg-gray-400'}`} />
+            Photos ({photos.length} taken)
+          </div>
         </div>
         {missing.length > 0 && (
-          <div className="text-[11px] text-muted-foreground leading-relaxed">
+          <p className="text-[10px] text-muted-foreground">
             <span className="font-medium">Not yet checked:</span>{' '}
             {missing.slice(0, 3).map((i: any) => i.label).join(', ')}
             {missing.length > 3 ? ` +${missing.length - 3} more` : ''}
-          </div>
+          </p>
         )}
-        {pct < 100 && (
-          <p className="text-[10px] text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 leading-relaxed">
-            Some recommended proof shots are missing. You can still export, but your packet may be less complete.
+        {total < 85 && (
+          <p className={`text-[10px] rounded px-2 py-1.5 leading-relaxed ${
+            label === 'Weak'
+              ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'
+              : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800'
+          }`}>
+            {label === 'Weak'
+              ? 'Key documentation is missing. Add required photos, odometer, and fuel records.'
+              : label === 'Partial'
+              ? 'Partial documentation — complete the checklist and add odometer and fuel photos.'
+              : 'Almost complete — a few more items would make this packet stronger.'}
           </p>
         )}
       </CardContent>
