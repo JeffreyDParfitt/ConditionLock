@@ -23,9 +23,9 @@ export interface PacketTemplate {
 export const templates: Record<PacketType, PacketTemplate> = {
   car_rental: {
     type: 'car_rental',
-    name: 'Car Rental',
-    description: 'Document vehicle condition before driving off and upon return.',
-    category: 'Personal / Travel',
+    name: 'Rental Car',
+    description: 'Document vehicle condition at pickup and return. Works with any rental company or car-sharing platform.',
+    category: 'Rental Vehicle',
     sections: [
       {
         name: 'Required Exterior Photos',
@@ -40,7 +40,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
           { label: 'Mirrors', description: 'Side mirrors intact and secure', phase: 'both', status: 'not_checked' },
           { label: 'Bumpers', description: 'Check lower trim and corners for scrapes', phase: 'both', status: 'not_checked' },
           { label: 'License Plate', description: 'Clear photo of license plate', phase: 'both', status: 'not_checked' },
-          { label: 'Existing Scratches/Dents', description: 'Document any pre-existing damage closely', phase: 'pickup', status: 'not_checked' },
+          { label: 'Existing Scratches / Dents', description: 'Document any pre-existing damage closely', phase: 'pickup', status: 'not_checked' },
         ]
       },
       {
@@ -52,9 +52,9 @@ export const templates: Record<PacketType, PacketTemplate> = {
           { label: 'Dashboard', description: 'General condition', phase: 'both', status: 'not_checked' },
           { label: 'Odometer', description: 'Clear photo showing current mileage', phase: 'both', status: 'not_checked' },
           { label: 'Fuel level', description: 'Clear photo showing fuel gauge', phase: 'both', status: 'not_checked' },
-          { label: 'Trunk', description: 'Empty and clean', phase: 'both', status: 'not_checked' },
+          { label: 'Trunk / Cargo area', description: 'Empty and clean', phase: 'both', status: 'not_checked' },
           { label: 'Floor mats', description: 'Present and condition', phase: 'both', status: 'not_checked' },
-          { label: 'Rental agreement', description: 'Photo of the paperwork', phase: 'pickup', status: 'not_checked' },
+          { label: 'Rental agreement / contract', description: 'Photo of the paperwork', phase: 'pickup', status: 'not_checked' },
         ]
       },
       {
@@ -74,6 +74,153 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
+  moving_truck_van: {
+    type: 'moving_truck_van',
+    name: 'Moving Truck / Van',
+    description: 'Document truck or cargo van condition at pickup and return. Works with U-Haul, Penske, Budget Truck, Enterprise, Ryder, and others.',
+    category: 'Rental Vehicle',
+    sections: [
+      {
+        name: 'Required Exterior Photos',
+        items: [
+          { label: 'Front of vehicle', description: 'Wide shot of cab front', phase: 'both', status: 'not_checked' },
+          { label: 'Rear of vehicle', description: 'Wide shot of cargo box rear and door', phase: 'both', status: 'not_checked' },
+          { label: 'Driver side', description: 'Full driver side including cab and cargo box', phase: 'both', status: 'not_checked' },
+          { label: 'Passenger side', description: 'Full passenger side including cab and cargo box', phase: 'both', status: 'not_checked' },
+          { label: 'Roof of cab', description: 'Check for damage or clearance marks', phase: 'both', status: 'not_checked' },
+          { label: 'Top of cargo box', description: 'Check for overhead clearance damage', phase: 'both', status: 'not_checked' },
+          { label: 'Wheels & Tires', description: 'All tires including duals if applicable', phase: 'both', status: 'not_checked' },
+          { label: 'Windshield & Glass', description: 'Chips, cracks, or pits', phase: 'both', status: 'not_checked' },
+          { label: 'License plate / unit number', description: 'Clear photo of plate and truck number', phase: 'both', status: 'not_checked' },
+          { label: 'Existing damage', description: 'Document any pre-existing dents, scrapes, or damage', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Cargo Box & Loading Area',
+        items: [
+          { label: 'Cargo box interior — floor', description: 'Check for damage, stains, debris', phase: 'both', status: 'not_checked' },
+          { label: 'Cargo box interior — walls', description: 'Check for dents or damage', phase: 'both', status: 'not_checked' },
+          { label: 'Cargo box interior — ceiling', description: 'Check for damage', phase: 'both', status: 'not_checked' },
+          { label: 'Tie-down rings / tracks', description: 'Present and intact', phase: 'both', status: 'not_checked' },
+          { label: 'Loading ramp / lift gate', description: 'Condition and operation', phase: 'both', status: 'not_checked' },
+          { label: 'Cargo door & latch', description: 'Rolls up, latches, and locks', phase: 'both', status: 'not_checked' },
+          { label: 'Fuel level', description: 'Photo of fuel gauge', phase: 'both', status: 'not_checked' },
+          { label: 'Odometer', description: 'Clear photo of mileage', phase: 'both', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Cab Interior',
+        items: [
+          { label: 'Driver seat', description: 'Condition of cab seating', phase: 'both', status: 'not_checked' },
+          { label: 'Dashboard', description: 'General condition, no warning lights', phase: 'both', status: 'not_checked' },
+          { label: 'Rental agreement / contract', description: 'Photo of paperwork', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Test It',
+        items: [
+          { label: 'Headlights', description: 'High and low beams working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Brake lights & turn signals', description: 'All working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Horn', description: 'Functions normally', phase: 'pickup', status: 'not_checked' },
+          { label: 'Wipers & Fluid', description: 'Wipers function, fluid sprays', phase: 'pickup', status: 'not_checked' },
+          { label: 'AC / Heat', description: 'Cab climate control works', phase: 'pickup', status: 'not_checked' },
+          { label: 'Cargo door operation', description: 'Rolls up and down smoothly', phase: 'pickup', status: 'not_checked' },
+          { label: 'Ramp deploy / retract', description: 'Ramp or lift gate operates correctly', phase: 'pickup', status: 'not_checked' },
+          { label: 'Warning lights', description: 'No unexpected dash lights on', phase: 'pickup', status: 'not_checked' },
+        ]
+      }
+    ]
+  },
+
+  trailer_tow_equipment: {
+    type: 'trailer_tow_equipment',
+    name: 'Trailer / Tow Equipment',
+    description: 'Document trailer or tow equipment condition at pickup and return.',
+    category: 'Rental Vehicle',
+    sections: [
+      {
+        name: 'Required Exterior Photos',
+        items: [
+          { label: 'Front / Coupler end', description: 'Hitch coupler and safety chain mounts', phase: 'both', status: 'not_checked' },
+          { label: 'Rear of trailer', description: 'Rear gate, lights, and bumper', phase: 'both', status: 'not_checked' },
+          { label: 'Driver side', description: 'Full driver side', phase: 'both', status: 'not_checked' },
+          { label: 'Passenger side', description: 'Full passenger side', phase: 'both', status: 'not_checked' },
+          { label: 'Wheels & Tires', description: 'Condition of all wheels and tires', phase: 'both', status: 'not_checked' },
+          { label: 'License plate', description: 'Clear photo of trailer plate', phase: 'both', status: 'not_checked' },
+          { label: 'Unit / trailer number', description: 'Photo of trailer ID sticker or number', phase: 'both', status: 'not_checked' },
+          { label: 'Existing damage', description: 'Close-up of any pre-existing dents or scrapes', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Trailer Bed / Interior',
+        items: [
+          { label: 'Trailer floor / bed', description: 'Condition of floor surface', phase: 'both', status: 'not_checked' },
+          { label: 'Side walls / rails', description: 'Condition of walls or stake pockets', phase: 'both', status: 'not_checked' },
+          { label: 'Rear gate / ramp', description: 'Gate or ramp condition and operation', phase: 'both', status: 'not_checked' },
+          { label: 'Tie-down rings / D-rings', description: 'Present and intact', phase: 'both', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Hitch & Safety Equipment',
+        items: [
+          { label: 'Coupler / hitch ball socket', description: 'No cracks, latches securely', phase: 'both', status: 'not_checked' },
+          { label: 'Safety chains', description: 'Both chains present and attached', phase: 'both', status: 'not_checked' },
+          { label: 'Breakaway cable', description: 'Present and connected if applicable', phase: 'pickup', status: 'not_checked' },
+          { label: 'Jack / tongue stand', description: 'Retracts and stows correctly', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Test It',
+        items: [
+          { label: 'Running lights', description: 'Side marker lights illuminated', phase: 'pickup', status: 'not_checked' },
+          { label: 'Brake lights', description: 'Activate when tow vehicle brakes', phase: 'pickup', status: 'not_checked' },
+          { label: 'Turn signals', description: 'Left and right working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Electric brakes', description: 'Trailer brakes engage if equipped', phase: 'pickup', status: 'not_checked' },
+        ]
+      }
+    ]
+  },
+
+  custom_rental_vehicle: {
+    type: 'custom_rental_vehicle',
+    name: 'Custom Rental Vehicle',
+    description: 'General rental vehicle condition packet for RVs, motorcycles, boats, or any rental not covered by other templates.',
+    category: 'Rental Vehicle',
+    sections: [
+      {
+        name: 'Required Exterior Photos',
+        items: [
+          { label: 'Front', description: 'Wide shot of front', phase: 'both', status: 'not_checked' },
+          { label: 'Rear', description: 'Wide shot of rear', phase: 'both', status: 'not_checked' },
+          { label: 'Left side', description: 'Full left side', phase: 'both', status: 'not_checked' },
+          { label: 'Right side', description: 'Full right side', phase: 'both', status: 'not_checked' },
+          { label: 'Top / Roof', description: 'Top surface condition', phase: 'both', status: 'not_checked' },
+          { label: 'Identification number / plate', description: 'License plate, hull ID, VIN, or unit number', phase: 'both', status: 'not_checked' },
+          { label: 'Existing damage', description: 'Close-ups of pre-existing damage', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Interior / Cargo',
+        items: [
+          { label: 'Main interior / cabin', description: 'Overall condition', phase: 'both', status: 'not_checked' },
+          { label: 'Controls / instrument panel', description: 'General condition, no warning indicators', phase: 'both', status: 'not_checked' },
+          { label: 'Fuel / charge level', description: 'Photo of gauge or display', phase: 'both', status: 'not_checked' },
+          { label: 'Odometer / hour meter', description: 'Clear photo of mileage or hours', phase: 'both', status: 'not_checked' },
+          { label: 'Rental agreement / contract', description: 'Photo of paperwork', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Test It',
+        items: [
+          { label: 'Lights', description: 'Running lights, brake lights, signals', phase: 'pickup', status: 'not_checked' },
+          { label: 'Engine / motor start', description: 'Starts and runs normally', phase: 'pickup', status: 'not_checked' },
+          { label: 'Warning indicators', description: 'No unexpected warnings', phase: 'pickup', status: 'not_checked' },
+        ]
+      }
+    ]
+  },
+
   hotel: {
     type: 'hotel',
     name: 'Hotel Stay',
@@ -135,6 +282,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   airbnb: {
     type: 'airbnb',
     name: 'Airbnb / Short-Term Rental',
@@ -196,6 +344,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   apartment_home: {
     type: 'apartment_home',
     name: 'Apartment / Home Rental',
@@ -267,6 +416,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   business_commercial_lease: {
     type: 'business_commercial_lease',
     name: 'Business / Commercial Lease',
@@ -312,6 +462,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   business_changeover_as_is_sale: {
     type: 'business_changeover_as_is_sale',
     name: 'Business Changeover / As-Is Sale',
@@ -352,6 +503,7 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   property_sale_home_sale: {
     type: 'property_sale_home_sale',
     name: 'Property Sale / Home Sale',
@@ -396,10 +548,11 @@ export const templates: Record<PacketType, PacketTemplate> = {
       }
     ]
   },
+
   vehicle_sale_as_is_transfer: {
     type: 'vehicle_sale_as_is_transfer',
     name: 'Vehicle Sale / As-Is Transfer',
-    description: 'Document condition for private private party auto sales.',
+    description: 'Document condition for private party auto sales.',
     category: 'Vehicle',
     sections: [
       {
@@ -414,227 +567,188 @@ export const templates: Record<PacketType, PacketTemplate> = {
         name: 'Exterior Condition',
         items: [
           { label: 'Front & Rear', description: 'Wide shots', phase: 'sale', status: 'not_checked' },
-          { label: 'Sides', description: 'Driver and passenger side', phase: 'sale', status: 'not_checked' },
-          { label: 'Tires/Wheels', description: 'Tire tread and wheel condition', phase: 'sale', status: 'not_checked' },
-          { label: 'Existing Body Damage', description: 'Dents, scratches, rust', phase: 'sale', status: 'not_checked' },
-          { label: 'Glass', description: 'Windshield chips or cracks', phase: 'sale', status: 'not_checked' }
+          { label: 'Both Sides', description: 'Driver and passenger side', phase: 'sale', status: 'not_checked' },
+          { label: 'Roof', description: 'Top condition', phase: 'sale', status: 'not_checked' },
+          { label: 'Wheels & Tires', description: 'All four', phase: 'sale', status: 'not_checked' },
+          { label: 'Known Damage', description: 'Close-ups of all existing damage', phase: 'sale', status: 'not_checked' }
         ]
       },
       {
         name: 'Interior Condition',
         items: [
-          { label: 'Seats', description: 'Tears, stains, wear', phase: 'sale', status: 'not_checked' },
-          { label: 'Controls', description: 'Radio, AC, windows working status', phase: 'sale', status: 'not_checked' },
-          { label: 'Trunk', description: 'Spare tire, jack present?', phase: 'sale', status: 'not_checked' }
+          { label: 'Front Seats', description: 'Condition of upholstery', phase: 'sale', status: 'not_checked' },
+          { label: 'Rear Seats', description: 'Condition of upholstery', phase: 'sale', status: 'not_checked' },
+          { label: 'Trunk', description: 'Condition, spare tire present', phase: 'sale', status: 'not_checked' }
         ]
       },
       {
-        name: 'Documents / Handoff',
+        name: 'As-Is Acknowledgment',
         items: [
-          { label: 'Title', description: 'Signed over properly', phase: 'sale', status: 'not_checked' },
-          { label: 'Bill of Sale', description: 'Completed and signed', phase: 'sale', status: 'not_checked' },
-          { label: 'Keys', description: 'All keys and fobs handed over', phase: 'sale', status: 'not_checked' }
+          { label: 'Bill of Sale', description: 'Photo of signed bill of sale', phase: 'sale', status: 'not_checked' },
+          { label: 'Keys Handed Over', description: 'All keys exchanged', phase: 'sale', status: 'not_checked' }
         ]
       }
     ]
   },
+
   equipment_sale_as_is_transfer: {
     type: 'equipment_sale_as_is_transfer',
     name: 'Equipment Sale / As-Is Transfer',
-    description: 'Document heavy machinery or specialized equipment sales.',
+    description: 'Document equipment condition for commercial as-is sales.',
     category: 'Business',
+    sections: [
+      {
+        name: 'Equipment Overview',
+        items: [
+          { label: 'Serial / Model Number', description: 'Photo of serial number tag', phase: 'sale', status: 'not_checked' },
+          { label: 'Overall Condition', description: 'Wide shot showing general state', phase: 'sale', status: 'not_checked' },
+          { label: 'Known Damage / Wear', description: 'Close-ups of any damage', phase: 'sale', status: 'not_checked' }
+        ]
+      },
+      {
+        name: 'Condition Check',
+        items: [
+          { label: 'Exterior / Housing', description: 'Condition of outer surfaces', phase: 'sale', status: 'not_checked' },
+          { label: 'Moving Parts', description: 'Condition of belts, chains, rollers', phase: 'sale', status: 'not_checked' },
+          { label: 'Electrical / Controls', description: 'Panel and control condition', phase: 'sale', status: 'not_checked' }
+        ]
+      },
+      {
+        name: 'As-Is Acknowledgment',
+        items: [
+          { label: 'Power-on Test', description: 'Equipment powers on as-is', phase: 'sale', status: 'not_checked' },
+          { label: 'Bill of Sale', description: 'Photo of signed agreement', phase: 'sale', status: 'not_checked' }
+        ]
+      }
+    ]
+  },
+
+  general_item_sale_as_is_transfer: {
+    type: 'general_item_sale_as_is_transfer',
+    name: 'General Item Sale / As-Is Transfer',
+    description: 'Document condition for any item sold or transferred as-is.',
+    category: 'Vehicle',
     sections: [
       {
         name: 'Item Overview',
         items: [
-          { label: 'Serial / Data Plate', description: 'Clear photo of manufacturer plate', phase: 'sale', status: 'not_checked' },
-          { label: 'Hour Meter / Usage', description: 'Usage reading if applicable', phase: 'sale', status: 'not_checked' },
-          { label: 'Overall Unit', description: 'Wide shots from all sides', phase: 'sale', status: 'not_checked' }
+          { label: 'Item — Overall', description: 'Wide shot of item', phase: 'sale', status: 'not_checked' },
+          { label: 'All Sides', description: 'Front, back, and sides', phase: 'sale', status: 'not_checked' },
+          { label: 'Known Damage / Wear', description: 'Close-up of any issues', phase: 'sale', status: 'not_checked' },
+          { label: 'Serial / ID Number', description: 'If applicable', phase: 'sale', status: 'not_checked' }
         ]
       },
       {
-        name: 'Condition',
+        name: 'As-Is Acknowledgment',
         items: [
-          { label: 'Wear & Tear', description: 'Document physical condition', phase: 'sale', status: 'not_checked' },
-          { label: 'Damage', description: 'Specific photos of broken/bent parts', phase: 'sale', status: 'not_checked' },
-          { label: 'Leaks', description: 'Hydraulic or fluid leaks', phase: 'sale', status: 'not_checked' }
+          { label: 'Agreement / Receipt', description: 'Photo of sale agreement', phase: 'sale', status: 'not_checked' }
+        ]
+      }
+    ]
+  },
+
+  moving_storage: {
+    type: 'moving_storage',
+    name: 'Moving / Storage',
+    description: 'Document items and condition before moving or putting into storage.',
+    category: 'Personal / Travel',
+    sections: [
+      {
+        name: 'Inventory Overview',
+        items: [
+          { label: 'All Items Packed', description: 'Wide shot before loading', phase: 'before', status: 'not_checked' },
+          { label: 'Loaded Truck / Unit', description: 'How items are loaded/packed', phase: 'before', status: 'not_checked' },
+          { label: 'Delivered / Unloaded', description: 'Condition on arrival', phase: 'after', status: 'not_checked' }
+        ]
+      },
+      {
+        name: 'High-Value Items',
+        items: [
+          { label: 'Electronics', description: 'Condition before packing', phase: 'before', status: 'not_checked' },
+          { label: 'Furniture', description: 'Condition before packing', phase: 'before', status: 'not_checked' },
+          { label: 'Appliances', description: 'Condition before packing', phase: 'before', status: 'not_checked' },
+          { label: 'Artwork / Fragile', description: 'Condition before packing', phase: 'before', status: 'not_checked' }
+        ]
+      }
+    ]
+  },
+
+  equipment_rental: {
+    type: 'equipment_rental',
+    name: 'Equipment Rental',
+    description: 'Document rental equipment condition at pickup and return.',
+    category: 'Personal / Travel',
+    sections: [
+      {
+        name: 'Required Photos',
+        items: [
+          { label: 'Equipment — Overall', description: 'Wide shot at pickup', phase: 'both', status: 'not_checked' },
+          { label: 'All Sides', description: 'Front, back, left, right', phase: 'both', status: 'not_checked' },
+          { label: 'Serial / Model Number', description: 'Photo of ID tag', phase: 'pickup', status: 'not_checked' },
+          { label: 'Existing Damage', description: 'Close-up of pre-existing issues', phase: 'pickup', status: 'not_checked' },
+          { label: 'Rental Agreement', description: 'Photo of paperwork', phase: 'pickup', status: 'not_checked' }
+        ]
+      },
+      {
+        name: 'Condition Check',
+        items: [
+          { label: 'Exterior / Housing', description: 'Overall surface condition', phase: 'both', status: 'not_checked' },
+          { label: 'Controls / Display', description: 'Condition of controls', phase: 'both', status: 'not_checked' },
+          { label: 'Accessories Included', description: 'Verify included attachments', phase: 'both', status: 'not_checked' }
         ]
       },
       {
         name: 'Test It',
         items: [
-          { label: 'Power / Start', description: 'Unit turns on/starts', phase: 'sale', status: 'not_checked' },
-          { label: 'Basic Function', description: 'Primary mechanism works', phase: 'sale', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Included Items',
-        items: [
-          { label: 'Attachments', description: 'Buckets, blades, accessories', phase: 'sale', status: 'not_checked' },
-          { label: 'Manuals / Logs', description: 'Maintenance records included', phase: 'sale', status: 'not_checked' },
-          { label: 'Keys', description: 'Keys handed over', phase: 'sale', status: 'not_checked' }
+          { label: 'Powers On / Starts', description: 'Operates normally at pickup', phase: 'pickup', status: 'not_checked' },
+          { label: 'Main Function', description: 'Primary function works correctly', phase: 'pickup', status: 'not_checked' }
         ]
       }
     ]
   },
-  general_item_sale_as_is_transfer: {
-    type: 'general_item_sale_as_is_transfer',
-    name: 'General Item Sale / As-Is Transfer',
-    description: 'Document condition for electronics, furniture, or high-value goods.',
-    category: 'Other',
-    sections: [
-      {
-        name: 'Item Overview',
-        items: [
-          { label: 'Overall Item', description: 'Clear wide photos', phase: 'sale', status: 'not_checked' },
-          { label: 'Serial Number', description: 'Model and serial if applicable', phase: 'sale', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Condition',
-        items: [
-          { label: 'Cosmetic Wear', description: 'Scratches, dents, marks', phase: 'sale', status: 'not_checked' },
-          { label: 'Functionality', description: 'Does it turn on/work as described?', phase: 'sale', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Included / Handoff',
-        items: [
-          { label: 'Accessories', description: 'Cables, remotes, cases included', phase: 'sale', status: 'not_checked' },
-          { label: 'Payment / Exchange', description: 'Item handed over as-is', phase: 'sale', status: 'not_checked' }
-        ]
-      }
-    ]
-  },
-  moving_storage: {
-    type: 'moving_storage',
-    name: 'Moving / Storage',
-    description: 'Document items before movers pack them or entering storage.',
-    category: 'Business',
-    sections: [
-      {
-        name: 'Truck / Unit Details',
-        items: [
-          { label: 'Truck / Unit Number', description: 'Photo identifying the container/truck', phase: 'both', status: 'not_checked' },
-          { label: 'Lock / Seal', description: 'Photo of secured lock or seal intact', phase: 'both', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Truck Condition (If Renting)',
-        items: [
-          { label: 'Odometer & Fuel', description: 'Starting/ending numbers', phase: 'both', status: 'not_checked' },
-          { label: 'Exterior Damage', description: 'Scrapes, roof clearance hits', phase: 'pickup', status: 'not_checked' },
-          { label: 'Cargo Area', description: 'Clean and swept out', phase: 'both', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'High Value Items',
-        items: [
-          { label: 'Electronics', description: 'TVs, computers condition before packing', phase: 'before', status: 'not_checked' },
-          { label: 'Furniture', description: 'Couches, tables showing no rips/scratches', phase: 'before', status: 'not_checked' },
-          { label: 'Fragile Items', description: 'Glassware, art packed properly', phase: 'before', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Loading / Unloading',
-        items: [
-          { label: 'Packed Container', description: 'Photo showing how it was loaded', phase: 'before', status: 'not_checked' },
-          { label: 'Unloading Condition', description: 'Photo of items as doors open', phase: 'after', status: 'not_checked' },
-          { label: 'Damage Found', description: 'Document broken items immediately', phase: 'after', status: 'not_checked' }
-        ]
-      }
-    ]
-  },
-  equipment_rental: {
-    type: 'equipment_rental',
-    name: 'Equipment Rental',
-    description: 'Tools, AV gear, or machinery rentals.',
-    category: 'Business',
-    sections: [
-      {
-        name: 'Item Overview',
-        items: [
-          { label: 'Serial / Barcode', description: 'Identifying tag on item', phase: 'both', status: 'not_checked' },
-          { label: 'Overall Condition', description: 'General view of item', phase: 'both', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Accessories / Cases',
-        items: [
-          { label: 'Cables / Chargers', description: 'All included cords', phase: 'both', status: 'not_checked' },
-          { label: 'Attachments', description: 'Blades, bits, lenses', phase: 'both', status: 'not_checked' },
-          { label: 'Case', description: 'Condition of transport case', phase: 'both', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Condition / Test',
-        items: [
-          { label: 'Visible Damage', description: 'Scratches, dents before use', phase: 'pickup', status: 'not_checked' },
-          { label: 'Power On', description: 'Unit starts and idles', phase: 'both', status: 'not_checked' },
-          { label: 'Cleanliness', description: 'Returned clean as required', phase: 'return', status: 'not_checked' }
-        ]
-      }
-    ]
-  },
+
   accident_claim: {
     type: 'accident_claim',
     name: 'Accident / Insurance Claim',
-    description: 'Document an incident scene for insurance purposes.',
-    category: 'Claims',
+    description: 'Document an accident scene, vehicle damage, and involved parties.',
+    category: 'Personal / Travel',
     sections: [
       {
-        name: 'Scene Safety',
+        name: 'Scene Documentation',
         items: [
-          { label: 'Moved to Safety', description: 'Vehicles moved if possible', phase: 'general', status: 'not_checked' },
-          { label: 'Police Called', description: 'Law enforcement notified', phase: 'general', status: 'not_checked' }
+          { label: 'Wide Shot — Scene', description: 'Overall accident scene from safe distance', phase: 'general', status: 'not_checked' },
+          { label: 'All Vehicles — Wide', description: 'Wide shots of all vehicles involved', phase: 'general', status: 'not_checked' },
+          { label: 'Your Vehicle — Damage', description: 'Close-ups of damage to your vehicle', phase: 'general', status: 'not_checked' },
+          { label: 'Other Vehicle(s) — Damage', description: 'Close-ups of other vehicle damage', phase: 'general', status: 'not_checked' },
+          { label: 'License Plates', description: 'All plates clearly visible', phase: 'general', status: 'not_checked' },
+          { label: 'Street / Location Signs', description: 'Intersection or address if visible', phase: 'general', status: 'not_checked' }
         ]
       },
       {
-        name: 'Vehicles / Damage',
+        name: 'Documentation',
         items: [
-          { label: 'Your Vehicle Damage', description: 'Close and wide shots', phase: 'general', status: 'not_checked' },
-          { label: 'Other Vehicle Damage', description: 'Close and wide shots', phase: 'general', status: 'not_checked' },
-          { label: 'License Plates', description: 'Clear photo of other vehicle plate', phase: 'general', status: 'not_checked' },
-          { label: 'Vehicle Positions', description: 'Wide shot showing how they rest', phase: 'general', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Environment',
-        items: [
-          { label: 'Intersection / Road', description: 'Show traffic signs/signals', phase: 'general', status: 'not_checked' },
-          { label: 'Weather / Lighting', description: 'Wet roads, glare, dark', phase: 'general', status: 'not_checked' },
-          { label: 'Skid Marks / Debris', description: 'Evidence on the road', phase: 'general', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Information Exchange',
-        items: [
-          { label: 'Other Driver License', description: 'Photo of ID', phase: 'general', status: 'not_checked' },
-          { label: 'Insurance Card', description: 'Photo of insurance info', phase: 'general', status: 'not_checked' },
-          { label: 'Police Report / Officer', description: 'Card or report number', phase: 'general', status: 'not_checked' }
+          { label: 'Other Driver License', description: 'If safe and legally permitted', phase: 'general', status: 'not_checked' },
+          { label: 'Other Insurance Card', description: 'Policy info from other driver', phase: 'general', status: 'not_checked' },
+          { label: 'Police Report Number', description: 'If officers respond', phase: 'general', status: 'not_checked' },
+          { label: 'Witness Info', description: 'If any witnesses present', phase: 'general', status: 'not_checked' }
         ]
       }
     ]
   },
+
   custom: {
     type: 'custom',
-    name: 'Custom',
-    description: 'A blank slate for your own specific documentation needs.',
-    category: 'Other',
+    name: 'Custom Packet',
+    description: 'Build a condition documentation packet from scratch.',
+    category: 'Personal / Travel',
     sections: [
       {
-        name: 'General Notes',
+        name: 'General Documentation',
         items: [
-          { label: 'Primary Item', description: 'Main subject of documentation', phase: 'general', status: 'not_checked' }
-        ]
-      },
-      {
-        name: 'Required Photos',
-        items: [
-          { label: 'Overview Wide', description: 'General wide shot', phase: 'general', status: 'not_checked' },
-          { label: 'Details', description: 'Close up specifics', phase: 'general', status: 'not_checked' }
+          { label: 'Overall Condition', description: 'Wide shot showing overall state', phase: 'both', status: 'not_checked' },
+          { label: 'Existing Issues', description: 'Document any pre-existing damage', phase: 'before', status: 'not_checked' }
         ]
       }
     ]
-  }
+  },
 };

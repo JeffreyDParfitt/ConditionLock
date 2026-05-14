@@ -16,9 +16,19 @@ export type { Entitlement } from './useTrial';
 
 export type Tier = 'trial' | 'pro' | 'business' | 'locked';
 
+export const RENTAL_VEHICLE_TYPES = [
+  'car_rental',
+  'moving_truck_van',
+  'trailer_tow_equipment',
+  'custom_rental_vehicle',
+] as const;
+
 export const FREE_TEMPLATES = ['car_rental', 'hotel', 'apartment_home', 'custom'];
 export const PRO_TEMPLATES = [
   ...FREE_TEMPLATES,
+  'moving_truck_van',
+  'trailer_tow_equipment',
+  'custom_rental_vehicle',
   'airbnb', 'property_sale_home_sale', 'vehicle_sale_as_is_transfer',
   'moving_storage', 'accident_claim', 'general_item_sale_as_is_transfer',
   'equipment_rental',
@@ -83,6 +93,10 @@ export const TIER_LIMITS = {
   },
 } as const;
 
+export function isRentalVehicleType(type: string): boolean {
+  return (RENTAL_VEHICLE_TYPES as readonly string[]).includes(type);
+}
+
 export function getRequiredTierForTemplate(type: string): 'trial' | 'pro' | 'business' {
   if (PRO_TEMPLATES.includes(type)) return 'pro';
   if (BUSINESS_TEMPLATES.includes(type)) return 'business';
@@ -100,7 +114,7 @@ export function getTier(): Tier {
   if (s.isLocked) return 'locked';
   if (s.entitlement === 'business') return 'business';
   if (s.entitlement === 'pro') return 'pro';
-  return 'trial'; // active trial OR no entitlement but trial still running
+  return 'trial';
 }
 
 export function useTier() {
@@ -121,7 +135,7 @@ export function useTier() {
   function tierRequiredForTemplate(type: string): 'pro' | 'business' | null {
     if ((TIER_LIMITS.pro.templates as string[]).includes(type)) {
       if (tier === 'locked') return 'pro';
-      return null; // pro and above can use it
+      return null;
     }
     if ((BUSINESS_TEMPLATES as string[]).includes(type)) {
       if (tier === 'pro') return 'business';

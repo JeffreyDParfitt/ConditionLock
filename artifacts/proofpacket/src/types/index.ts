@@ -1,4 +1,21 @@
-export type PacketType = 'car_rental' | 'hotel' | 'airbnb' | 'apartment_home' | 'business_commercial_lease' | 'business_changeover_as_is_sale' | 'property_sale_home_sale' | 'vehicle_sale_as_is_transfer' | 'equipment_sale_as_is_transfer' | 'general_item_sale_as_is_transfer' | 'moving_storage' | 'equipment_rental' | 'accident_claim' | 'custom';
+export type PacketType =
+  | 'car_rental'
+  | 'moving_truck_van'
+  | 'trailer_tow_equipment'
+  | 'custom_rental_vehicle'
+  | 'hotel'
+  | 'airbnb'
+  | 'apartment_home'
+  | 'business_commercial_lease'
+  | 'business_changeover_as_is_sale'
+  | 'property_sale_home_sale'
+  | 'vehicle_sale_as_is_transfer'
+  | 'equipment_sale_as_is_transfer'
+  | 'general_item_sale_as_is_transfer'
+  | 'moving_storage'
+  | 'equipment_rental'
+  | 'accident_claim'
+  | 'custom';
 
 export type ChecklistStatus = 'not_checked' | 'good' | 'damaged' | 'dirty' | 'missing' | 'not_working' | 'works' | 'not_applicable' | 'unknown' | 'not_safe_to_check' | 'included' | 'excluded' | 'present' | 'not_present';
 

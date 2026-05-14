@@ -1,10 +1,11 @@
 import { useDexieQuery } from "@/hooks/useLiveQuery";
 import { db } from "@/storage/db";
 import { storage } from "@/storage/actions";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
-  Shield, Plus, FileText, CheckCircle2, ChevronRight, Clock,
-  ShieldCheck, FilePlus2, AlertTriangle, XCircle, Trash2, Timer
+  Shield, FileText, CheckCircle2, ChevronRight, Clock,
+  ShieldCheck, AlertTriangle, XCircle, Trash2, Timer,
+  Truck, Car, LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,10 +21,11 @@ const RESULT_CONFIG = {
 } as const;
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const packets = useDexieQuery(() => db.packets.orderBy('updatedAt').reverse().toArray()) || [];
   const photos  = useDexieQuery(() => db.photos.count()) || 0;
   const verificationResults = useDexieQuery(() => storage.getVerificationResults()) || [];
-  const { tier, isTrial, trialDaysRemaining, trialHoursRemaining, trialStatus, entitlement } = useTier();
+  const { tier, isTrial, trialDaysRemaining, trialHoursRemaining, trialStatus } = useTier();
   const { toast } = useToast();
 
   const recentPackets = packets.slice(0, 4);
@@ -48,12 +50,14 @@ export default function Dashboard() {
     if (trialStatus === 'expired') return null;
     if (trialDaysRemaining === 0 && trialHoursRemaining === 0) return 'Trial ends very soon';
     if (trialDaysRemaining === 0) return `Trial ends today — ${trialHoursRemaining}h remaining`;
-    if (trialDaysRemaining === 1) return `Trial active — 1 day remaining`;
+    if (trialDaysRemaining === 1) return 'Trial active — 1 day remaining';
     return `Trial active — ${trialDaysRemaining} days remaining`;
   };
 
   return (
     <div className="flex flex-col w-full max-w-lg mx-auto min-h-[100dvh] px-4 pt-6 pb-24 space-y-6">
+
+      {/* Header */}
       <header className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -64,19 +68,17 @@ export default function Dashboard() {
             {badge.label}
           </span>
         </div>
-        <p className="text-sm font-medium text-muted-foreground">Prove the condition before there's a dispute.</p>
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-full border border-green-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-800">
           <CheckCircle2 className="w-3.5 h-3.5" />
           No account. No cloud. No server.
         </div>
       </header>
 
-      {/* Trial countdown banner */}
+      {/* Trial countdown */}
       {isTrial && trialCountdownLabel() && (
-        <Card className={
-          trialDaysRemaining === 0
-            ? 'border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20'
-            : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/10'
+        <Card className={trialDaysRemaining === 0
+          ? 'border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20'
+          : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/10'
         }>
           <CardContent className="flex items-center justify-between p-3 gap-3">
             <div className="flex items-center gap-2">
@@ -92,7 +94,7 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Upgrade nudge when trial has few days left */}
+      {/* Trial ending soon nudge */}
       {isTrial && trialDaysRemaining <= 1 && (
         <Link href="/pricing">
           <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/20 shadow-xs cursor-pointer hover:border-blue-400 transition-colors">
@@ -100,7 +102,7 @@ export default function Dashboard() {
               <ShieldCheck className="w-8 h-8 text-blue-600 shrink-0" />
               <div className="flex-1">
                 <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Keep your packets after the trial</div>
-                <div className="text-xs text-blue-700/70 dark:text-blue-400/70 mt-0.5">Upgrade to ProofPacket Pro ($14.99) or Business Pro ($39.99) — one-time purchase.</div>
+                <div className="text-xs text-blue-700/70 dark:text-blue-400/70 mt-0.5">Pro $14.99 · Business Pro $39.99 — one-time purchase.</div>
               </div>
               <ChevronRight className="w-4 h-4 text-blue-500 shrink-0" />
             </CardContent>
@@ -108,49 +110,91 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* What do you want to do? */}
+      {/* ── Rental Vehicle Hero ── */}
       <div className="space-y-3">
-        <h2 className="text-base font-semibold tracking-tight text-muted-foreground">What do you want to do?</h2>
-        <div className="grid grid-cols-1 gap-3">
-          <Link href="/packets/new">
-            <Card className="cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group border-primary/20" data-testid="card-create-packet">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight">Protect yourself from rental vehicle damage disputes.</h2>
+          <p className="text-sm text-muted-foreground mt-1 leading-snug">
+            Create verified pickup and return condition packets for rental cars, moving trucks, cargo vans, trailers, and car-sharing trips.
+          </p>
+        </div>
+
+        <div className="grid gap-3">
+          <button
+            className="w-full text-left"
+            onClick={() => setLocation('/packets/new/car_rental')}
+            data-testid="card-rental-car"
+          >
+            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all group border-primary/20">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                  <FilePlus2 className="w-6 h-6 text-primary" />
+                  <Car className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-base leading-tight">Create Packet</div>
+                  <div className="font-semibold text-base leading-tight">Start Rental Car Packet</div>
                   <div className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                    Document condition before a rental, sale, handoff, lease, claim, or transfer.
+                    Avis, Budget, Enterprise, Hertz, National, Alamo, Sixt, Turo, Getaround, Zipcar, and more.
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-xs font-semibold text-primary">Start New Packet</span>
-                  <ChevronRight className="w-4 h-4 text-primary" />
-                </div>
+                <ChevronRight className="w-4 h-4 text-primary shrink-0" />
               </CardContent>
             </Card>
-          </Link>
+          </button>
 
-          <Link href="/verify">
-            <Card className="cursor-pointer hover:border-indigo-400/40 hover:shadow-sm transition-all group border-indigo-200/50 dark:border-indigo-800/50 bg-indigo-50/30 dark:bg-indigo-950/10" data-testid="card-verify-packet">
+          <button
+            className="w-full text-left"
+            onClick={() => setLocation('/packets/new/moving_truck_van')}
+            data-testid="card-moving-truck"
+          >
+            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all group border-muted">
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0 group-hover:bg-indigo-200/70 transition-colors">
-                  <ShieldCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-muted/70 transition-colors">
+                  <Truck className="w-6 h-6 text-foreground/70" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-base leading-tight">Verify Packet</div>
+                  <div className="font-semibold text-base leading-tight">Start Moving Truck / Van Packet</div>
                   <div className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                    Verify that received photo files match a ProofPacket verification manifest.
+                    U-Haul, Penske, Budget Truck, Enterprise Truck, Ryder, Home Depot, and more.
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Verify Received Packet</span>
-                  <ChevronRight className="w-4 h-4 text-indigo-500" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </CardContent>
+            </Card>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            className="w-full text-left"
+            onClick={() => setLocation('/verify')}
+            data-testid="card-verify-packet"
+          >
+            <Card className="cursor-pointer hover:border-indigo-400/40 hover:shadow-sm transition-all group border-indigo-200/50 dark:border-indigo-800/50 bg-indigo-50/30 dark:bg-indigo-950/10 h-full">
+              <CardContent className="p-4 flex flex-col gap-2 h-full">
+                <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div>
+                  <div className="font-semibold text-sm leading-tight">Verify Received Packet</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-snug">Check photo hashes against a manifest.</div>
                 </div>
               </CardContent>
             </Card>
-          </Link>
+          </button>
+
+          <button
+            className="w-full text-left"
+            onClick={() => setLocation('/packets/new')}
+            data-testid="card-more-packet-types"
+          >
+            <Card className="cursor-pointer hover:border-muted-foreground/30 hover:shadow-sm transition-all group border-muted h-full">
+              <CardContent className="p-4 flex flex-col gap-2 h-full">
+                <LayoutGrid className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <div className="font-semibold text-sm leading-tight">More Packet Types</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-snug">Hotels, Airbnb, apartments, sales, and more.</div>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
         </div>
       </div>
 
@@ -184,7 +228,7 @@ export default function Dashboard() {
             <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-3">
               <FileText className="w-10 h-10 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
-                Create your first proof packet before check-in, pickup, move-in, return, handoff, lease start, sale, transfer, or dispute.
+                Create your first packet to document rental vehicle condition, property handoffs, sales, or any condition transfer.
               </p>
             </CardContent>
           </Card>
@@ -221,7 +265,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Recent Verification Results */}
+      {/* Recent Verifications */}
       {recentResults.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">Recent Verifications</h2>
@@ -264,14 +308,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Privacy promise */}
+      {/* Privacy card */}
       <Card className="bg-muted/30 border-muted">
         <CardContent className="p-4 flex gap-3">
           <Shield className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <p className="text-xs font-medium">Fully local. 100% private.</p>
             <p className="text-[11px] text-muted-foreground">
-              All packet data, photos, and verification results are stored only on this device. Nothing is uploaded to any server.
+              ProofPacket runs on your device. Packets, photos, hashes, and archives are not uploaded to any server.
             </p>
           </div>
         </CardContent>

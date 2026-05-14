@@ -32,21 +32,31 @@ A mobile-first, fully local web app for documenting property condition before re
   - `utils/crypto.ts` — SHA-256 hashing (Web Crypto API)
   - `utils/manifest.ts` — manifest generation, archive export/import
   - `pdf/generator.ts` — jsPDF report generator
-  - `hooks/useTier.ts` — Free/Pro/Business tier system
+  - `hooks/useTier.ts` — trial/Pro/Business tier system + RENTAL_VEHICLE_TYPES, isRentalVehicleType()
+  - `hooks/useTrial.ts` — 3-day trial state, entitlement simulation
   - `components/Navigation.tsx` — bottom nav (Home, Packets, New, Verify, Settings)
 
 ## Architecture decisions
 
 - **Fully local**: All data in IndexedDB, no server. Hashing via Web Crypto API.
-- **Dual workflow**: Dashboard offers "Create Packet" (sender) and "Verify Packet" (receiver) modes in the same app.
-- **Tier simulation**: Tier stored in `localStorage` key `pp_tier_sim`. Developer toggles in Settings.
+- **Dual workflow**: Dashboard offers rental vehicle quick-start cards and "Verify Packet" mode in the same app.
+- **Trial model**: 3-day full-access trial (Business-level). Tier = 'trial' | 'pro' | 'business' | 'locked'.
+- **Tier simulation**: Entitlement stored in `localStorage` key `pp_entitlement_sim`. Developer toggles in Settings.
 - **Archive format**: JSZip ZIP with packet-data.json, verification-manifest.json, original photos, checksums.txt, README.txt.
 - **SHA-256 matching**: Hash-first matching (filename not required to match), with fallback to filename-based mismatch detection.
 
 ## Product
 
+**Rental Vehicle focus** (primary launch use case):
+- Rental Car Packet — works with Avis, Budget, Enterprise, Hertz, Alamo, Turo, Getaround, Zipcar, and any rental company.
+- Moving Truck / Van Packet — works with U-Haul, Penske, Budget Truck, Enterprise Truck, Ryder, Home Depot, and others.
+- Trailer / Tow Equipment Packet
+- Custom Rental Vehicle Packet (RVs, motorcycles, boats, etc.)
+
+**Other packet types**: Hotel, Airbnb/STR, Apartment/Home, Property Sale, Vehicle Sale, Business Lease, Business Changeover, Equipment Rental, Moving/Storage, Accident Claim, Custom.
+
 **Create Packet mode** (sender):
-- Choose packet type (car rental, apartment, sale, etc.)
+- Choose packet type; fill in rental company/platform, vehicle details, odometer, fuel/EV battery, accessories
 - Build checklist, add photos, communication logs, signatures
 - Export: PDF Report, Verified Packet (manifest + summary), Full Archive ZIP, Photos ZIP
 
@@ -60,26 +70,40 @@ A mobile-first, fully local web app for documenting property condition before re
 - Import Full Packet Archive ZIP → restores packet + photos into IndexedDB
 - Duplicate detection with replace/duplicate choice
 
+## Rental Vehicle — Company / Platform Support
+
+Company names are stored in `packet.details.rentalCompany` (and `packet.companyOrPerson` for display).
+Selector options are grouped by type in `NewPacketForm.tsx`:
+
+- **Rental Cars**: Avis, Budget, Enterprise, Hertz, National, Alamo, Sixt, Thrifty, Dollar, Fox
+- **Car-sharing**: Turo, Getaround, Zipcar
+- **Moving Trucks**: U-Haul, Penske, Budget Truck Rental, Enterprise Truck Rental, Ryder, Home Depot Truck Rental, Lowe's Truck Rental
+- **Always**: Local / Independent, Other (triggers free-text field)
+
+ProofPacket is not affiliated with rental companies or car-sharing platforms. It currently creates API-free exports that users can manually attach to email, rental company portals, car-sharing dispute workflows, or claim forms. Future integrations may include rental vehicle companies, fleet operators, car-sharing platforms, and dispute/claims workflows.
+
 ## Pricing tiers
 
-| Feature | Free | Pro | Business |
-|---------|------|-----|----------|
-| Packets | 1 | ∞ | ∞ |
-| Photos/packet | 15 | ∞ | ∞ |
-| Watermark | ✓ | — | — |
-| Signatures | — | ✓ | ✓ |
-| JSON Backup | — | ✓ | ✓ |
-| Verified Export | — | ✓ | ✓ |
-| Archive Export | — | ✓ | ✓ |
-| Photos ZIP | — | — | ✓ |
-| Save Verifications | — | — | ✓ |
+| Feature | Trial (3 days) | Pro | Business Pro |
+|---------|----------------|-----|--------------|
+| Packets | ∞ | ∞ | ∞ |
+| Photos/packet | ∞ | ∞ | ∞ |
+| Watermark | — | — | — |
+| Signatures | ✓ | ✓ | ✓ |
+| JSON Backup | ✓ | ✓ | ✓ |
+| Verified Export | ✓ | ✓ | ✓ |
+| Archive Export | ✓ | ✓ | ✓ |
+| Photos ZIP | ✓ | — | ✓ |
+| Save Verifications | ✓ | — | ✓ |
+| Price | $0 | $14.99 | $39.99 |
 
 ## User preferences
 
 - No backend, no accounts, no cloud — everything local only
 - Mobile-first layout (max-w-lg, pb-24 for nav)
-- Tier stored in localStorage key `pp_tier_sim` for dev simulation
+- Entitlement stored in localStorage key `pp_entitlement_sim` for dev simulation
 - Use plain disclaimer language — never say "legally certified", "court-approved", etc.
+- Do not use company logos or branding colors that imply affiliation
 
 ## Gotchas
 
@@ -88,6 +112,7 @@ A mobile-first, fully local web app for documenting property condition before re
 - `generatePDFBlob` in generator.ts calls `generatePDF` internally (triggers download) — avoid calling it from archive flows directly; pass `undefined` for pdfBlob in `exportFullArchive` to skip PDF in ZIP
 - JSZip is installed at workspace root; import as `import JSZip from 'jszip'`
 - Web Crypto API requires HTTPS or localhost — check `isCryptoAvailable()` before hashing
+- Rental vehicle types: 'car_rental' | 'moving_truck_van' | 'trailer_tow_equipment' | 'custom_rental_vehicle' — use `isRentalVehicleType(type)` from useTier.ts
 
 ## Pointers
 

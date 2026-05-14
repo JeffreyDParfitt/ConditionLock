@@ -10,7 +10,10 @@ function formatDate(iso: string) {
 }
 
 const PDF_TITLES: Record<string, string> = {
-  car_rental: 'Car Rental Condition Report',
+  car_rental: 'Rental Car Condition Report',
+  moving_truck_van: 'Moving Truck / Van Condition Report',
+  trailer_tow_equipment: 'Trailer / Tow Equipment Condition Report',
+  custom_rental_vehicle: 'Rental Vehicle Condition Report',
   hotel: 'Hotel Stay Condition Report',
   airbnb: 'Short-Term Rental Condition Report',
   apartment_home: 'Apartment / Home Rental Condition Report',
