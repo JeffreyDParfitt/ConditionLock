@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload, Archive, AlertTriangle } from "lucide-react";
+import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload, Archive, AlertTriangle, RotateCcw, Timer, XCircle } from "lucide-react";
 import { importArchive } from "@/utils/manifest";
 import { useToast } from "@/hooks/use-toast";
 import { templates } from "@/templates";
-import { useTier, setTier, TIER_LIMITS } from "@/hooks/useTier";
-import type { Tier } from "@/hooks/useTier";
+import { useTier, TIER_LIMITS } from "@/hooks/useTier";
+import { useTrial, setEntitlement, resetTrial, simulateTrialExpired, clearSimulation } from "@/hooks/useTrial";
 import { Link } from "wouter";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
@@ -22,6 +22,7 @@ export default function Settings() {
   const photos = useDexieQuery(() => db.photos.count()) || 0;
   const { toast } = useToast();
   const { tier, limits } = useTier();
+  const trial = useTrial();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
   const [upgradeTier, setUpgradeTier] = useState<'pro' | 'business'>('pro');
@@ -235,12 +236,13 @@ export default function Settings() {
     toast({ title: "Sample Data Loaded", description: "A sample car rental packet has been created." });
   };
 
-  const tierLabels: Record<Tier, { label: string; color: string; bg: string; border: string }> = {
-    free: { label: 'Free', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900', border: 'border-slate-200 dark:border-slate-700' },
-    pro: { label: 'Pro', color: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/40', border: 'border-blue-200 dark:border-blue-800' },
-    business: { label: 'Business Pro', color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/40', border: 'border-indigo-200 dark:border-indigo-800' },
+  const tierLabels: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    trial:    { label: 'Trial Active',    color: 'text-green-700 dark:text-green-400',   bg: 'bg-green-50 dark:bg-green-950/30',   border: 'border-green-200 dark:border-green-800' },
+    pro:      { label: 'Pro',             color: 'text-blue-700 dark:text-blue-400',     bg: 'bg-blue-50 dark:bg-blue-950/40',     border: 'border-blue-200 dark:border-blue-800' },
+    business: { label: 'Business Pro',    color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/40', border: 'border-indigo-200 dark:border-indigo-800' },
+    locked:   { label: 'Trial Expired',   color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-50 dark:bg-red-950/30',       border: 'border-red-200 dark:border-red-800' },
   };
-  const tierInfo = tierLabels[tier];
+  const tierInfo = tierLabels[tier] ?? tierLabels.trial;
 
   return (
     <div className="flex flex-col w-full max-w-lg mx-auto min-h-[100dvh] px-4 pt-6 pb-24 space-y-6">
@@ -254,17 +256,23 @@ export default function Settings() {
         <CardContent className="p-4 flex items-center justify-between gap-3">
           <div>
             <div className="text-xs text-muted-foreground font-medium mb-0.5">Current Plan</div>
-            <div className={`text-base font-bold ${tierInfo.color}`}>{TIER_LIMITS[tier].label}</div>
+            <div className={`text-base font-bold ${tierInfo.color}`}>{tierInfo.label}</div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              {tier === 'free' ? '1 packet · 15 photos · watermarked PDF' :
-               tier === 'pro' ? 'Unlimited packets · signatures · JSON backup' :
-               'Everything + business templates · ZIP export'}
+              {tier === 'trial' && trial.daysRemaining > 0
+                ? `${trial.daysRemaining} day${trial.daysRemaining !== 1 ? 's' : ''} remaining · full access`
+                : tier === 'trial'
+                ? 'Trial ends today · full access'
+                : tier === 'pro'
+                ? 'Unlimited packets · signatures · JSON backup'
+                : tier === 'business'
+                ? 'Everything + business templates · ZIP export'
+                : 'Trial expired — upgrade to continue'}
             </div>
           </div>
           {tier !== 'business' && (
             <Link href="/pricing">
-              <Button size="sm" className="shrink-0 h-9" variant={tier === 'free' ? 'default' : 'outline'} data-testid="button-upgrade-cta">
-                {tier === 'free' ? <><Zap className="w-3.5 h-3.5 mr-1" /> Upgrade</> : 'See Plans'}
+              <Button size="sm" className="shrink-0 h-9" variant={tier === 'locked' ? 'default' : 'outline'} data-testid="button-upgrade-cta">
+                {tier === 'locked' ? <><Zap className="w-3.5 h-3.5 mr-1" /> Upgrade</> : 'See Plans'}
               </Button>
             </Link>
           )}
@@ -321,23 +329,12 @@ export default function Settings() {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className={!limits.watermarkedPdf || tier !== 'free' ? '' : 'text-muted-foreground'}>
-                Watermark Exports
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {tier === 'free' ? 'PDFs are watermarked on Free plan.' : 'Add "ProofPacket" watermark to PDFs.'}
-              </p>
+              <Label>Watermark Exports</Label>
+              <p className="text-xs text-muted-foreground">Add "ProofPacket" watermark to exported PDFs.</p>
             </div>
             <Switch
-              checked={tier === 'free' ? true : settings.watermarkExports}
-              disabled={tier === 'free'}
-              onCheckedChange={v => {
-                if (tier === 'free') {
-                  showUpgrade('Remove the PDF watermark by upgrading to ProofPacket Pro.', 'pro');
-                } else {
-                  updateSetting('watermarkExports', v);
-                }
-              }}
+              checked={settings.watermarkExports}
+              onCheckedChange={v => updateSetting('watermarkExports', v)}
             />
           </div>
         </CardContent>
@@ -421,40 +418,80 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Developer Toggles */}
+      {/* Developer Tools */}
       <Card className="border-dashed border-2 border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <span className="text-amber-600">⚙</span> Developer Tools
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-300 uppercase tracking-wide">Dev Only</span>
           </CardTitle>
-          <CardDescription>Simulate tier unlocks locally. Payments not yet enabled.</CardDescription>
+          <CardDescription>
+            Developer testing only — remove or hide before production.
+            Replace these toggles with RevenueCat / App Store / Google Play checks before release.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          {/* Trial controls */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Trial</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs"
+                onClick={() => { resetTrial(); toast({ title: 'Trial reset', description: 'Fresh 3-day trial started.' }); }}
+                data-testid="button-reset-trial"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset Trial
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs border-red-300 text-red-700 hover:bg-red-50"
+                onClick={() => { simulateTrialExpired(); toast({ title: 'Trial simulated as expired' }); }}
+                data-testid="button-simulate-expired"
+              >
+                <Timer className="w-3.5 h-3.5 mr-1.5" /> Simulate Expired
+              </Button>
+            </div>
+          </div>
+
+          {/* Entitlement controls */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Simulated Entitlement</p>
+            <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-blue-600" /> Simulate Pro Unlock</Label>
-              <p className="text-xs text-muted-foreground">Unlock all Pro features for testing.</p>
+              <Switch
+                checked={trial.entitlement === 'pro' || trial.entitlement === 'business'}
+                onCheckedChange={v => setEntitlement(v ? 'pro' : 'none')}
+                data-testid="toggle-simulate-pro"
+              />
             </div>
-            <Switch
-              checked={tier === 'pro' || tier === 'business'}
-              onCheckedChange={v => setTier(v ? 'pro' : 'free')}
-              data-testid="toggle-simulate-pro"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-indigo-700" /> Simulate Business Pro Unlock</Label>
-              <p className="text-xs text-muted-foreground">Unlock all Business features for testing.</p>
+              <Switch
+                checked={trial.entitlement === 'business'}
+                onCheckedChange={v => setEntitlement(v ? 'business' : trial.entitlement === 'business' ? 'pro' : 'none')}
+                data-testid="toggle-simulate-business"
+              />
             </div>
-            <Switch
-              checked={tier === 'business'}
-              onCheckedChange={v => setTier(v ? 'business' : tier === 'business' ? 'pro' : tier)}
-              data-testid="toggle-simulate-business"
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-9 text-xs"
+              onClick={() => { clearSimulation(); setEntitlement('none'); toast({ title: 'Simulated unlocks cleared' }); }}
+              data-testid="button-clear-simulation"
+            >
+              <XCircle className="w-3.5 h-3.5 mr-1.5" /> Clear Simulated Unlocks
+            </Button>
           </div>
-          <div className="text-[11px] text-muted-foreground pt-1 border-t">
-            Current simulated tier: <strong>{TIER_LIMITS[tier].label}</strong>
+
+          <div className="text-[11px] text-muted-foreground pt-1 border-t space-y-0.5">
+            <div>Trial status: <strong>{trial.trialStatus}</strong>
+              {trial.trialStatus === 'active' && ` · ${trial.daysRemaining}d ${trial.hoursRemaining}h remaining`}
+            </div>
+            <div>Entitlement: <strong>{trial.entitlement}</strong></div>
+            <div>Active tier: <strong>{tier}</strong></div>
           </div>
         </CardContent>
       </Card>

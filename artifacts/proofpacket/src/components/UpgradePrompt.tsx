@@ -21,12 +21,12 @@ const TIER_DETAILS = {
     border: 'border-blue-200 dark:border-blue-800',
     btnClass: 'bg-blue-600 hover:bg-blue-700 text-white',
     perks: [
-      'Unlimited proof packets',
-      'Unlimited photos (original quality)',
-      'No PDF watermark',
+      'Unlimited proof packets & photos',
+      'PDF export, verified packet export',
+      'Full Packet Archive export & import',
       'Acknowledgment signatures',
       'JSON backup & restore',
-      'Airbnb, Property Sale, Vehicle Sale, Moving, Accident Claim templates',
+      'Airbnb, Property Sale, Vehicle Sale, Moving, Accident Claim, and more',
       'All deep checklists',
     ],
   },
@@ -46,8 +46,8 @@ const TIER_DETAILS = {
       'Equipment Sale / As-Is Transfer template',
       'Commercial kitchen & warehouse checklists',
       'Asset inventory with serial/model tracking',
-      'Keys & access card tracking',
       'ZIP export of original-quality photos',
+      'Save verification results locally',
     ],
   },
 };
@@ -65,9 +65,7 @@ export function UpgradePrompt({ open, onClose, requiredTier, reason }: UpgradePr
             <Lock className={`w-5 h-5 ${details.color}`} />
           </div>
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold leading-snug">
-              {reason}
-            </DialogTitle>
+            <DialogTitle className="text-base font-semibold leading-snug">{reason}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground mt-1">
             Available in <span className={`font-semibold ${details.color}`}>{details.name}</span>
@@ -90,9 +88,7 @@ export function UpgradePrompt({ open, onClose, requiredTier, reason }: UpgradePr
           </ul>
 
           <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1" onClick={onClose}>
-              Not now
-            </Button>
+            <Button variant="outline" className="flex-1" onClick={onClose}>Not now</Button>
             <Button
               className={`flex-1 ${details.btnClass}`}
               onClick={() => { onClose(); setLocation('/pricing'); }}
@@ -102,7 +98,7 @@ export function UpgradePrompt({ open, onClose, requiredTier, reason }: UpgradePr
           </div>
 
           <p className="text-[10px] text-center text-muted-foreground leading-relaxed">
-            Payments are not yet enabled. Use Settings to simulate unlock for testing.
+            Payments not yet enabled. Use Developer Tools in Settings to simulate unlock for testing.
           </p>
         </div>
       </DialogContent>

@@ -3,8 +3,8 @@ import { db } from "@/storage/db";
 import { storage } from "@/storage/actions";
 import { Link } from "wouter";
 import {
-  Shield, Plus, FileText, CheckCircle2, ChevronRight, Clock, Zap,
-  ShieldCheck, FilePlus2, AlertTriangle, XCircle, Trash2, FolderOpen
+  Shield, Plus, FileText, CheckCircle2, ChevronRight, Clock,
+  ShieldCheck, FilePlus2, AlertTriangle, XCircle, Trash2, Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,34 +14,42 @@ import { useToast } from "@/hooks/use-toast";
 import type { VerificationResult } from "@/types";
 
 const RESULT_CONFIG = {
-  passed:  { label: 'All Verified',   color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-950/30',  icon: CheckCircle2 },
-  warning: { label: 'Incomplete',     color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-950/30',  icon: AlertTriangle },
-  failed:  { label: 'Hash Mismatch',  color: 'text-red-700 dark:text-red-400',      bg: 'bg-red-50 dark:bg-red-950/30',      icon: XCircle },
+  passed:  { label: 'All Verified',  color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30',  icon: CheckCircle2 },
+  warning: { label: 'Incomplete',    color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30',  icon: AlertTriangle },
+  failed:  { label: 'Hash Mismatch', color: 'text-red-700 dark:text-red-400',     bg: 'bg-red-50 dark:bg-red-950/30',      icon: XCircle },
 } as const;
 
 export default function Dashboard() {
   const packets = useDexieQuery(() => db.packets.orderBy('updatedAt').reverse().toArray()) || [];
-  const photos = useDexieQuery(() => db.photos.count()) || 0;
+  const photos  = useDexieQuery(() => db.photos.count()) || 0;
   const verificationResults = useDexieQuery(() => storage.getVerificationResults()) || [];
-  const { tier, limits } = useTier();
+  const { tier, isTrial, trialDaysRemaining, trialHoursRemaining, trialStatus, entitlement } = useTier();
   const { toast } = useToast();
 
   const recentPackets = packets.slice(0, 4);
   const recentResults = verificationResults.slice(0, 3);
-  const totalPackets = packets.length;
 
-  const tierLabels: Record<string, { label: string; color: string; bg: string }> = {
-    free:     { label: 'Free',         color: 'text-slate-600 dark:text-slate-400',  bg: 'bg-slate-100 dark:bg-slate-800' },
-    pro:      { label: 'Pro',          color: 'text-blue-700 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-900/40' },
-    business: { label: 'Business Pro', color: 'text-indigo-700 dark:text-indigo-400',bg: 'bg-indigo-100 dark:bg-indigo-900/40' },
+  const tierBadge: Record<string, { label: string; color: string; bg: string }> = {
+    trial:    { label: 'Trial',         color: 'text-green-700 dark:text-green-400',   bg: 'bg-green-100 dark:bg-green-900/40' },
+    pro:      { label: 'Pro',           color: 'text-blue-700 dark:text-blue-400',     bg: 'bg-blue-100 dark:bg-blue-900/40' },
+    business: { label: 'Business Pro',  color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/40' },
+    locked:   { label: 'Trial Expired', color: 'text-red-700 dark:text-red-400',       bg: 'bg-red-100 dark:bg-red-900/40' },
   };
-  const tierInfo = tierLabels[tier];
+  const badge = tierBadge[tier] ?? tierBadge.trial;
 
   const handleDeleteResult = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     await storage.deleteVerificationResult(id);
     toast({ title: "Result deleted" });
+  };
+
+  const trialCountdownLabel = () => {
+    if (trialStatus === 'expired') return null;
+    if (trialDaysRemaining === 0 && trialHoursRemaining === 0) return 'Trial ends very soon';
+    if (trialDaysRemaining === 0) return `Trial ends today — ${trialHoursRemaining}h remaining`;
+    if (trialDaysRemaining === 1) return `Trial active — 1 day remaining`;
+    return `Trial active — ${trialDaysRemaining} days remaining`;
   };
 
   return (
@@ -52,8 +60,8 @@ export default function Dashboard() {
             <Shield className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight text-primary">ProofPacket</h1>
           </div>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${tierInfo.bg} ${tierInfo.color}`}>
-            {tierInfo.label}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${badge.bg} ${badge.color}`}>
+            {badge.label}
           </span>
         </div>
         <p className="text-sm font-medium text-muted-foreground">Prove the condition before there's a dispute.</p>
@@ -63,12 +71,49 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* Trial countdown banner */}
+      {isTrial && trialCountdownLabel() && (
+        <Card className={
+          trialDaysRemaining === 0
+            ? 'border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20'
+            : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/10'
+        }>
+          <CardContent className="flex items-center justify-between p-3 gap-3">
+            <div className="flex items-center gap-2">
+              <Timer className={`w-4 h-4 shrink-0 ${trialDaysRemaining === 0 ? 'text-amber-600' : 'text-green-700'}`} />
+              <span className={`text-xs font-medium ${trialDaysRemaining === 0 ? 'text-amber-800 dark:text-amber-300' : 'text-green-800 dark:text-green-300'}`}>
+                {trialCountdownLabel()}
+              </span>
+            </div>
+            <Link href="/pricing">
+              <span className="text-xs font-semibold text-primary whitespace-nowrap">See Plans →</span>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Upgrade nudge when trial has few days left */}
+      {isTrial && trialDaysRemaining <= 1 && (
+        <Link href="/pricing">
+          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/20 shadow-xs cursor-pointer hover:border-blue-400 transition-colors">
+            <CardContent className="flex items-center gap-3 p-4">
+              <ShieldCheck className="w-8 h-8 text-blue-600 shrink-0" />
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Keep your packets after the trial</div>
+                <div className="text-xs text-blue-700/70 dark:text-blue-400/70 mt-0.5">Upgrade to ProofPacket Pro ($14.99) or Business Pro ($39.99) — one-time purchase.</div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-blue-500 shrink-0" />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* What do you want to do? */}
       <div className="space-y-3">
         <h2 className="text-base font-semibold tracking-tight text-muted-foreground">What do you want to do?</h2>
         <div className="grid grid-cols-1 gap-3">
           <Link href="/packets/new">
-            <Card className="cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group border-primary/20 bg-primary/3" data-testid="card-create-packet">
+            <Card className="cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group border-primary/20" data-testid="card-create-packet">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                   <FilePlus2 className="w-6 h-6 text-primary" />
@@ -114,12 +159,7 @@ export default function Dashboard() {
         <Card className="shadow-xs border-muted">
           <CardContent className="p-4">
             <div className="text-xs text-muted-foreground font-medium mb-1">Packets</div>
-            <div className="text-2xl font-bold">
-              {totalPackets}
-              {limits.maxPackets !== Infinity && (
-                <span className="text-sm font-normal text-muted-foreground"> / {limits.maxPackets}</span>
-              )}
-            </div>
+            <div className="text-2xl font-bold">{packets.length}</div>
           </CardContent>
         </Card>
         <Card className="shadow-xs border-muted">
@@ -130,30 +170,12 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Upgrade nudge */}
-      {tier === 'free' && (
-        <Link href="/pricing">
-          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/20 shadow-xs cursor-pointer hover:border-blue-400 transition-colors">
-            <CardContent className="flex items-center gap-3 p-4">
-              <Zap className="w-8 h-8 text-blue-600 shrink-0" />
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">Upgrade to ProofPacket Pro</div>
-                <div className="text-xs text-blue-700/70 dark:text-blue-400/70 mt-0.5">Unlimited packets, verified exports, archive ZIP, signatures — $14.99 one-time.</div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-blue-500 shrink-0" />
-            </CardContent>
-          </Card>
-        </Link>
-      )}
-
       {/* Recent Packets */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">Recent Packets</h2>
           {packets.length > 0 && (
-            <Link href="/packets" className="text-sm font-medium text-primary hover:underline">
-              View All
-            </Link>
+            <Link href="/packets" className="text-sm font-medium text-primary hover:underline">View All</Link>
           )}
         </div>
 
@@ -202,9 +224,7 @@ export default function Dashboard() {
       {/* Recent Verification Results */}
       {recentResults.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">Recent Verifications</h2>
-          </div>
+          <h2 className="text-lg font-semibold tracking-tight">Recent Verifications</h2>
           <div className="space-y-3">
             {recentResults.map((r: VerificationResult) => {
               const cfg = RESULT_CONFIG[r.resultStatus];
@@ -232,7 +252,6 @@ export default function Dashboard() {
                       <button
                         onClick={(e) => handleDeleteResult(r.id, e)}
                         className="text-muted-foreground hover:text-destructive p-1 shrink-0"
-                        title="Delete result"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

@@ -1,0 +1,275 @@
+Update ProofPacket’s pricing, trial, and device-transfer behavior.
+
+Major pricing change:
+Remove the Free tier completely.
+
+ProofPacket should use a 3-day free trial model.
+
+After the 3-day trial ends, the user must purchase either:
+1. ProofPacket Pro
+2. ProofPacket Business Pro
+
+Do not allow continued free use after the trial ends except for viewing basic app information, accessing import/export help, and restoring purchases where applicable.
+
+Important:
+Do not implement real App Store or Google Play payments yet unless instructed separately.
+For now, keep this as local development logic with clear placeholders for future App Store / Google Play / RevenueCat integration.
+
+Pricing tiers:
+
+1. Trial
+Duration: 3 days
+Price: $0 during trial
+Access:
+- Full app access during the 3-day trial
+- Create packets
+- Add original-quality photos
+- Use checklists
+- Add notes
+- Add communication logs
+- Use signatures
+- Export PDF
+- Export verified packet
+- Use hash verification
+- Export/import archives
+- Try both Pro and Business features during trial
+
+Trial behavior:
+- Trial starts the first time the app is opened or first time the user creates a packet.
+- Store trialStartDate locally.
+- Store trialEndsAt locally.
+- Show trial countdown clearly in the app.
+- Example copy:
+  “Trial active — 2 days remaining”
+  “Trial ends today”
+  “Trial expired — choose ProofPacket Pro or Business Pro to continue”
+- After trial expiration, lock packet creation, packet editing, photo adding, exports, verification saves, and archive imports unless the user has a Pro or Business unlock.
+- User should still be able to export their existing data before deleting the app, if possible, even after trial expiration. If you decide to restrict this, clearly warn users before trial ends.
+
+2. ProofPacket Pro
+Price: $14.99 one-time purchase
+Access:
+- Personal/travel/housing/claims use
+- Car Rental
+- Hotel Stay
+- Airbnb / Short-Term Rental
+- Apartment / Home Rental
+- Property Sale / Home Sale
+- Vehicle Sale / As-Is Transfer
+- Moving / Storage
+- Accident / Insurance Claim
+- General Item Sale / As-Is Transfer
+- Custom packets
+- Unlimited packets
+- Original-quality photo storage
+- PDF export
+- Verified Packet export
+- SHA-256 photo hashes
+- Receiver-side Verify Packet mode
+- Communication logs
+- Acknowledgment signatures
+- Full Packet Archive export
+- Full Packet Archive import/restore
+- JSON backup/export
+- ZIP photo export if available
+- Add More Items
+- Add Custom Area / Room
+- Add Unexpected Issue
+- Before / After / Pickup / Return / Sale / Transfer phases
+- Open / Close / Lock / Hinge checks
+- Flip / Lift / Look Under checks
+- Bathroom Deep Check
+- Kitchen Deep Check
+- Test It checklists
+
+3. ProofPacket Business Pro
+Price: $39.99 one-time purchase
+Access:
+Everything in ProofPacket Pro, plus:
+- Business / Commercial Lease template
+- Business Changeover / As-Is Sale template
+- Equipment Rental
+- Equipment Sale / As-Is Transfer
+- Advanced asset inventory
+- Included/excluded asset tracking
+- Serial number/model number fields
+- Commercial kitchen checklist
+- Office/retail/warehouse/workshop checklists
+- Keys/access-card tracking
+- POS/electronics checklist
+- Furniture/fixture/equipment checklist
+- Buyer/seller/tenant/landlord signature roles
+- Business-specific PDF titles and disclaimers
+- Added During Inspection asset sections
+- Business handoff PDF packet
+
+Remove the previous Free tier limitations:
+- Remove “1 active packet”
+- Remove “15 photos max”
+- Remove “watermarked PDF for free users”
+- Remove free template limitations
+- Remove “basic free PDF”
+- Remove any Free tier cards/copy
+
+Replace pricing screen with:
+
+Trial
+3 days free
+Try all ProofPacket features for 3 days.
+
+ProofPacket Pro
+$14.99 one-time purchase
+For rentals, hotels, Airbnbs, homes, car rentals, vehicle sales, property sales, claims, and personal proof packets.
+
+ProofPacket Business Pro
+$39.99 one-time purchase
+For commercial leases, business changeovers, as-is business sales, equipment transfers, kitchens, offices, warehouses, and asset handoffs.
+
+Important pricing language:
+Add this copy to the pricing screen:
+
+“Purchases are handled by the app store on the device platform you use.”
+
+“ProofPacket purchases are platform-based. An iOS purchase can be restored on supported Apple devices using the same Apple ID. An Android purchase can be restored on supported Android devices using the same Google account.”
+
+“If you switch from iOS to Android, or Android to iOS, the app stores do not automatically transfer purchases across platforms. A new purchase may be required on the new platform.”
+
+“Your packet data is portable. You can export a Full Packet Archive from one device and import it into ProofPacket on another device, including across iOS and Android.”
+
+“Export/import transfers your packet files and original-quality photos. It does not transfer app store purchase entitlements between Apple and Google.”
+
+Avoid saying purchases are literally “per device” in the technical logic because Apple and Google purchases are normally tied to the user’s App Store / Google Play account, not only the physical device.
+
+Instead use this user-facing phrase:
+“Purchases are tied to the app store account and platform used for purchase.”
+
+Device/platform behavior to support:
+
+Same-platform upgrade:
+- If user upgrades from one iPhone to another iPhone and uses the same Apple ID, they should be able to restore purchase.
+- If user uses iPhone and iPad with the same Apple ID, they should be able to restore purchase.
+- If user upgrades from one Android phone to another Android phone and uses the same Google account, they should be able to restore purchase.
+
+Cross-platform switch:
+- If user switches from iOS to Android, purchase entitlement does not transfer automatically.
+- If user switches from Android to iOS, purchase entitlement does not transfer automatically.
+- User can still export packet archives from the old device and import those archives on the new device.
+- User may need to purchase again on the new platform.
+
+No-backend requirement:
+Do not create a user account system.
+Do not create server-side entitlement syncing.
+Do not create cross-platform purchase syncing.
+Do not create cloud storage.
+Do not upload packets/photos/hashes/archives.
+
+Because ProofPacket has no backend:
+- Purchase restore should eventually rely on Apple App Store / Google Play / RevenueCat platform restore.
+- Cross-platform entitlement transfer is not supported.
+- Data portability is handled through Full Packet Archive export/import.
+
+Trial storage model for development:
+Create local trial state:
+- trialStartedAt
+- trialEndsAt
+- trialStatus: 'not_started' | 'active' | 'expired'
+- simulatedEntitlement: 'none' | 'pro' | 'business'
+- lastEntitlementCheckAt
+
+For development/testing only:
+Add Settings toggles:
+- Reset Trial
+- Simulate Trial Expired
+- Simulate Pro Unlock
+- Simulate Business Pro Unlock
+- Clear Simulated Unlocks
+
+These toggles must be labeled:
+“Developer testing only — remove or hide before production.”
+
+Production note:
+Before App Store / Google Play release, replace simulated unlocks with RevenueCat or native in-app purchase checks.
+
+If using RevenueCat later:
+- Create entitlement: pro
+- Create entitlement: business
+- iOS products:
+  - com.proofpacket.app.pro
+  - com.proofpacket.app.business
+- Android products:
+  - proofpacket_pro
+  - proofpacket_business
+- Restore purchases should restore same-platform purchases through the app store account.
+- Do not promise cross-platform purchase transfer without a ProofPacket account/backend.
+
+Trial implementation warning:
+If the final mobile app uses one-time non-consumable purchases, the 3-day trial may need to be handled locally or through app logic.
+If the final mobile app uses app-store-managed free trials, that usually works best with subscriptions.
+For now, implement the 3-day trial as app-level local trial logic and leave clear comments where real store payment integration will be added later.
+
+Trial lock screen:
+When the trial expires and the user has no entitlement, show a lock screen:
+
+Title:
+“Your 3-day ProofPacket trial has ended”
+
+Body:
+“Choose ProofPacket Pro or Business Pro to continue creating, editing, verifying, exporting, and restoring packets.”
+
+Buttons:
+- Upgrade to ProofPacket Pro — $14.99
+- Upgrade to Business Pro — $39.99
+- Restore Purchase
+- Learn About Data Portability
+
+Include this data portability note:
+“Your packet data stays local. Export a Full Packet Archive to move packets to another phone, computer, email, or cloud drive. Archives can be imported back into ProofPacket later.”
+
+Allow users to access:
+- Pricing screen
+- Restore Purchase placeholder
+- Import/Export information
+- Privacy policy
+- Terms/disclaimer
+- Existing local archive export if possible, so users are not trapped from saving their own data after trial expiration
+
+App copy updates:
+Replace “Free” language everywhere with “3-day trial.”
+
+Remove:
+- “Free users”
+- “Free version”
+- “Watermarked free PDF”
+- “Upgrade from Free”
+
+Use:
+- “Trial users”
+- “Trial active”
+- “Trial expired”
+- “Choose Pro or Business Pro”
+- “Restore purchase”
+- “Platform-based purchase”
+- “Export/import packet archives”
+
+Privacy/runtime copy:
+“ProofPacket runs on your device. Your packets, original-quality photos, hashes, verification results, and archives are not uploaded to ProofPacket servers because ProofPacket does not use servers.”
+
+Data portability copy:
+“Moving phones? Export a Full Packet Archive from your old device, save it to your computer, email, iCloud Drive, Google Drive, Dropbox, USB drive, or external storage, then import it into ProofPacket on your new device.”
+
+Cross-platform purchase copy:
+“Packet archives can move between iOS and Android. App store purchases generally do not transfer between Apple and Google. Switching platforms may require a new purchase.”
+
+Acceptance criteria:
+- No Free tier appears in UI.
+- Trial is 3 days.
+- Trial countdown appears.
+- After trial expiration, app requires Pro or Business unlock.
+- Pro and Business pricing appear correctly.
+- Business templates require Business entitlement after trial.
+- Personal/travel/housing templates require Pro or Business after trial.
+- Same-platform restore purchase copy is present.
+- Cross-platform purchase limitation copy is present.
+- Full Packet Archive export/import is clearly described as the data-transfer method.
+- No backend/account/cloud sync is added.
+- Developer simulation toggles exist for testing only.

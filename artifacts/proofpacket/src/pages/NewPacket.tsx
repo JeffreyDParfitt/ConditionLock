@@ -50,12 +50,6 @@ export default function NewPacket() {
         <p className="text-sm text-muted-foreground">Select a template to pre-fill the right checklist items.</p>
       </header>
 
-      {tier === 'free' && (
-        <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 flex items-center justify-between gap-3">
-          <span>Free plan: 1 packet, 4 templates.</span>
-          <Link href="/pricing" className="text-xs font-semibold underline underline-offset-2 shrink-0">See Plans</Link>
-        </div>
-      )}
 
       <div className="space-y-8">
         {categories.map(category => (
