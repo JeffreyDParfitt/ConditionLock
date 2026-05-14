@@ -102,6 +102,13 @@ export default function Pricing() {
         </Card>
       )}
 
+      {/* Upgrade note — shown when user has Pro */}
+      {entitlement === 'pro' && (
+        <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+          ProofPacket Pro is active. Upgrade to Business Pro and pay only the difference — $25.00.
+        </div>
+      )}
+
       <div className="space-y-4">
         {/* ProofPacket Pro */}
         <Card className={`overflow-hidden shadow-xs transition-all ${entitlement === 'pro' ? 'ring-2 ring-blue-500' : 'border-muted'}`}>
@@ -115,7 +122,9 @@ export default function Pricing() {
                 {entitlement === 'pro' && (
                   <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase">Active</span>
                 )}
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase">Most Popular</span>
+                {entitlement !== 'pro' && entitlement !== 'business' && (
+                  <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase">Most Popular</span>
+                )}
               </div>
             </div>
             <div className="flex items-baseline gap-1">
@@ -133,13 +142,13 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            {entitlement !== 'pro' && entitlement !== 'business' && (
+            {entitlement === 'none' && (
               <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleUpgrade('pro')} data-testid="button-upgrade-pro">
                 Upgrade to ProofPacket Pro — $14.99
               </Button>
             )}
             {entitlement === 'pro' && (
-              <div className="text-center text-sm text-blue-700 dark:text-blue-400 font-medium py-1">✓ Your current plan</div>
+              <div className="text-center text-sm text-blue-700 dark:text-blue-400 font-medium py-1">✓ ProofPacket Pro active</div>
             )}
             {entitlement === 'business' && (
               <div className="text-center text-sm text-muted-foreground py-1">Included in Business Pro</div>
@@ -159,13 +168,27 @@ export default function Pricing() {
                 {entitlement === 'business' && (
                   <span className="text-[10px] font-bold bg-indigo-700 text-white px-2 py-0.5 rounded-full uppercase">Active</span>
                 )}
-                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-full uppercase">Best for Business</span>
+                {entitlement !== 'business' && (
+                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-full uppercase">Best for Business</span>
+                )}
               </div>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold">$39.99</span>
-              <span className="text-sm text-muted-foreground">one-time</span>
+              {entitlement === 'pro' ? (
+                <>
+                  <span className="text-2xl font-bold">$25.00</span>
+                  <span className="text-sm text-muted-foreground">upgrade from Pro</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold">$39.99</span>
+                  <span className="text-sm text-muted-foreground">one-time</span>
+                </>
+              )}
             </div>
+            {entitlement === 'none' && (
+              <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-1 font-medium">Upgrade from Pro: $25.00</p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">For commercial leases, business changeovers, as-is business sales, equipment transfers, kitchens, offices, warehouses, and asset handoffs.</p>
           </div>
           <CardContent className="p-4 space-y-4">
@@ -178,17 +201,29 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            {entitlement !== 'business' && (
+            {entitlement === 'none' && (
               <Button className="w-full h-11 bg-indigo-700 hover:bg-indigo-800 text-white" onClick={() => handleUpgrade('business')} data-testid="button-upgrade-business">
                 Upgrade to Business Pro — $39.99
               </Button>
             )}
+            {entitlement === 'pro' && (
+              <Button className="w-full h-11 bg-indigo-700 hover:bg-indigo-800 text-white" onClick={() => handleUpgrade('business')} data-testid="button-upgrade-business-from-pro">
+                Upgrade to Business Pro — $25.00
+              </Button>
+            )}
             {entitlement === 'business' && (
-              <div className="text-center text-sm text-indigo-700 dark:text-indigo-400 font-medium py-1">✓ Your current plan</div>
+              <div className="text-center text-sm text-indigo-700 dark:text-indigo-400 font-medium py-1">✓ Business Pro active</div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Pro-to-Business upgrade note */}
+      {entitlement === 'none' && (
+        <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
+          Already have ProofPacket Pro? Upgrade to Business Pro later and pay only the difference.
+        </p>
+      )}
 
       {/* Restore & portability */}
       <div className="space-y-3">
