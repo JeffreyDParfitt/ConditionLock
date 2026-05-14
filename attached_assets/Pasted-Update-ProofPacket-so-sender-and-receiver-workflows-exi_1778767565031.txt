@@ -1,0 +1,213 @@
+Update ProofPacket so sender and receiver workflows exist inside the same app.
+
+Do not create a separate receiver app.
+
+On the Dashboard / Home screen, show two primary mode cards:
+
+1. Create Packet
+Subtitle:
+“Document condition, add photos, create checklists, and export a verified packet.”
+
+2. Verify Packet
+Subtitle:
+“Check a received ProofPacket manifest and photo files locally.”
+
+The user should choose what they want to do:
+- Create a new proof packet
+- Verify a packet they received
+
+Create Packet mode:
+This is the existing sender workflow.
+It includes:
+- create packet
+- choose packet type
+- add checklist items
+- add original-quality photos
+- generate SHA-256 hashes
+- add notes
+- add communication logs
+- add signatures
+- export PDF
+- export verified packet
+
+Verify Packet mode:
+This is the receiver workflow.
+It should be accessible from:
+- Dashboard / Home
+- Main navigation
+- Export / Verification area
+- Settings if appropriate
+
+Verify Packet mode should allow the user to:
+- upload verification-manifest.json
+- upload original photo files
+- upload a photo ZIP if ZIP support exists
+- optionally upload the PDF report
+- run local verification
+- view verification results
+
+Important constraints:
+- Same app.
+- No backend.
+- No accounts.
+- No cloud upload.
+- No server verification.
+- All verification happens locally in the browser.
+- Use Web Crypto API and SHA-256.
+- Do not upload manifests, photos, PDFs, or ZIP files anywhere.
+
+Dashboard layout:
+At the top, show:
+
+“ What do you want to do?”
+
+Then show two large cards:
+
+Card 1:
+Title: Create Packet
+Description: Document condition before a rental, sale, handoff, lease, claim, or transfer.
+Button: Start New Packet
+
+Card 2:
+Title: Verify Packet
+Description: Verify that received photo files match a ProofPacket verification manifest.
+Button: Verify Received Packet
+
+Below those cards, show:
+- Recent Packets
+- Recent Verification Results if stored locally
+- Privacy promise
+
+Create Packet workflow:
+Keep the existing packet creation flow.
+
+When exporting, add:
+- Export Basic PDF
+- Export Verified Packet
+
+Export Verified Packet should generate:
+- PDF report
+- verification-manifest.json
+- verification-summary.txt
+- ZIP of original-quality photos if possible
+- optional bundled ZIP containing all files if easy
+
+Verify Packet workflow:
+Create a new screen called Verify Packet.
+
+The screen should have this copy:
+“Use this mode if someone sent you a ProofPacket. Upload the verification manifest and photo files you received. ProofPacket checks the files locally on this device and shows whether they match the recorded hashes.”
+
+Upload inputs:
+1. Verification manifest JSON
+2. Photo files, multiple upload allowed
+3. Photo ZIP, optional if supported
+4. PDF report, optional
+
+Verification process:
+- Parse the manifest.
+- Recalculate SHA-256 hashes for uploaded photo files locally.
+- Compare recalculated hashes against the photo hashes in the manifest.
+- Match files by hash first.
+- If needed, also display filename/photo ID matches.
+- Do not require filenames to be identical if hashes match.
+- Show extra uploaded files that are not in the manifest.
+- Show missing files listed in the manifest that were not uploaded.
+- Show mismatched files where filename/photo ID appears to match but hash differs.
+
+Verification result statuses:
+- Verified
+- Missing
+- Hash mismatch
+- Extra/unmatched
+- Manifest error
+
+Verification result summary should show:
+- packet title
+- packet type
+- packet ID
+- manifest hash
+- generated date/time
+- total photos expected
+- total files uploaded
+- number verified
+- number missing
+- number mismatched
+- number extra/unmatched
+
+For each photo, show:
+- status
+- original filename if available
+- caption
+- category
+- phase
+- checklist item label if available
+- expected SHA-256 hash
+- calculated SHA-256 hash if uploaded
+- notes if available
+
+Save verification results locally:
+After verification, allow the receiver to save a local verification result record.
+
+VerificationResult model:
+- id
+- packetId
+- packetTitle
+- packetType
+- manifestHash
+- verifiedAt
+- totalExpected
+- totalUploaded
+- verifiedCount
+- missingCount
+- mismatchCount
+- extraCount
+- resultStatus: 'passed' | 'warning' | 'failed'
+- notes
+
+Recent Verification Results:
+On Dashboard, below Recent Packets, show Recent Verification Results if any exist.
+Each result card should show:
+- packet title
+- verified date/time
+- result status
+- verified/missing/mismatch counts
+- open result button
+- delete result button
+
+User-facing terminology:
+Use simple labels:
+- Create Packet
+- Verify Packet
+- Export Verified Packet
+- Verification Manifest
+- Photo Integrity Check
+- Hash Match
+- Hash Mismatch
+
+Avoid legal overpromising:
+Do not say:
+- legally certified
+- court-approved
+- guaranteed proof
+- legally admissible
+- authenticated evidence
+
+Use this disclaimer on Verify Packet screen and PDF:
+“Hash verification confirms whether the files being checked match the files recorded in this ProofPacket manifest. It does not prove who took the photos, where they were taken, whether the scene was staged, or whether the packet has legal evidentiary value.”
+
+Add this disclaimer to Create Packet export screen:
+“Verified Packet export helps receivers check whether files match the exported manifest. It does not create legal certification or replace professional advice.”
+
+Pricing behavior:
+- Free users can create basic watermarked PDFs.
+- ProofPacket Pro should include Export Verified Packet.
+- Business Pro should include Export Verified Packet, ZIP bundle, and saved receiver verification results.
+- For now, do not implement real payments.
+- Use the existing Simulate Pro Unlock and Simulate Business Pro Unlock toggles for testing.
+
+Developer/testing:
+- Add sample verification manifest data if possible.
+- Add a test tool to recalculate hashes for a packet.
+- Add clear error messages if browser crypto APIs are unavailable.
+- Make the Verify Packet flow usable on mobile.

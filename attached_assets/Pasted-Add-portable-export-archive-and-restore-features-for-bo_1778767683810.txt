@@ -1,0 +1,215 @@
+Add portable export, archive, and restore features for both Create Packet and Verify Packet modes.
+
+Goal:
+Users should be able to download their ProofPacket files to a computer, email, external drive, or cloud drive so they can clear space on their phone, then later re-download and re-import the files back into ProofPacket.
+
+This must work without a backend, server, account, or cloud sync.
+
+Important constraints:
+- No backend.
+- No accounts.
+- No automatic cloud sync.
+- No uploads to ProofPacket servers.
+- All exports and imports happen locally through files the user controls.
+- Users can manually save files to their PC, email, iCloud Drive, Google Drive, Dropbox, USB drive, external hard drive, or any storage they choose.
+- Users can later re-download those files and import them back into ProofPacket.
+
+Add these export types:
+
+1. Export PDF Report
+Exports:
+- human-readable PDF report only
+
+2. Export Verified Packet
+Exports:
+- PDF report
+- verification-manifest.json
+- verification-summary.txt
+- original-quality photos if ZIP export is available
+
+3. Export Full Packet Archive
+This is the most important backup format.
+
+It should create one portable archive file, preferably a ZIP, named like:
+ProofPacket_[PacketTitle]_[Date]_Archive.zip
+
+The archive should include:
+- packet-data.json
+- verification-manifest.json
+- verification-summary.txt
+- ProofPacket_Report.pdf
+- photos/originals/ folder with original-quality photo files
+- photos/thumbnails/ folder if thumbnails exist
+- signatures/ folder if signature images exist
+- README.txt explaining what the archive contains
+- DISCLAIMERS.txt
+- optional checksums.txt with hashes for all files
+
+4. Export Photos ZIP
+Exports:
+- original-quality photos only
+- filenames should be readable where possible
+- include photo-metadata.json
+- include photo-hashes.txt
+
+5. Export Verification Result
+For receiver/Verify Packet mode.
+
+Exports:
+- verification-result.json
+- verification-result-summary.txt
+- optional PDF verification result if easy
+
+Import / Restore features:
+
+Add an Import / Restore screen accessible from:
+- Dashboard
+- Settings
+- Packets screen
+- Verify Packet screen
+
+Import options:
+
+1. Import Full Packet Archive
+Allows user to import a ProofPacket archive ZIP that was previously exported.
+
+Behavior:
+- User uploads archive ZIP.
+- App extracts and reads packet-data.json.
+- App restores packet details, checklist items, photos, photo metadata, communication logs, signatures, hashes, and notes.
+- App stores restored photos as original-quality Blobs in IndexedDB.
+- App preserves original photo hashes.
+- App shows restored packet in the Packets list.
+- App should warn if a packet with the same ID already exists and ask whether to:
+  - replace existing
+  - import as duplicate
+  - cancel
+
+2. Import Packet JSON Backup
+Allows user to import packet-data.json if no ZIP is available.
+Behavior:
+- Restore packet details and metadata.
+- If photos are missing, show them as missing.
+- Keep photo hash records so the user can later reattach/verify original photos.
+
+3. Import Photos to Existing Packet
+Allows user to attach original photo files back to a restored packet.
+Behavior:
+- User selects photos.
+- App calculates SHA-256 hashes.
+- App matches photos to stored photo metadata by hash.
+- If a hash matches, restore that photo file to the correct photo record.
+- If files are extra/unmatched, show them separately and allow the user to attach manually.
+
+4. Import Verification Result
+For receiver mode.
+Allows user to import a previously saved verification-result.json.
+
+Storage management:
+
+Add a Storage Management screen in Settings.
+
+Show:
+- estimated app storage used
+- number of packets
+- number of original-quality photos
+- largest packets by storage size
+- warning that browser/PWA storage can be cleared by the user/browser/device
+- backup recommendation
+
+Add actions:
+- Export Full Archive for a packet
+- Export All Packets Archive if feasible
+- Delete local copy after archive
+- Delete photos only after archive
+- Delete packet
+- Clear all local data
+
+Important:
+Before deleting anything, require confirmation.
+
+When user chooses “Delete local copy after archive,” show:
+“Make sure you have saved the archive somewhere safe before deleting local data. ProofPacket cannot recover deleted local files without an archive.”
+
+Add this safety rule:
+Do not allow one-click delete immediately after export unless the user confirms that they saved the file.
+
+Receiver-side archive support:
+
+In Verify Packet mode, allow a receiver to:
+- export verification results
+- export a copy of the manifest they verified
+- export a verification result archive
+- later import that verification result archive
+
+Verification archive should include:
+- verification-result.json
+- verification-result-summary.txt
+- uploaded manifest copy if available
+- list of verified/missing/mismatched files
+- hashes calculated during verification
+- timestamp of verification
+
+User-facing copy:
+
+Add this copy to Export Full Packet Archive:
+“Use this archive if you want to move a packet off your phone, save it to a computer, email it to yourself, or store it in iCloud Drive, Google Drive, Dropbox, USB, or an external drive. You can import this archive back into ProofPacket later.”
+
+Add this copy to Import / Restore:
+“Re-import a ProofPacket archive from your phone, computer, email, or cloud drive. Restored packets are stored locally on this device.”
+
+Add this copy to Storage Management:
+“Original-quality photos can take up significant storage. Export a Full Packet Archive before deleting local copies.”
+
+Add this copy near Delete Local Copy:
+“Only delete local data after confirming your archive is saved somewhere safe.”
+
+File naming:
+
+Use safe readable filenames:
+- ProofPacket_[packet-title]_[YYYY-MM-DD]_Report.pdf
+- ProofPacket_[packet-title]_[YYYY-MM-DD]_Manifest.json
+- ProofPacket_[packet-title]_[YYYY-MM-DD]_Photos.zip
+- ProofPacket_[packet-title]_[YYYY-MM-DD]_Archive.zip
+- ProofPacket_[packet-title]_[YYYY-MM-DD]_VerificationResult.json
+
+For photo files:
+Use readable names if possible:
+[packet-title]_[photo-category]_[phase]_[date]_[short-photo-id].jpg
+
+Do not rename photos in a way that breaks verification.
+The manifest should store:
+- original filename if available
+- archive filename
+- photo ID
+- SHA-256 hash
+
+Hashing/archive behavior:
+
+For Full Packet Archive:
+- include SHA-256 hash for each original-quality photo
+- include SHA-256 hash for packet-data.json
+- include SHA-256 hash for the PDF report if possible
+- include SHA-256 hash for verification-manifest.json
+- include checksums.txt
+
+When importing an archive:
+- recalculate hashes if possible
+- show whether archive files match included hashes
+- warn if any file is missing or changed
+
+Important limitations:
+Add this disclaimer:
+“ProofPacket archives are local user-controlled files. If you delete both the local packet and all exported archives, ProofPacket cannot recover the data.”
+
+MVP priority:
+If full ZIP import/export is complex, implement in this order:
+1. Export Full Packet Archive ZIP
+2. Import Full Packet Archive ZIP
+3. Export Photos ZIP
+4. Import photos by hash
+5. Storage Management screen
+6. Export/import verification results
+
+Portable Archives:
+Export a full packet archive to your computer, email, or cloud drive. Re-import it later to restore the packet and original-quality photos back into ProofPacket.
