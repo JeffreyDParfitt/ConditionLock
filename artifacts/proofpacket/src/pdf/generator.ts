@@ -286,7 +286,14 @@ export async function generatePDF(
       }
       doc.setFontSize(7);
       doc.setTextColor(...slate);
-      const label = [photo.caption, photo.category, photo.phase, photo.dateTaken ? formatDate(photo.dateTaken) : ''].filter(Boolean).join(' · ');
+      const sourceTag = (photo as any).appCaptured === true || (photo as any).source === 'in_app_camera'
+        ? 'Captured in ProofPacket'
+        : (photo as any).source === 'imported_document'
+        ? 'Imported Document'
+        : (photo as any).source
+        ? 'Legacy / Unknown source'
+        : '';
+      const label = [sourceTag, photo.caption, photo.category, photo.phase, photo.dateTaken ? formatDate(photo.dateTaken) : ''].filter(Boolean).join(' · ');
       doc.text(label, xPos, rowY + imgH + 4, { maxWidth: imgW });
       col++;
       if (col >= 2) {

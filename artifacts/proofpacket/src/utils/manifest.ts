@@ -15,6 +15,11 @@ export interface ManifestPhotoEntry {
   dateTaken: string;
   checklistItemLabel?: string;
   notes?: string;
+  source?: string;
+  appCaptured?: boolean;
+  verificationEligible?: boolean;
+  capturedAt?: string;
+  importedAt?: string;
 }
 
 export interface VerificationManifest {
@@ -57,6 +62,11 @@ export async function buildManifest(
         phase: p.phase || '',
         dateTaken: p.dateTaken || p.createdAt || '',
         notes: '',
+        source: p.source || (p.appCaptured === true ? 'in_app_camera' : 'unknown'),
+        appCaptured: p.appCaptured ?? false,
+        verificationEligible: p.verificationEligible ?? (p.appCaptured === true),
+        capturedAt: p.capturedAt,
+        importedAt: p.importedAt,
       };
     })
   );

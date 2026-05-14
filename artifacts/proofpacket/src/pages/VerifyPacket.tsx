@@ -27,7 +27,7 @@ const STATUS_CONFIG = {
   extra:     { label: 'Extra / Unmatched',color: 'text-slate-600 dark:text-slate-400',  bg: 'bg-slate-50 dark:bg-slate-900',      border: 'border-slate-200 dark:border-slate-700',  icon: Info },
 } as const;
 
-const HASH_DISCLAIMER = "Hash verification confirms whether the files being checked match the files recorded in this ProofPacket manifest. It does not prove who took the photos, where they were taken, whether the scene was staged, or whether the packet has legal evidentiary value.";
+const HASH_DISCLAIMER = "ProofPacket verifies file integrity by comparing SHA-256 hashes. In-app capture helps strengthen documentation, but it does not prove who took the photo, where it was taken, whether the scene was staged, or whether the packet has legal evidentiary value.";
 
 export default function VerifyPacket() {
   const { toast } = useToast();
@@ -129,6 +129,11 @@ export default function VerifyPacket() {
 
       for (const entry of manifest.photos) {
         const uploadedByHash = uploadedHashes.get(entry.sha256);
+        const provenanceFields = {
+          source: entry.source,
+          appCaptured: entry.appCaptured,
+          verificationEligible: entry.verificationEligible,
+        };
         if (uploadedByHash) {
           matchedHashes.add(entry.sha256);
           photoResults.push({
@@ -141,6 +146,7 @@ export default function VerifyPacket() {
             expectedHash: entry.sha256,
             calculatedHash: entry.sha256,
             status: 'verified',
+            ...provenanceFields,
           });
         } else {
           // Check for name match with different hash
@@ -157,6 +163,7 @@ export default function VerifyPacket() {
               expectedHash: entry.sha256,
               calculatedHash,
               status: 'mismatch',
+              ...provenanceFields,
             });
           } else {
             photoResults.push({
@@ -169,6 +176,7 @@ export default function VerifyPacket() {
               expectedHash: entry.sha256,
               calculatedHash: '',
               status: 'missing',
+              ...provenanceFields,
             });
           }
         }
@@ -538,6 +546,19 @@ export default function VerifyPacket() {
                       )}
                     </div>
                     <p className="text-xs font-medium truncate">{r.fileName}</p>
+                    {r.appCaptured !== undefined && (
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded w-fit block ${
+                        r.appCaptured === true
+                          ? 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/30'
+                          : r.source === 'imported_document'
+                          ? 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/30'
+                          : 'text-gray-500 bg-gray-100 dark:bg-gray-900'
+                      }`}>
+                        {r.appCaptured === true ? 'Captured in ProofPacket'
+                          : r.source === 'imported_document' ? 'Imported Document'
+                          : 'Legacy / Unknown source'}
+                      </span>
+                    )}
                     {r.caption && <p className="text-xs text-muted-foreground italic">{r.caption}</p>}
                     <div className="text-[10px] text-muted-foreground space-y-0.5 font-mono">
                       {r.expectedHash && (

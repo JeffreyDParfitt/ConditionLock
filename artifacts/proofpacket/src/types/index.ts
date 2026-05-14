@@ -76,6 +76,13 @@ export interface PhotoItem {
   phase: Phase;
   dateTaken: string;
   createdAt: string;
+  appCaptured?: boolean;
+  source?: 'in_app_camera' | 'imported_document' | 'legacy_import' | 'unknown';
+  verificationEligible?: boolean;
+  capturedAt?: string;
+  importedAt?: string;
+  sha256Hash?: string;
+  hashCreatedAt?: string;
 }
 
 export interface CommunicationLog {
@@ -136,6 +143,9 @@ export interface VerificationPhotoResult {
   expectedHash: string;
   calculatedHash: string;
   status: 'verified' | 'missing' | 'mismatch' | 'extra';
+  source?: string;
+  appCaptured?: boolean;
+  verificationEligible?: boolean;
 }
 
 export interface VerificationResult {

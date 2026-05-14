@@ -1,4 +1,5 @@
 import { db } from './db';
+import { sha256Blob, isCryptoAvailable } from '../utils/crypto';
 import type { Packet, ChecklistItem, PhotoItem, CommunicationLog, SignatureItem, PacketType, VerificationResult, ActivityLog } from '../types';
 
 export const APP_VERSION = '1.1.0';
@@ -58,16 +59,29 @@ export const storage = {
   // Photos
   async addPhoto(photo: Omit<PhotoItem, 'id' | 'createdAt' | 'thumbnailData'> & { thumbnailData?: string }) {
     const id = crypto.randomUUID();
+    const now = new Date().toISOString();
     let thumbnailData = photo.thumbnailData ?? '';
     if (!thumbnailData && photo.originalBlob) {
       const { generateThumbnail } = await import('../utils/photo');
       thumbnailData = await generateThumbnail(photo.originalBlob);
     }
+    let sha256Hash = photo.sha256Hash;
+    let hashCreatedAt = photo.hashCreatedAt;
+    if (!sha256Hash && photo.originalBlob) {
+      try {
+        if (isCryptoAvailable()) {
+          sha256Hash = await sha256Blob(photo.originalBlob as Blob);
+          hashCreatedAt = now;
+        }
+      } catch { /* crypto unavailable — hash will be generated on export */ }
+    }
     const newPhoto: PhotoItem = {
       ...photo,
       thumbnailData,
       id,
-      createdAt: new Date().toISOString()
+      createdAt: now,
+      sha256Hash,
+      hashCreatedAt,
     };
     await db.photos.add(newPhoto);
     return id;

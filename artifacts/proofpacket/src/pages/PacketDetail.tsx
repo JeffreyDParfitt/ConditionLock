@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock, Activity, Copy } from "lucide-react";
+import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image as ImageIcon, ChevronLeft, Plus, Trash2, Lock, Activity, Copy, Upload } from "lucide-react";
 import { format } from "date-fns";
 import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
@@ -397,8 +397,8 @@ function ChecklistTab({ packet }: { packet: any }) {
 // PHOTOS TAB
 // ------------------------------------------------------------------
 function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   const [viewingPhoto, setViewingPhoto] = useState<any>(null);
   const [viewUrl, setViewUrl] = useState<string>('');
   const [editCaption, setEditCaption] = useState('');
@@ -415,13 +415,20 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
     'test result', 'appliance interior', 'cabinet/drawer interior', 'general'
   ];
 
-  const handleFile = async (file: File) => {
+  const evidencePhotos = photos.filter((p: any) => p.source !== 'imported_document');
+  const importedDocs = photos.filter((p: any) => p.source === 'imported_document');
+
+  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (limits.maxPhotosPerPacket !== Infinity && photos.length >= limits.maxPhotosPerPacket) {
       setPhotoUpgradeOpen(true);
+      e.target.value = '';
       return;
     }
     setUploading(true);
     try {
+      const now = new Date().toISOString();
       await storage.addPhoto({
         packetId: packet.id,
         originalBlob: file,
@@ -431,18 +438,45 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
         caption: '',
         category: 'general',
         phase: 'general',
-        dateTaken: new Date().toISOString()
+        dateTaken: now,
+        appCaptured: true,
+        source: 'in_app_camera',
+        verificationEligible: true,
+        capturedAt: now,
       });
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
-  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await handleFile(file);
-    e.target.value = '';
+  const handleDocumentImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const now = new Date().toISOString();
+      for (const file of files) {
+        await storage.addPhoto({
+          packetId: packet.id,
+          originalBlob: file,
+          mimeType: file.type || 'application/octet-stream',
+          fileName: file.name || 'document',
+          fileSize: file.size,
+          caption: '',
+          category: 'receipt/agreement',
+          phase: 'general',
+          dateTaken: now,
+          appCaptured: false,
+          source: 'imported_document',
+          verificationEligible: false,
+          importedAt: now,
+        });
+      }
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const openPhoto = (photo: any) => {
@@ -472,48 +506,60 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
     closePhoto();
   };
 
+  const getSourceChip = (photo: any): { label: string; bg: string } => {
+    if (photo.source === 'imported_document') return { label: 'Doc', bg: 'bg-blue-600/80' };
+    if (photo.appCaptured === true || photo.source === 'in_app_camera') return { label: 'In-App', bg: 'bg-green-600/80' };
+    return { label: 'Legacy', bg: 'bg-gray-500/70' };
+  };
+
+  const getSourceLabel = (photo: any): string => {
+    if (photo.source === 'in_app_camera' || photo.appCaptured === true) return 'Captured in ProofPacket';
+    if (photo.source === 'imported_document') return 'Imported Document';
+    if (photo.source === 'legacy_import') return 'Legacy / Imported';
+    return 'Unknown source (legacy)';
+  };
+
   const totalMB = photos.reduce((sum: number, p: any) => sum + (p.fileSize || 0), 0) / (1024 * 1024);
   const showStorageWarning = photos.length > 20 || totalMB > 200;
   const atPhotoLimit = limits.maxPhotosPerPacket !== Infinity && photos.length >= limits.maxPhotosPerPacket;
 
   return (
     <div className="space-y-4 pb-12">
-      <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handleCapture} />
-      <input type="file" accept="image/*" multiple className="hidden" ref={galleryInputRef} onChange={async (e) => {
-        const files = Array.from(e.target.files || []);
-        for (const f of files) await handleFile(f);
-        e.target.value = '';
-      }} />
+      <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraInputRef} onChange={handleCapture} />
+      <input type="file" accept="image/*,application/pdf,.pdf,.doc,.docx,.txt" multiple className="hidden" ref={documentInputRef} onChange={handleDocumentImport} />
 
-      {atPhotoLimit ? (
-        <button
-          className="w-full rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 flex items-center justify-between gap-3"
-          onClick={() => setPhotoUpgradeOpen(true)}
-          data-testid="button-photo-limit-upgrade"
-        >
-          <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> Free plan limit: {limits.maxPhotosPerPacket} photos per packet</span>
-          <span className="text-xs font-semibold underline underline-offset-2 shrink-0">Upgrade</span>
-        </button>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <Button className="h-14" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
-            <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving...' : 'Camera'}
-          </Button>
-          <Button variant="outline" className="h-14" onClick={() => galleryInputRef.current?.click()} disabled={uploading} data-testid="button-add-from-gallery">
-            <ImageIcon className="w-5 h-5 mr-2" /> Gallery
-          </Button>
+      {/* Evidence photos section */}
+      <div className="space-y-3">
+        <div className="text-[11px] bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-2 leading-relaxed text-green-800 dark:text-green-300">
+          <span className="font-semibold block mb-0.5">Evidence photos must be taken inside ProofPacket.</span>
+          Gallery uploads are disabled for evidence photos. In-app capture helps reduce disputes about photo origin and supports stronger documentation.
         </div>
-      )}
+
+        {atPhotoLimit ? (
+          <button
+            className="w-full rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 flex items-center justify-between gap-3"
+            onClick={() => setPhotoUpgradeOpen(true)}
+            data-testid="button-photo-limit-upgrade"
+          >
+            <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> Free plan limit: {limits.maxPhotosPerPacket} photos per packet</span>
+            <span className="text-xs font-semibold underline underline-offset-2 shrink-0">Upgrade</span>
+          </button>
+        ) : (
+          <Button className="w-full h-14" onClick={() => cameraInputRef.current?.click()} disabled={uploading} data-testid="button-take-photo">
+            <Camera className="w-5 h-5 mr-2" /> {uploading ? 'Saving…' : 'Take Photo'}
+          </Button>
+        )}
+
+        <p className="text-[10px] text-muted-foreground text-center">
+          Camera access is required for evidence photos. If prompted, allow camera access in your browser or device settings.
+        </p>
+      </div>
 
       {limits.maxPhotosPerPacket !== Infinity && !atPhotoLimit && (
         <div className="text-[11px] text-muted-foreground text-right">
           {photos.length} / {limits.maxPhotosPerPacket} photos used
         </div>
       )}
-
-      <div className="text-[11px] text-muted-foreground bg-primary/5 border border-primary/10 rounded-md px-3 py-2 leading-relaxed">
-        ProofPacket stores an original-quality local copy of each photo on this device. Photos are not uploaded. Export a backup when the packet is important.
-      </div>
 
       <UpgradePrompt
         open={photoUpgradeOpen}
@@ -529,44 +575,82 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
         </div>
       )}
 
-      {photos.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
-          <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">No photos yet.</p>
-          <p className="text-xs mt-1 opacity-60">Tap Camera or Gallery to add your first photo.</p>
+      {/* Evidence photos grid */}
+      {evidencePhotos.length === 0 ? (
+        <div className="py-10 text-center text-muted-foreground border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
+          <Camera className="w-10 h-10 mx-auto mb-2 opacity-20" />
+          <p className="text-sm">No evidence photos yet.</p>
+          <p className="text-xs mt-1 opacity-60">Tap "Take Photo" to capture your first evidence photo.</p>
         </div>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? 's' : ''} — tap to view or edit</p>
+          <p className="text-xs text-muted-foreground">{evidencePhotos.length} evidence photo{evidencePhotos.length !== 1 ? 's' : ''} — tap to view or edit</p>
           <div className="grid grid-cols-2 gap-2">
-            {photos.map((photo: any) => (
-              <button
-                key={photo.id}
-                className="relative aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 group text-left"
-                onClick={() => openPhoto(photo)}
-                data-testid={`photo-thumb-${photo.id}`}
-              >
-                <img
-                  src={photo.thumbnailData}
-                  className="object-cover w-full h-full"
-                  alt={photo.caption || 'Photo'}
-                />
-                {photo.caption && (
-                  <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1">
-                    <p className="text-white text-[10px] truncate">{photo.caption}</p>
-                  </div>
-                )}
-              </button>
-            ))}
+            {evidencePhotos.map((photo: any) => {
+              const chip = getSourceChip(photo);
+              return (
+                <button
+                  key={photo.id}
+                  className="relative aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-left"
+                  onClick={() => openPhoto(photo)}
+                  data-testid={`photo-thumb-${photo.id}`}
+                >
+                  <img src={photo.thumbnailData} className="object-cover w-full h-full" alt={photo.caption || 'Photo'} />
+                  <div className={`absolute top-1 left-1 ${chip.bg} text-white text-[9px] font-bold px-1.5 py-0.5 rounded`}>{chip.label}</div>
+                  {photo.caption && (
+                    <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1">
+                      <p className="text-white text-[10px] truncate">{photo.caption}</p>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </>
       )}
 
-      {/* Full-size photo viewer */}
+      {/* Documents & Receipts section */}
+      <div className="space-y-3 border-t border-gray-200 dark:border-gray-800 pt-4">
+        <div>
+          <h3 className="text-sm font-semibold">Documents & Receipts</h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+            Rental agreements, return receipts, fuel receipts, weight tickets, screenshots, repair estimates, and other documents may be imported here. Imported files are labeled separately from in-app captured evidence photos.
+          </p>
+        </div>
+        <Button variant="outline" className="w-full h-12" onClick={() => documentInputRef.current?.click()} disabled={uploading}>
+          <Upload className="w-4 h-4 mr-2" /> Import Document or Receipt
+        </Button>
+        {importedDocs.length > 0 && (
+          <>
+            <p className="text-xs text-muted-foreground">{importedDocs.length} document{importedDocs.length !== 1 ? 's' : ''} imported</p>
+            <div className="grid grid-cols-2 gap-2">
+              {importedDocs.map((photo: any) => (
+                <button
+                  key={photo.id}
+                  className="relative aspect-square rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 border border-blue-200 dark:border-blue-800 text-left"
+                  onClick={() => openPhoto(photo)}
+                >
+                  <img src={photo.thumbnailData} className="object-cover w-full h-full" alt={photo.caption || 'Document'} />
+                  <div className="absolute top-1 left-1 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Doc</div>
+                  {photo.caption && (
+                    <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1">
+                      <p className="text-white text-[10px] truncate">{photo.caption}</p>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Full-size photo / document viewer */}
       <Dialog open={!!viewingPhoto} onOpenChange={(open) => { if (!open) closePhoto(); }}>
         <DialogContent className="sm:max-w-lg w-[95vw] p-0 overflow-hidden">
           <DialogHeader className="px-4 pt-4 pb-0">
-            <DialogTitle className="text-sm">Photo</DialogTitle>
+            <DialogTitle className="text-sm">
+              {viewingPhoto?.source === 'imported_document' ? 'Imported Document' : 'Evidence Photo'}
+            </DialogTitle>
           </DialogHeader>
           {viewingPhoto && (
             <div className="flex flex-col gap-3 p-4">
@@ -575,17 +659,29 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
                   <img src={viewUrl} alt="Full size" className="max-h-64 w-full object-contain" />
                 </div>
               )}
+              {/* Source label */}
+              <div className={`text-[11px] px-2 py-1.5 rounded border font-medium flex items-center justify-between gap-2 ${
+                viewingPhoto.source === 'in_app_camera' || viewingPhoto.appCaptured === true
+                  ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                  : viewingPhoto.source === 'imported_document'
+                  ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
+                  : 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              }`}>
+                <span>{getSourceLabel(viewingPhoto)}</span>
+                {viewingPhoto.sha256Hash && (
+                  <span className="font-mono font-normal opacity-60 text-[10px] shrink-0">
+                    SHA-256: {viewingPhoto.sha256Hash.slice(0, 10)}…
+                  </span>
+                )}
+              </div>
               <div className="text-[10px] text-muted-foreground">
-                Original quality — {viewingPhoto.fileName || 'photo'} · {viewingPhoto.fileSize ? (viewingPhoto.fileSize / 1024).toFixed(0) + ' KB' : ''}
+                {viewingPhoto.fileName || 'file'} · {viewingPhoto.fileSize ? (viewingPhoto.fileSize / 1024).toFixed(0) + ' KB' : ''}
+                {viewingPhoto.capturedAt && ` · Captured ${new Date(viewingPhoto.capturedAt).toLocaleDateString()}`}
+                {viewingPhoto.importedAt && ` · Imported ${new Date(viewingPhoto.importedAt).toLocaleDateString()}`}
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Caption</Label>
-                <Input
-                  value={editCaption}
-                  onChange={e => setEditCaption(e.target.value)}
-                  placeholder="Add a caption..."
-                  className="h-9 text-sm"
-                />
+                <Input value={editCaption} onChange={e => setEditCaption(e.target.value)} placeholder="Add a caption..." className="h-9 text-sm" />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Category</Label>
