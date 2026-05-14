@@ -24,6 +24,80 @@ import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, Communic
 import { useTier, isRentalVehicleType } from "@/hooks/useTier";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
+// ------------------------------------------------------------------
+// STATUS HELPERS — shared across components in this file
+// ------------------------------------------------------------------
+const POSITIVE_STATUSES = ['good', 'works', 'included', 'present', 'returned', 'resolved'];
+const ISSUE_STATUSES = ['damaged', 'dirty', 'stained', 'odor', 'missing', 'not_working', 'not_present', 'not_returned', 'not_reported', 'unresolved'];
+const EXCLUSIVE_STATUSES = ['not_checked', 'not_applicable'];
+
+const ALL_STATUS_TAGS: string[] = [
+  'good', 'works', 'included', 'present', 'returned', 'resolved',
+  'damaged', 'dirty', 'stained', 'odor', 'missing', 'not_working',
+  'not_present', 'not_returned', 'excluded', 'reported', 'not_reported', 'needs_follow_up', 'unresolved',
+  'unknown', 'not_safe_to_check', 'not_applicable', 'not_checked',
+];
+
+function getEffectiveStatuses(item: any): string[] {
+  if (item.statuses && item.statuses.length > 0) return item.statuses;
+  if (item.status && item.status !== 'not_checked') return [item.status];
+  return ['not_checked'];
+}
+
+function isItemChecked(item: any): boolean {
+  const s = getEffectiveStatuses(item);
+  return s.some(x => x !== 'not_checked') || !!(item.notes?.trim());
+}
+
+function hasIssueStatus(item: any): boolean {
+  return getEffectiveStatuses(item).some(s => ISSUE_STATUSES.includes(s));
+}
+
+function getCardBorderColor(statuses: string[]): string {
+  if (statuses.includes('not_applicable')) return 'bg-gray-400 dark:bg-gray-600';
+  if (statuses.every(s => s === 'not_checked')) return 'bg-gray-200 dark:bg-gray-800';
+  if (ISSUE_STATUSES.some(s => statuses.includes(s))) return 'bg-destructive';
+  if (POSITIVE_STATUSES.some(s => statuses.includes(s))) return 'bg-green-500';
+  return 'bg-amber-400';
+}
+
+function getChipStyle(tag: string, selected: boolean): string {
+  const base = 'inline-flex items-center h-7 px-2.5 text-[11px] rounded-full border font-medium transition-colors cursor-pointer select-none';
+  if (!selected) return `${base} border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-500 dark:hover:border-gray-500 bg-transparent`;
+  if (POSITIVE_STATUSES.includes(tag)) return `${base} bg-green-500 text-white border-green-500`;
+  if (ISSUE_STATUSES.includes(tag)) return `${base} bg-destructive text-destructive-foreground border-destructive`;
+  if (tag === 'reported' || tag === 'needs_follow_up') return `${base} bg-amber-500 text-white border-amber-500`;
+  if (tag === 'not_applicable') return `${base} bg-gray-600 text-white border-gray-600`;
+  if (tag === 'not_checked') return `${base} bg-gray-400 text-white border-gray-400`;
+  return `${base} bg-slate-500 text-white border-slate-500`;
+}
+
+function toggleStatusTag(current: string[], tag: string): string[] {
+  if (EXCLUSIVE_STATUSES.includes(tag)) return [tag];
+  const withoutExclusive = current.filter(s => !EXCLUSIVE_STATUSES.includes(s));
+  if (withoutExclusive.includes(tag)) {
+    const next = withoutExclusive.filter(s => s !== tag);
+    return next.length === 0 ? ['not_checked'] : next;
+  }
+  return [...withoutExclusive, tag];
+}
+
+function getPrimaryStatus(statuses: string[]): string {
+  return statuses.find(s => ISSUE_STATUSES.includes(s))
+    || statuses.find(s => !EXCLUSIVE_STATUSES.includes(s))
+    || statuses[0]
+    || 'not_checked';
+}
+
+function formatStatuses(statuses: string[]): string {
+  return statuses.map(s =>
+    s === 'needs_follow_up' ? 'needs follow-up' :
+    s === 'not_safe_to_check' ? 'not safe to check' :
+    s.replace(/_/g, ' ')
+  ).join(', ');
+}
+
+// ------------------------------------------------------------------
 export default function PacketDetail() {
   const params = useParams();
   const [, setLocation] = useLocation();
@@ -86,7 +160,7 @@ export default function PacketDetail() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <CheckSquare className="w-6 h-6 mx-auto mb-2 text-primary" />
-                  <div className="text-xl font-bold">{packet.checklistItems?.filter(i => i.status !== 'not_checked').length || 0} / {packet.checklistItems?.length || 0}</div>
+                  <div className="text-xl font-bold">{packet.checklistItems?.filter((i: any) => isItemChecked(i)).length || 0} / {packet.checklistItems?.length || 0}</div>
                   <div className="text-xs text-muted-foreground">Items Checked</div>
                 </CardContent>
               </Card>
@@ -153,19 +227,26 @@ export default function PacketDetail() {
 function ChecklistTab({ packet }: { packet: any }) {
   const items = packet.checklistItems || [];
   const sections = Array.from(new Set(items.map((i: any) => i.section)));
-  
+
   const [filter, setFilter] = useState("all");
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [newItemSection, setNewItemSection] = useState("Additional Items");
   const [newItemLabel, setNewItemLabel] = useState("");
-  
-  const updateItemStatus = async (itemId: string, status: ChecklistStatus) => {
-    const newItems = items.map((i: any) => i.id === itemId ? { ...i, status } : i);
+
+  const updateItemStatuses = async (item: any, newStatuses: string[]) => {
+    const primary = getPrimaryStatus(newStatuses) as ChecklistStatus;
+    const newItems = items.map((i: any) =>
+      i.id === item.id
+        ? { ...i, statuses: newStatuses, status: primary, updatedAt: new Date().toISOString() }
+        : i
+    );
     await storage.updatePacket(packet.id, { checklistItems: newItems });
   };
 
   const updateItemNotes = async (itemId: string, notes: string) => {
-    const newItems = items.map((i: any) => i.id === itemId ? { ...i, notes } : i);
+    const newItems = items.map((i: any) =>
+      i.id === itemId ? { ...i, notes, updatedAt: new Date().toISOString() } : i
+    );
     await storage.updatePacket(packet.id, { checklistItems: newItems });
   };
 
@@ -179,6 +260,7 @@ function ChecklistTab({ packet }: { packet: any }) {
       description: "Added during inspection",
       phase: "both",
       status: "not_checked",
+      statuses: ["not_checked"],
       notes: "",
       photoIds: [],
       addedDuringInspection: true,
@@ -190,6 +272,12 @@ function ChecklistTab({ packet }: { packet: any }) {
     setNewItemOpen(false);
   };
 
+  const filterItem = (item: any) => {
+    if (filter === 'not_checked') return !isItemChecked(item);
+    if (filter === 'issues') return hasIssueStatus(item);
+    return true;
+  };
+
   return (
     <div className="space-y-6 pb-20 relative">
       <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
@@ -199,81 +287,80 @@ function ChecklistTab({ packet }: { packet: any }) {
       </div>
 
       {sections.map((section: any) => {
-        const sectionItems = items.filter((i: any) => i.section === section).filter((i: any) => {
-          if (filter === 'not_checked') return i.status === 'not_checked';
-          if (filter === 'issues') return ['damaged', 'dirty', 'missing', 'not_working'].includes(i.status);
-          return true;
-        });
-
+        const sectionItems = items.filter((i: any) => i.section === section).filter(filterItem);
         if (sectionItems.length === 0) return null;
-        
-        const completed = items.filter((i: any) => i.section === section && i.status !== 'not_checked').length;
-        const total = items.filter((i: any) => i.section === section).length;
-        
+
+        const allInSection = items.filter((i: any) => i.section === section);
+        const done = allInSection.filter(isItemChecked).length;
+        const total = allInSection.length;
+
         return (
           <div key={section} className="space-y-3">
             <div className="flex items-center justify-between sticky top-[100px] bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur py-2 z-10 border-b border-gray-200 dark:border-gray-800">
               <h2 className="font-semibold text-sm">{section}</h2>
-              <span className="text-xs text-muted-foreground">{completed}/{total}</span>
+              <span className="text-xs text-muted-foreground">{done}/{total}</span>
             </div>
             <div className="space-y-3">
-              {sectionItems.map((item: any) => (
-                <Card key={item.id} className="shadow-xs border-muted overflow-hidden">
-                  <div className={`h-1 w-full ${item.status === 'not_checked' ? 'bg-gray-200 dark:bg-gray-800' : (item.status === 'good' || item.status === 'works' || item.status === 'present' || item.status === 'included') ? 'bg-green-500' : (item.status === 'not_applicable' || item.status === 'unknown') ? 'bg-gray-400' : 'bg-destructive'}`} />
-                  <CardContent className="p-3 space-y-3">
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-sm font-medium">{item.label}</h3>
-                        {item.addedDuringInspection && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">ADDED</span>}
+              {sectionItems.map((item: any) => {
+                const statuses = getEffectiveStatuses(item);
+                const hasPos = statuses.some(s => POSITIVE_STATUSES.includes(s));
+                const hasIss = hasIssueStatus(item);
+                const showMixed = hasPos && hasIss;
+
+                return (
+                  <Card key={item.id} className="shadow-xs border-muted overflow-hidden">
+                    <div className={`h-1 w-full ${getCardBorderColor(statuses)}`} />
+                    <CardContent className="p-3 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-medium leading-tight">{item.label}</h3>
+                          {item.description && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.description}</p>}
+                        </div>
+                        {item.addedDuringInspection && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">ADDED</span>}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button 
-                        variant={item.status === 'good' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`h-10 text-xs ${item.status === 'good' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}`}
-                        onClick={() => updateItemStatus(item.id, 'good')}
-                      >Good</Button>
-                      <Button 
-                        variant={item.status === 'damaged' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`h-10 text-xs ${item.status === 'damaged' ? 'bg-destructive hover:bg-destructive/90 text-white border-destructive' : ''}`}
-                        onClick={() => updateItemStatus(item.id, 'damaged')}
-                      >Damaged</Button>
-                      <Button 
-                        variant={item.status === 'dirty' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`h-10 text-xs ${item.status === 'dirty' ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' : ''}`}
-                        onClick={() => updateItemStatus(item.id, 'dirty')}
-                      >Dirty</Button>
-                    </div>
 
-                    <div className="flex gap-2 mt-2">
-                       <Button 
-                        variant={item.status === 'missing' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`flex-1 h-8 text-xs ${item.status === 'missing' ? 'bg-destructive hover:bg-destructive/90 text-white border-destructive' : ''}`}
-                        onClick={() => updateItemStatus(item.id, 'missing')}
-                      >Missing</Button>
-                      <Button 
-                        variant={item.status === 'not_applicable' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`flex-1 h-8 text-xs ${item.status === 'not_applicable' ? 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600' : ''}`}
-                        onClick={() => updateItemStatus(item.id, 'not_applicable')}
-                      >N/A</Button>
-                    </div>
+                      {/* Multi-select status chips */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {ALL_STATUS_TAGS.map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className={getChipStyle(tag, statuses.includes(tag))}
+                            onClick={() => updateItemStatuses(item, toggleStatusTag(statuses, tag))}
+                          >
+                            {tag === 'needs_follow_up' ? 'needs follow-up'
+                              : tag === 'not_safe_to_check' ? 'not safe to check'
+                              : tag.replace(/_/g, ' ')}
+                          </button>
+                        ))}
+                      </div>
 
-                    <Input 
-                      placeholder="Add notes..." 
-                      className="text-xs h-9 bg-gray-100 dark:bg-gray-900 border-none"
-                      value={item.notes}
-                      onChange={(e) => updateItemNotes(item.id, e.target.value)}
-                    />
-                  </CardContent>
-                </Card>
-              ))}
+                      {/* Active statuses summary */}
+                      {statuses.some(s => s !== 'not_checked') && (
+                        <div className="text-[11px] text-muted-foreground">
+                          <span className="font-medium">Status:</span>{' '}
+                          {formatStatuses(statuses)}
+                        </div>
+                      )}
+
+                      {/* Mixed-status warning */}
+                      {showMixed && (
+                        <div className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5">
+                          This item has both positive and issue statuses selected. Add a note to clarify if needed.
+                        </div>
+                      )}
+
+                      {/* Notes */}
+                      <Input
+                        placeholder="Add notes…"
+                        className="text-xs h-9 bg-gray-100 dark:bg-gray-900 border-none"
+                        value={item.notes}
+                        onChange={(e) => updateItemNotes(item.id, e.target.value)}
+                      />
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         );
@@ -1092,8 +1179,8 @@ function RequiredShotScore({ packet }: { packet: any }) {
 
   if (requiredItems.length === 0) return null;
 
-  const checked = requiredItems.filter((i: any) => i.status !== 'not_checked');
-  const missing = requiredItems.filter((i: any) => i.status === 'not_checked');
+  const checked = requiredItems.filter((i: any) => isItemChecked(i));
+  const missing = requiredItems.filter((i: any) => !isItemChecked(i));
   const pct = Math.round((checked.length / requiredItems.length) * 100);
 
   return (
@@ -1285,13 +1372,16 @@ function buildDisputeText(packet: any): string {
   }
 
   const issues = (packet.checklistItems || []).filter((i: any) =>
-    ['damaged', 'dirty', 'missing', 'not_working'].includes(i.status)
+    getEffectiveStatuses(i).some((s: string) => ISSUE_STATUSES.includes(s))
   );
   if (issues.length > 0) {
     lines.push('');
     lines.push('DOCUMENTED ISSUES');
     issues.forEach((i: any) => {
-      lines.push(`  • ${i.label} — ${i.status.replace('_', ' ')}${i.notes ? ': ' + i.notes : ''}`);
+      const ss = getEffectiveStatuses(i);
+      const issueStatuses = ss.filter((s: string) => ISSUE_STATUSES.includes(s));
+      const displayStatuses = issueStatuses.length > 0 ? formatStatuses(issueStatuses) : formatStatuses(ss);
+      lines.push(`  • ${i.label} — ${displayStatuses}${i.notes ? ': ' + i.notes : ''}`);
     });
   }
 
@@ -1360,13 +1450,16 @@ function buildTravelSummaryText(packet: any): string {
   }
 
   const issues = (packet.checklistItems || []).filter((i: any) =>
-    ['damaged', 'dirty', 'missing', 'not_working'].includes(i.status)
+    getEffectiveStatuses(i).some((s: string) => ISSUE_STATUSES.includes(s))
   );
   if (issues.length > 0) {
     lines.push('');
     lines.push('DOCUMENTED ISSUES');
     issues.forEach((i: any) => {
-      lines.push(`  • ${i.label} — ${i.status.replace('_', ' ')}${i.notes ? ': ' + i.notes : ''}`);
+      const ss = getEffectiveStatuses(i);
+      const issueStatuses = ss.filter((s: string) => ISSUE_STATUSES.includes(s));
+      const displayStatuses = issueStatuses.length > 0 ? formatStatuses(issueStatuses) : formatStatuses(ss);
+      lines.push(`  • ${i.label} — ${displayStatuses}${i.notes ? ': ' + i.notes : ''}`);
     });
   }
 

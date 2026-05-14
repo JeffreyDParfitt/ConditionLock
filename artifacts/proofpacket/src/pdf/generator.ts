@@ -212,7 +212,8 @@ export async function generatePDF(
         head: [['Item', 'Status', 'Notes']],
         body: items.map(item => [
           item.label,
-          item.status.replace(/_/g, ' '),
+          (item.statuses && item.statuses.length > 0 ? item.statuses : [item.status])
+            .map((s: string) => s.replace(/_/g, ' ')).join(', '),
           item.notes || '—',
         ]),
         theme: 'grid',
@@ -233,7 +234,8 @@ export async function generatePDF(
         body: addedItems.map(item => [
           item.label,
           item.section,
-          item.status.replace(/_/g, ' '),
+          (item.statuses && item.statuses.length > 0 ? item.statuses : [item.status])
+            .map((s: string) => s.replace(/_/g, ' ')).join(', '),
           item.notes || '—',
           formatDate(item.createdAt),
         ]),

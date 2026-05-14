@@ -18,7 +18,11 @@ export type PacketType =
   | 'accident_claim'
   | 'custom';
 
-export type ChecklistStatus = 'not_checked' | 'good' | 'damaged' | 'dirty' | 'missing' | 'not_working' | 'works' | 'not_applicable' | 'unknown' | 'not_safe_to_check' | 'included' | 'excluded' | 'present' | 'not_present';
+export type ChecklistStatus =
+  | 'not_checked' | 'good' | 'works' | 'damaged' | 'dirty' | 'stained' | 'odor'
+  | 'missing' | 'not_working' | 'unknown' | 'not_safe_to_check' | 'not_applicable'
+  | 'included' | 'excluded' | 'present' | 'not_present' | 'returned' | 'not_returned'
+  | 'reported' | 'not_reported' | 'needs_follow_up' | 'resolved' | 'unresolved';
 
 export type Phase = 'before' | 'after' | 'both' | 'pickup' | 'return' | 'sale' | 'transfer' | 'handoff' | 'general';
 
@@ -50,6 +54,7 @@ export interface ChecklistItem {
   description: string;
   phase: Phase;
   status: ChecklistStatus;
+  statuses?: string[];
   notes: string;
   photoIds: string[];
   addedDuringInspection: boolean;
