@@ -221,6 +221,10 @@ export default function Pricing() {
       </Card>
 
       <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
+        Purchases are platform-based and tied to the app store account used for purchase.
+      </p>
+
+      <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
         ProofPacket runs on your device. Your packets, photos, hashes, verification results, and archives are not uploaded to ProofPacket servers because ProofPacket does not use servers.
       </p>
     </div>
