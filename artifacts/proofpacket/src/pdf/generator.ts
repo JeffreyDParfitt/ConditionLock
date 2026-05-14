@@ -14,6 +14,7 @@ const PDF_TITLES: Record<string, string> = {
   moving_truck_van: 'Moving Truck / Van Condition Report',
   trailer_tow_equipment: 'Trailer / Tow Equipment Condition Report',
   custom_rental_vehicle: 'Rental Vehicle Condition Report',
+  company_vehicle_handoff: 'Company Vehicle Handoff Report',
   hotel: 'Hotel Stay Condition Report',
   airbnb: 'Short-Term Rental Condition Report',
   apartment_home: 'Apartment / Home Rental Condition Report',

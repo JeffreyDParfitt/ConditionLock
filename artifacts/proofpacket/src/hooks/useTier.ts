@@ -36,6 +36,7 @@ export const PRO_TEMPLATES = [
 export const BUSINESS_TEMPLATES = [
   ...PRO_TEMPLATES,
   'business_commercial_lease', 'business_changeover_as_is_sale', 'equipment_sale_as_is_transfer',
+  'company_vehicle_handoff',
 ];
 
 const ALL_FEATURES = {

@@ -221,6 +221,142 @@ export const templates: Record<PacketType, PacketTemplate> = {
     ]
   },
 
+  company_vehicle_handoff: {
+    type: 'company_vehicle_handoff',
+    name: 'Company Vehicle Handoff',
+    description: 'Document company vehicle condition at checkout, return, or transfer between drivers. Works for fleet cars, vans, trucks, delivery vehicles, service vehicles, and any employer-assigned vehicle.',
+    category: 'Business',
+    sections: [
+      {
+        name: 'Required Exterior Photos',
+        items: [
+          { label: 'Front exterior', description: 'Wide shot of front', phase: 'both', status: 'not_checked' },
+          { label: 'Rear exterior', description: 'Wide shot of rear', phase: 'both', status: 'not_checked' },
+          { label: 'Driver side', description: 'Full driver side', phase: 'both', status: 'not_checked' },
+          { label: 'Passenger side', description: 'Full passenger side', phase: 'both', status: 'not_checked' },
+          { label: 'Roof', description: 'Check for damage if visible and safe', phase: 'both', status: 'not_checked' },
+          { label: 'Hood', description: 'Condition of hood surface', phase: 'both', status: 'not_checked' },
+          { label: 'Trunk / hatch / cargo area exterior', description: 'Exterior of cargo or trunk area', phase: 'both', status: 'not_checked' },
+          { label: 'Front bumper', description: 'Close-up of front bumper condition', phase: 'both', status: 'not_checked' },
+          { label: 'Rear bumper', description: 'Close-up of rear bumper condition', phase: 'both', status: 'not_checked' },
+          { label: 'Wheels / rims', description: 'All wheels for curb rash or damage', phase: 'both', status: 'not_checked' },
+          { label: 'Tires', description: 'Tread depth and condition', phase: 'both', status: 'not_checked' },
+          { label: 'Windshield', description: 'Full windshield for chips or cracks', phase: 'both', status: 'not_checked' },
+          { label: 'Side windows', description: 'All side windows', phase: 'both', status: 'not_checked' },
+          { label: 'Rear window', description: 'Rear glass condition', phase: 'both', status: 'not_checked' },
+          { label: 'Mirrors', description: 'Both side mirrors', phase: 'both', status: 'not_checked' },
+          { label: 'License plate', description: 'Clear photo of plate', phase: 'both', status: 'not_checked' },
+          { label: 'Company decals / branding', description: 'Condition of any decals, logos, or wraps if present', phase: 'both', status: 'not_checked' },
+          { label: 'Existing scratches / dents', description: 'Close-ups of all pre-existing damage at checkout', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Required Interior Photos',
+        items: [
+          { label: 'Driver seat', description: 'Upholstery condition', phase: 'both', status: 'not_checked' },
+          { label: 'Passenger seat', description: 'Upholstery condition', phase: 'both', status: 'not_checked' },
+          { label: 'Back seats', description: 'Rear seat condition', phase: 'both', status: 'not_checked' },
+          { label: 'Dashboard', description: 'General dashboard condition', phase: 'both', status: 'not_checked' },
+          { label: 'Odometer', description: 'Clear photo of current mileage', phase: 'both', status: 'not_checked' },
+          { label: 'Fuel gauge / EV battery display', description: 'Photo of fuel or charge level', phase: 'both', status: 'not_checked' },
+          { label: 'Warning lights', description: 'Note any active warning or check lights', phase: 'both', status: 'not_checked' },
+          { label: 'Center console', description: 'Condition of console', phase: 'both', status: 'not_checked' },
+          { label: 'Glove box', description: 'Open and check — registration/insurance present', phase: 'pickup', status: 'not_checked' },
+          { label: 'Trunk / cargo area', description: 'Interior cargo space condition', phase: 'both', status: 'not_checked' },
+          { label: 'Floor mats', description: 'Present and condition', phase: 'both', status: 'not_checked' },
+          { label: 'Headliner', description: 'Ceiling fabric condition', phase: 'both', status: 'not_checked' },
+          { label: 'Infotainment screen', description: 'Screen condition, no cracks', phase: 'both', status: 'not_checked' },
+          { label: 'Cab cleanliness', description: 'Overall interior cleanliness', phase: 'both', status: 'not_checked' },
+          { label: 'Personal items removed', description: 'No personal belongings left behind', phase: 'return', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Work Equipment / Accessories',
+        items: [
+          { label: 'Keys / key fob', description: 'Issued and accounted for', phase: 'both', status: 'not_checked' },
+          { label: 'Spare key', description: 'Spare key present if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Fuel card', description: 'Fuel card issued and returned', phase: 'both', status: 'not_checked' },
+          { label: 'Toll transponder', description: 'Transponder present if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Parking pass', description: 'Present if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Company phone / tablet mount', description: 'Mount present and undamaged', phase: 'both', status: 'not_checked' },
+          { label: 'Charger / cables', description: 'Vehicle or device charger cables present', phase: 'both', status: 'not_checked' },
+          { label: 'Dashcam', description: 'Present and powered if equipped', phase: 'both', status: 'not_checked' },
+          { label: 'GPS / telematics device', description: 'Device visible and undamaged if equipped', phase: 'both', status: 'not_checked' },
+          { label: 'Safety vest / PPE', description: 'Safety gear present if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Traffic cones', description: 'Count and condition', phase: 'both', status: 'not_checked' },
+          { label: 'First aid kit', description: 'Present and stocked if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Fire extinguisher', description: 'Present and in date if issued', phase: 'both', status: 'not_checked' },
+          { label: 'Tools', description: 'All issued tools accounted for', phase: 'both', status: 'not_checked' },
+          { label: 'Ladder / ladder rack', description: 'Present and secured', phase: 'both', status: 'not_checked' },
+          { label: 'Cargo straps / tie-downs', description: 'Count and condition', phase: 'both', status: 'not_checked' },
+          { label: 'Delivery bags / totes', description: 'Count and condition if applicable', phase: 'both', status: 'not_checked' },
+          { label: 'Paperwork / documents', description: 'Vehicle registration and insurance card present', phase: 'both', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Test It',
+        items: [
+          { label: 'Headlights', description: 'Low beams working', phase: 'pickup', status: 'not_checked' },
+          { label: 'High beams', description: 'High beams working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Turn signals', description: 'Left and right working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Brake lights', description: 'All brake lights illuminated', phase: 'pickup', status: 'not_checked' },
+          { label: 'Hazard lights', description: 'Four-way flashers working', phase: 'pickup', status: 'not_checked' },
+          { label: 'Reverse lights', description: 'Illuminate when in reverse if safely checkable', phase: 'pickup', status: 'not_checked' },
+          { label: 'Wipers', description: 'All speeds working, blades in good condition', phase: 'pickup', status: 'not_checked' },
+          { label: 'Horn', description: 'Functions normally', phase: 'pickup', status: 'not_checked' },
+          { label: 'AC / Heat', description: 'Climate control functional', phase: 'pickup', status: 'not_checked' },
+          { label: 'Windows', description: 'All windows roll up and down', phase: 'pickup', status: 'not_checked' },
+          { label: 'Door locks', description: 'All doors lock and unlock', phase: 'pickup', status: 'not_checked' },
+          { label: 'Seatbelts', description: 'Latch and retract properly', phase: 'pickup', status: 'not_checked' },
+          { label: 'Warning lights', description: 'No unexpected dash warnings', phase: 'pickup', status: 'not_checked' },
+          { label: 'Backup camera', description: 'Displays when reversing if equipped', phase: 'pickup', status: 'not_checked' },
+          { label: 'Liftgate', description: 'Operates correctly if equipped', phase: 'pickup', status: 'not_checked' },
+          { label: 'Cargo door', description: 'Rolls up, latches, locks if van/truck', phase: 'pickup', status: 'not_checked' },
+          { label: 'Loading ramp', description: 'Deploys and retracts if equipped', phase: 'pickup', status: 'not_checked' },
+          { label: 'EV charging cable', description: 'Cable present and undamaged if electric vehicle', phase: 'pickup', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Damage Documentation',
+        items: [
+          { label: 'All pre-existing damage documented', description: 'All scratches, dents, chips, and wear noted at checkout', phase: 'pickup', status: 'not_checked' },
+          { label: 'Damage photos taken', description: 'Close-up photos of each damage area', phase: 'pickup', status: 'not_checked' },
+          { label: 'Damage reported to supervisor', description: 'Pre-existing damage confirmed with manager before checkout', phase: 'pickup', status: 'not_checked' },
+          { label: 'New damage at return documented', description: 'Any new damage since checkout is photographed and noted', phase: 'return', status: 'not_checked' },
+          { label: 'New damage reported', description: 'New damage reported to supervisor / fleet manager', phase: 'return', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Return / Check-In Condition',
+        items: [
+          { label: 'Same overall condition as checkout', description: 'No new undocumented damage', phase: 'return', status: 'not_checked' },
+          { label: 'Fuel / battery level documented', description: 'Photo taken of gauge at return', phase: 'return', status: 'not_checked' },
+          { label: 'Ending odometer documented', description: 'Photo taken of mileage at return', phase: 'return', status: 'not_checked' },
+          { label: 'Keys / fob returned', description: 'All keys accounted for', phase: 'return', status: 'not_checked' },
+          { label: 'Fuel card returned', description: 'Fuel card returned if issued', phase: 'return', status: 'not_checked' },
+          { label: 'Toll transponder returned', description: 'Transponder returned if issued', phase: 'return', status: 'not_checked' },
+          { label: 'Equipment / accessories returned', description: 'All issued items returned and accounted for', phase: 'return', status: 'not_checked' },
+          { label: 'Cargo area emptied', description: 'No items left in cargo area', phase: 'return', status: 'not_checked' },
+          { label: 'Personal items removed', description: 'Driver has removed all personal belongings', phase: 'return', status: 'not_checked' },
+          { label: 'Cab cleanliness acceptable', description: 'Interior left in acceptable condition', phase: 'return', status: 'not_checked' },
+          { label: 'Supervisor / fleet manager notified', description: 'Return confirmed with responsible party', phase: 'return', status: 'not_checked' },
+        ]
+      },
+      {
+        name: 'Driver Transfer',
+        items: [
+          { label: 'Outgoing driver condition documented', description: 'Vehicle condition documented by outgoing driver', phase: 'transfer', status: 'not_checked' },
+          { label: 'Incoming driver condition documented', description: 'Incoming driver confirms or notes differences', phase: 'transfer', status: 'not_checked' },
+          { label: 'Odometer at transfer documented', description: 'Clear photo of mileage at handoff', phase: 'transfer', status: 'not_checked' },
+          { label: 'Fuel / battery at transfer documented', description: 'Gauge photo taken at handoff', phase: 'transfer', status: 'not_checked' },
+          { label: 'Keys / accessories handed over', description: 'All items transferred to incoming driver', phase: 'transfer', status: 'not_checked' },
+          { label: 'Outgoing driver signature captured', description: 'Outgoing driver signed the handoff report', phase: 'transfer', status: 'not_checked' },
+          { label: 'Incoming driver signature captured', description: 'Incoming driver signed the handoff report', phase: 'transfer', status: 'not_checked' },
+        ]
+      }
+    ]
+  },
+
   hotel: {
     type: 'hotel',
     name: 'Hotel Stay',

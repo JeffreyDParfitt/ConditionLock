@@ -3,6 +3,7 @@ export type PacketType =
   | 'moving_truck_van'
   | 'trailer_tow_equipment'
   | 'custom_rental_vehicle'
+  | 'company_vehicle_handoff'
   | 'hotel'
   | 'airbnb'
   | 'apartment_home'

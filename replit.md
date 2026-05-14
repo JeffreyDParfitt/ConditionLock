@@ -82,6 +82,8 @@ Selector options are grouped by type in `NewPacketForm.tsx`:
 
 ProofPacket is not affiliated with rental companies or car-sharing platforms. It currently creates API-free exports that users can manually attach to email, rental company portals, car-sharing dispute workflows, or claim forms. Future integrations may include rental vehicle companies, fleet operators, car-sharing platforms, and dispute/claims workflows.
 
+Company Vehicle Handoff is designed for future integrations with fleet management systems, internal ticketing tools, HR/onboarding workflows, and maintenance systems. Current exports are API-free and can be attached manually to emails, tickets, fleet records, or internal documentation systems.
+
 ## Pricing tiers
 
 | Feature | Trial (3 days) | Pro | Business Pro |
