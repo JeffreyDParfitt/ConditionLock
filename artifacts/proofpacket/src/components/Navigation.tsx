@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, FileText, PlusCircle, LayoutTemplate, Settings } from "lucide-react";
+import { Home, FileText, PlusCircle, ShieldCheck, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Navigation() {
@@ -9,7 +9,7 @@ export function Navigation() {
     { href: "/", label: "Home", icon: Home },
     { href: "/packets", label: "Packets", icon: FileText },
     { href: "/packets/new", label: "New", icon: PlusCircle, highlight: true },
-    { href: "/templates", label: "Templates", icon: LayoutTemplate },
+    { href: "/verify", label: "Verify", icon: ShieldCheck },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 

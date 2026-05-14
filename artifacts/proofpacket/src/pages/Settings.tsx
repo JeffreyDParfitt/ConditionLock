@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload } from "lucide-react";
+import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload, Archive, AlertTriangle } from "lucide-react";
+import { importArchive } from "@/utils/manifest";
 import { useToast } from "@/hooks/use-toast";
 import { templates } from "@/templates";
 import { useTier, setTier, TIER_LIMITS } from "@/hooks/useTier";
@@ -119,6 +120,72 @@ export default function Settings() {
         toast({ title: "Backup restored", description: `${data.packets.length} packets imported.` });
       } catch (err) {
         toast({ title: "Import failed", description: "Invalid or corrupted backup file.", variant: "destructive" });
+      }
+    };
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  };
+
+  const handleImportArchive = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip,application/zip';
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        toast({ title: "Reading archive…", description: "Extracting packet data and photos." });
+        const { packet, photos, manifest } = await importArchive(file);
+
+        const existing = await db.packets.get(packet.id);
+        if (existing) {
+          const choice = window.confirm(
+            `A packet with the same ID already exists:\n"${existing.title}"\n\nClick OK to replace it, or Cancel to import as a duplicate.`
+          );
+          if (choice) {
+            await db.packets.put(packet);
+          } else {
+            const { id: _, ...rest } = packet;
+            const newId = crypto.randomUUID();
+            await db.packets.put({ ...rest, id: newId, title: `${packet.title} (Restored)`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+          }
+        } else {
+          await db.packets.put(packet);
+        }
+
+        let restoredPhotos = 0;
+        let missingPhotos = 0;
+        for (const { entry, blob } of photos) {
+          if (blob) {
+            const { generateThumbnail } = await import('@/utils/photo');
+            const thumbnailData = await generateThumbnail(blob);
+            await db.photos.put({
+              id: entry.id,
+              packetId: packet.id,
+              originalBlob: blob,
+              thumbnailData,
+              mimeType: entry.mimeType,
+              fileName: entry.archiveFileName,
+              fileSize: entry.fileSize,
+              caption: entry.caption,
+              category: entry.category,
+              phase: entry.phase as any,
+              dateTaken: entry.dateTaken,
+              createdAt: new Date().toISOString(),
+            });
+            restoredPhotos++;
+          } else {
+            missingPhotos++;
+          }
+        }
+
+        const desc = missingPhotos > 0
+          ? `Packet restored. ${restoredPhotos} photo(s) restored, ${missingPhotos} missing from archive.`
+          : `Packet and ${restoredPhotos} photo(s) fully restored.`;
+        toast({ title: "Archive imported", description: desc });
+      } catch (err: any) {
+        toast({ title: "Import failed", description: err.message || "Invalid or corrupted archive file.", variant: "destructive" });
       }
     };
     document.body.appendChild(input);
@@ -272,6 +339,36 @@ export default function Settings() {
                 }
               }}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Import / Restore Archive */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Archive className="w-4 h-4 text-primary" />
+            Import / Restore Archive
+          </CardTitle>
+          <CardDescription>
+            Re-import a ProofPacket archive from your phone, computer, email, or cloud drive. Restored packets are stored locally on this device.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full justify-start h-12"
+            onClick={handleImportArchive}
+            data-testid="button-import-archive"
+          >
+            <Archive className="w-4 h-4 mr-2 text-green-700" />
+            Import Full Packet Archive (.zip)
+          </Button>
+          <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+              ProofPacket archives are local user-controlled files. If you delete both the local packet and all exported archives, ProofPacket cannot recover the data.
+            </p>
           </div>
         </CardContent>
       </Card>

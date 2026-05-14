@@ -86,3 +86,35 @@ export interface AppSettings {
   showDisclaimer: boolean;
   watermarkExports: boolean;
 }
+
+export type VerificationStatus = 'passed' | 'warning' | 'failed';
+
+export interface VerificationPhotoResult {
+  id: string;
+  fileName: string;
+  archiveFileName: string;
+  caption: string;
+  category: string;
+  phase: string;
+  expectedHash: string;
+  calculatedHash: string;
+  status: 'verified' | 'missing' | 'mismatch' | 'extra';
+}
+
+export interface VerificationResult {
+  id: string;
+  packetId: string;
+  packetTitle: string;
+  packetType: string;
+  manifestHash: string;
+  verifiedAt: string;
+  totalExpected: number;
+  totalUploaded: number;
+  verifiedCount: number;
+  missingCount: number;
+  mismatchCount: number;
+  extraCount: number;
+  resultStatus: VerificationStatus;
+  photoResults: VerificationPhotoResult[];
+  notes: string;
+}

@@ -18,6 +18,8 @@ import { Camera, Download, FileText, CheckSquare, MessageSquare, PenTool, Image 
 import { format } from "date-fns";
 import SignaturePad from "signature_pad";
 import { generatePDF } from "@/pdf/generator";
+import { exportVerifiedPacket, exportFullArchive, exportPhotosZip } from "@/utils/manifest";
+import { isCryptoAvailable } from "@/utils/crypto";
 import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, CommunicationLog } from "@/types";
 import { useTier } from "@/hooks/useTier";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -122,7 +124,7 @@ export default function PacketDetail() {
           </TabsContent>
 
           <TabsContent value="export" className="mt-0">
-            <ExportTab packet={packet} settings={settings} />
+            <ExportTab packet={packet} settings={settings} photos={photos} />
           </TabsContent>
         </div>
       </Tabs>
@@ -751,45 +753,84 @@ function SignaturesTab({ packet }: { packet: any }) {
 // ------------------------------------------------------------------
 // EXPORT TAB
 // ------------------------------------------------------------------
-function ExportTab({ packet, settings }: { packet: any, settings: any }) {
+function ExportTab({ packet, settings, photos }: { packet: any, settings: any, photos: any[] }) {
+  const { limits } = useTier();
+  const { toast } = useToast();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+  const [upgradeTier, setUpgradeTier] = useState<'pro' | 'business'>('pro');
   const [opts, setOpts] = useState({
-    includeCover: true,
-    includeSummary: true,
-    includeChecklist: true,
-    includePhotos: true,
-    includeCommLog: true,
-    includeSignatures: true,
-    includeDisclaimer: true
+    includeCover: true, includeSummary: true, includeChecklist: true,
+    includePhotos: true, includeCommLog: true, includeSignatures: true, includeDisclaimer: true
   });
-  const [generating, setGenerating] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const cryptoOk = isCryptoAvailable();
 
-  const handleExport = async () => {
-    setGenerating(true);
-    try {
-      await generatePDF(packet, settings, opts);
-      await storage.updatePacket(packet.id, { exportCount: (packet.exportCount || 0) + 1 });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setGenerating(false);
-    }
+  const showUpgrade = (reason: string, required: 'pro' | 'business') => {
+    setUpgradeReason(reason);
+    setUpgradeTier(required);
+    setUpgradeOpen(true);
   };
 
+  const withBusy = async (key: string, fn: () => Promise<void>) => {
+    setBusyAction(key);
+    try { await fn(); } catch (e: any) {
+      toast({ title: "Export failed", description: e.message || "An error occurred.", variant: "destructive" });
+    } finally { setBusyAction(null); }
+  };
+
+  const handlePDF = () => withBusy('pdf', async () => {
+    await generatePDF(packet, settings, opts);
+    await storage.updatePacket(packet.id, { exportCount: (packet.exportCount || 0) + 1 });
+    toast({ title: "PDF exported", description: "Check your downloads folder." });
+  });
+
+  const handleVerifiedExport = () => {
+    if (!limits.hasVerifiedExport) { showUpgrade('Export Verified Packet requires ProofPacket Pro.', 'pro'); return; }
+    if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available in this browser.", variant: "destructive" }); return; }
+    withBusy('verified', async () => {
+      const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
+      await exportVerifiedPacket(packet, photos, exportedBy);
+      toast({ title: "Verified Packet exported", description: "Manifest JSON and summary downloaded." });
+    });
+  };
+
+  const handleFullArchive = () => {
+    if (!limits.hasArchiveExport) { showUpgrade('Export Full Archive requires ProofPacket Pro.', 'pro'); return; }
+    if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available in this browser.", variant: "destructive" }); return; }
+    withBusy('archive', async () => {
+      const confirmed = window.confirm(
+        `This will create a ZIP archive of "${packet.title}" with all photos, manifest, and metadata.\n\nSave the file somewhere safe — ProofPacket cannot recover deleted local data without an archive.\n\nProceed?`
+      );
+      if (!confirmed) return;
+      const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
+      await exportFullArchive(packet, photos, exportedBy);
+      toast({ title: "Archive exported", description: "Full packet archive ZIP downloaded." });
+    });
+  };
+
+  const handlePhotosZip = () => {
+    if (!limits.hasZipExport) { showUpgrade('Photos ZIP export requires Business Pro.', 'business'); return; }
+    if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available.", variant: "destructive" }); return; }
+    withBusy('photos', async () => {
+      await exportPhotosZip(packet, photos);
+      toast({ title: "Photos ZIP exported", description: "Original-quality photos downloaded." });
+    });
+  };
+
+  const busy = (key: string) => busyAction === key;
+
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-12">
+      {/* PDF options */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Include in PDF</CardTitle>
+          <CardTitle className="text-base">PDF Options</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {Object.entries(opts).map(([key, val]) => (
             <div key={key} className="flex items-center space-x-3">
-              <Checkbox 
-                id={key} 
-                checked={val} 
-                onCheckedChange={(c) => setOpts(prev => ({...prev, [key]: !!c}))}
-                className="w-5 h-5"
-              />
+              <Checkbox id={key} checked={val} onCheckedChange={(c) => setOpts(prev => ({...prev, [key]: !!c}))} className="w-5 h-5" />
               <Label htmlFor={key} className="text-sm font-medium leading-none cursor-pointer">
                 {key.replace('include', '').replace(/([A-Z])/g, ' $1').trim()}
               </Label>
@@ -798,10 +839,82 @@ function ExportTab({ packet, settings }: { packet: any, settings: any }) {
         </CardContent>
       </Card>
 
-      <Button size="lg" className="w-full h-14 text-base" onClick={handleExport} disabled={generating}>
-        <Download className="w-5 h-5 mr-2" />
-        {generating ? "Generating..." : "Export PDF Report"}
-      </Button>
+      {/* Export actions */}
+      <div className="space-y-3">
+        {/* Export PDF */}
+        <Button size="lg" className="w-full h-14 text-base" onClick={handlePDF} disabled={!!busyAction}>
+          <Download className="w-5 h-5 mr-2" />
+          {busy('pdf') ? "Generating…" : "Export PDF Report"}
+        </Button>
+
+        {/* Export Verified Packet */}
+        <div className="space-y-1">
+          {limits.hasVerifiedExport ? (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/30" onClick={handleVerifiedExport} disabled={!!busyAction}>
+              <Download className="w-5 h-5 mr-2 text-indigo-600" />
+              {busy('verified') ? "Hashing photos…" : "Export Verified Packet"}
+            </Button>
+          ) : (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base" onClick={handleVerifiedExport}>
+              <Lock className="w-5 h-5 mr-2" />
+              Export Verified Packet
+              <span className="ml-auto text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded uppercase">Pro</span>
+            </Button>
+          )}
+          <p className="text-[11px] text-muted-foreground px-1">
+            Downloads manifest JSON + summary. Lets receivers verify photo integrity locally.
+          </p>
+        </div>
+
+        {/* Export Full Archive */}
+        <div className="space-y-1">
+          {limits.hasArchiveExport ? (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base border-green-300 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-950/30" onClick={handleFullArchive} disabled={!!busyAction}>
+              <Download className="w-5 h-5 mr-2 text-green-700" />
+              {busy('archive') ? "Building archive…" : "Export Full Packet Archive"}
+            </Button>
+          ) : (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base" onClick={handleFullArchive}>
+              <Lock className="w-5 h-5 mr-2" />
+              Export Full Packet Archive
+              <span className="ml-auto text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded uppercase">Pro</span>
+            </Button>
+          )}
+          <p className="text-[11px] text-muted-foreground px-1">
+            ZIP with original-quality photos, manifest, PDF, metadata. Save to computer, email, or cloud drive. Re-import later.
+          </p>
+        </div>
+
+        {/* Export Photos ZIP */}
+        <div className="space-y-1">
+          {limits.hasZipExport ? (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base" onClick={handlePhotosZip} disabled={!!busyAction}>
+              <Download className="w-5 h-5 mr-2" />
+              {busy('photos') ? "Zipping photos…" : `Export Photos ZIP (${photos.length})`}
+            </Button>
+          ) : (
+            <Button variant="outline" size="lg" className="w-full h-14 text-base" onClick={handlePhotosZip}>
+              <Lock className="w-5 h-5 mr-2" />
+              Export Photos ZIP
+              <span className="ml-auto text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-1.5 py-0.5 rounded uppercase">Business</span>
+            </Button>
+          )}
+          <p className="text-[11px] text-muted-foreground px-1">
+            Original-quality photos with SHA-256 hashes. Includes photo-metadata.json.
+          </p>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <Card className="bg-muted/30 border-muted">
+        <CardContent className="p-4">
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <strong>Export disclaimer:</strong> Verified Packet export helps receivers check whether files match the exported manifest. It does not create legal certification or replace professional advice.
+          </p>
+        </CardContent>
+      </Card>
+
+      <UpgradePrompt open={upgradeOpen} onClose={() => setUpgradeOpen(false)} requiredTier={upgradeTier} reason={upgradeReason} />
     </div>
   );
 }

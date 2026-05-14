@@ -1,45 +1,94 @@
-# [Project name]
+# ProofPacket
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mobile-first, fully local web app for documenting property condition before rentals, sales, handoffs, and transfers. All data stored in IndexedDB via Dexie. No accounts, no cloud, no backend.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/proofpacket run dev` — run the web app (preview at `/`)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000, currently unused)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + Tailwind + shadcn/ui, Wouter routing
+- DB: Dexie v3 (IndexedDB), no backend DB
+- PDF: jsPDF + jspdf-autotable
+- ZIP: JSZip (archive export/import, photo ZIP)
+- Crypto: Web Crypto API, SHA-256 (browser-native)
+- Signatures: signature_pad
+- Animations: framer-motion
+- Icons: lucide-react
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/proofpacket/src/` — main app
+  - `pages/` — Dashboard, Packets, PacketDetail, NewPacket, NewPacketForm, VerifyPacket, Templates, Settings, Pricing
+  - `storage/db.ts` — Dexie schema (v2: packets, photos, settings, verificationResults)
+  - `storage/actions.ts` — all DB read/write helpers
+  - `types/index.ts` — all TypeScript types
+  - `utils/crypto.ts` — SHA-256 hashing (Web Crypto API)
+  - `utils/manifest.ts` — manifest generation, archive export/import
+  - `pdf/generator.ts` — jsPDF report generator
+  - `hooks/useTier.ts` — Free/Pro/Business tier system
+  - `components/Navigation.tsx` — bottom nav (Home, Packets, New, Verify, Settings)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Fully local**: All data in IndexedDB, no server. Hashing via Web Crypto API.
+- **Dual workflow**: Dashboard offers "Create Packet" (sender) and "Verify Packet" (receiver) modes in the same app.
+- **Tier simulation**: Tier stored in `localStorage` key `pp_tier_sim`. Developer toggles in Settings.
+- **Archive format**: JSZip ZIP with packet-data.json, verification-manifest.json, original photos, checksums.txt, README.txt.
+- **SHA-256 matching**: Hash-first matching (filename not required to match), with fallback to filename-based mismatch detection.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**Create Packet mode** (sender):
+- Choose packet type (car rental, apartment, sale, etc.)
+- Build checklist, add photos, communication logs, signatures
+- Export: PDF Report, Verified Packet (manifest + summary), Full Archive ZIP, Photos ZIP
+
+**Verify Packet mode** (receiver):
+- Upload verification-manifest.json + photo files or ZIP
+- SHA-256 hashes computed locally, compared against manifest
+- Results: verified / missing / hash mismatch / extra
+- Save results locally (Business tier), export result summary
+
+**Import / Restore**:
+- Import Full Packet Archive ZIP → restores packet + photos into IndexedDB
+- Duplicate detection with replace/duplicate choice
+
+## Pricing tiers
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Packets | 1 | ∞ | ∞ |
+| Photos/packet | 15 | ∞ | ∞ |
+| Watermark | ✓ | — | — |
+| Signatures | — | ✓ | ✓ |
+| JSON Backup | — | ✓ | ✓ |
+| Verified Export | — | ✓ | ✓ |
+| Archive Export | — | ✓ | ✓ |
+| Photos ZIP | — | — | ✓ |
+| Save Verifications | — | — | ✓ |
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- No backend, no accounts, no cloud — everything local only
+- Mobile-first layout (max-w-lg, pb-24 for nav)
+- Tier stored in localStorage key `pp_tier_sim` for dev simulation
+- Use plain disclaimer language — never say "legally certified", "court-approved", etc.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- `storage.getSettings()` is pure read — call `storage.ensureSettings()` at startup only (in `main.tsx`)
+- Dexie DB is version 2 — adding new tables requires incrementing the version
+- `generatePDFBlob` in generator.ts calls `generatePDF` internally (triggers download) — avoid calling it from archive flows directly; pass `undefined` for pdfBlob in `exportFullArchive` to skip PDF in ZIP
+- JSZip is installed at workspace root; import as `import JSZip from 'jszip'`
+- Web Crypto API requires HTTPS or localhost — check `isCryptoAvailable()` before hashing
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

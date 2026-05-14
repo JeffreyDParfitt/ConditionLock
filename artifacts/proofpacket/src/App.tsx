@@ -12,6 +12,7 @@ import PacketDetail from "@/pages/PacketDetail";
 import Templates from "@/pages/Templates";
 import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
+import VerifyPacket from "@/pages/VerifyPacket";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/templates" component={Templates} />
         <Route path="/settings" component={Settings} />
         <Route path="/pricing" component={Pricing} />
+        <Route path="/verify" component={VerifyPacket} />
         <Route component={NotFound} />
       </Switch>
       <Navigation />

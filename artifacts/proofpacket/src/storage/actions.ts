@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { Packet, ChecklistItem, PhotoItem, CommunicationLog, SignatureItem, PacketType } from '../types';
+import type { Packet, ChecklistItem, PhotoItem, CommunicationLog, SignatureItem, PacketType, VerificationResult } from '../types';
 
 export const storage = {
   // Packets
@@ -89,7 +89,6 @@ export const storage = {
     return settings;
   },
 
-  // Call once at startup to create the settings row if missing
   async ensureSettings() {
     const existing = await db.settings.get(1);
     if (!existing) {
@@ -106,5 +105,24 @@ export const storage = {
 
   async updateSettings(changes: Partial<Omit<import('../types').AppSettings, 'id'>>) {
     await db.settings.update(1, changes);
-  }
+  },
+
+  // Verification Results
+  async getVerificationResults() {
+    return await db.verificationResults.orderBy('verifiedAt').reverse().toArray();
+  },
+
+  async getVerificationResult(id: string) {
+    return await db.verificationResults.get(id);
+  },
+
+  async saveVerificationResult(result: Omit<VerificationResult, 'id'>) {
+    const id = crypto.randomUUID();
+    await db.verificationResults.add({ ...result, id });
+    return id;
+  },
+
+  async deleteVerificationResult(id: string) {
+    await db.verificationResults.delete(id);
+  },
 };
