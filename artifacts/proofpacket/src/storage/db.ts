@@ -28,6 +28,13 @@ export class ProofPacketDB extends Dexie {
       verificationResults: 'id, packetId, verifiedAt, resultStatus',
       activityLog: 'id, packetId, timestamp, activityType'
     });
+    this.version(4).stores({
+      packets: 'id, createdAt, updatedAt, type',
+      photos: 'id, packetId, phase, createdAt, conditionEvidenceId, checklistItemId',
+      settings: 'id',
+      verificationResults: 'id, packetId, verifiedAt, resultStatus',
+      activityLog: 'id, packetId, timestamp, activityType'
+    });
   }
 }
 

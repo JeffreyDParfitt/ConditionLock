@@ -30,6 +30,21 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 const POSITIVE_STATUSES = ['good', 'works', 'included', 'present', 'returned', 'resolved'];
 const ISSUE_STATUSES = ['damaged', 'dirty', 'stained', 'odor', 'missing', 'not_working', 'not_present', 'not_returned', 'not_reported', 'unresolved'];
 const EXCLUSIVE_STATUSES = ['not_checked', 'not_applicable'];
+const EVIDENCE_STATUS_LIST = ['good', 'works', 'damaged', 'dirty', 'stained', 'odor', 'missing', 'not_working', 'not_present', 'not_returned', 'unresolved'];
+const STATUS_LABELS: Record<string, string> = {
+  good: 'Good Condition', works: 'Works / Functional', damaged: 'Damaged', dirty: 'Dirty',
+  stained: 'Stained', odor: 'Odor', missing: 'Missing', not_working: 'Not Working',
+  not_present: 'Not Present', not_returned: 'Not Returned', unresolved: 'Unresolved',
+};
+const NOTE_REQUIRED_STATUSES = ['odor', 'not_working', 'missing'];
+const NOTE_HINTS_MAP: Record<string, string> = {
+  odor: "Describe the odor — type, strength, where it's strongest…",
+  not_working: "Describe what isn't working and how you tested it…",
+  missing: "Describe what's missing and where it should be…",
+  damaged: "Describe the damage — location, size, appearance…",
+  stained: "Describe the stain — location, color, size…",
+  dirty: "Describe the dirty area and extent…",
+};
 
 const ALL_STATUS_TAGS: string[] = [
   'good', 'works', 'included', 'present', 'returned', 'resolved',
@@ -220,7 +235,7 @@ export default function PacketDetail() {
           </TabsContent>
 
           <TabsContent value="checklist" className="mt-0">
-            <ChecklistTab packet={packet} />
+            <ChecklistTab packet={packet} photos={photos} />
           </TabsContent>
 
           <TabsContent value="photos" className="mt-0">
@@ -249,9 +264,144 @@ export default function PacketDetail() {
 }
 
 // ------------------------------------------------------------------
+// INLINE EVIDENCE CARD — rendered per-condition inside checklist items
+// ------------------------------------------------------------------
+function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIssue, onUpdate, onPhotoAdded, onPhotoDeleted }: {
+  packetId: string; checklistItemId: string; evidence: any; photos: any[];
+  isIssue: boolean; onUpdate: (c: any) => void; onPhotoAdded: (id: string) => void; onPhotoDeleted: (id: string) => void;
+}) {
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [capturing, setCapturing] = useState(false);
+  const [viewUrl, setViewUrl] = useState('');
+  const [viewPhoto, setViewPhoto] = useState<any>(null);
+  const [note, setNote] = useState(evidence.note || '');
+  useEffect(() => { setNote(evidence.note || ''); }, [evidence.note]);
+
+  const displayLabel = STATUS_LABELS[evidence.status as string] || String(evidence.status || '').replace(/_/g, ' ');
+  const needsNote = NOTE_REQUIRED_STATUSES.includes(evidence.status as string);
+  const missingPhoto = isIssue && photos.length === 0;
+  const missingNote = needsNote && !String(evidence.note || '').trim();
+
+  const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCapturing(true);
+    try {
+      const now = new Date().toISOString();
+      const id = await storage.addPhoto({
+        packetId, checklistItemId,
+        conditionEvidenceId: evidence.id,
+        originalBlob: file,
+        mimeType: file.type || 'image/jpeg',
+        fileName: `ev-${evidence.status}-${Date.now()}.jpg`,
+        fileSize: file.size,
+        caption: displayLabel,
+        category: String(evidence.status),
+        phase: 'general' as any,
+        dateTaken: now,
+        appCaptured: true,
+        source: 'in_app_camera' as any,
+        verificationEligible: true,
+        capturedAt: now,
+      });
+      onPhotoAdded(id);
+    } finally { setCapturing(false); e.target.value = ''; }
+  };
+
+  const openPhoto = (photo: any) => { setViewPhoto(photo); setViewUrl(URL.createObjectURL(photo.originalBlob)); };
+  const closePhoto = () => { if (viewUrl) URL.revokeObjectURL(viewUrl); setViewPhoto(null); setViewUrl(''); };
+
+  return (
+    <div className={`rounded-lg border px-3 py-2.5 space-y-2 ${isIssue ? 'border-destructive/40 bg-destructive/5 dark:bg-destructive/10' : 'border-green-500/30 bg-green-50/50 dark:bg-green-950/10'}`}>
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
+
+      <div className="flex items-start justify-between gap-2 flex-wrap">
+        <p className={`text-[11px] font-semibold ${isIssue ? 'text-destructive' : 'text-green-700 dark:text-green-400'}`}>
+          {displayLabel}
+        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {isIssue && (
+            <div className="flex gap-1">
+              {(['mild', 'moderate', 'severe'] as const).map(sev => (
+                <button key={sev} type="button"
+                  className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium transition-colors ${evidence.severity === sev
+                    ? sev === 'severe' ? 'bg-destructive text-white border-destructive'
+                      : sev === 'moderate' ? 'bg-amber-500 text-white border-amber-500'
+                      : 'bg-amber-200 text-amber-800 border-amber-200'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:border-gray-400'}`}
+                  onClick={() => onUpdate({ severity: sev, updatedAt: new Date().toISOString() })}
+                >{sev}</button>
+              ))}
+            </div>
+          )}
+          {evidence.timestamp && (
+            <span className="text-[9px] text-muted-foreground">
+              {new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(evidence.timestamp))}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {missingPhoto && (
+        <p className="text-[10px] text-destructive bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20 leading-relaxed">
+          Photo needed — tap "Take Photo" to document this condition.
+        </p>
+      )}
+      {missingNote && (
+        <p className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 rounded px-2 py-1.5 border border-amber-200 dark:border-amber-800 leading-relaxed">
+          {evidence.status === 'odor' ? "Odors aren't visible in photos — a note is especially important here." : 'A note helps describe this condition.'}
+        </p>
+      )}
+
+      {photos.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {photos.map((photo: any) => (
+            <button key={photo.id} className="w-14 h-14 rounded overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0" onClick={() => openPhoto(photo)}>
+              <img src={photo.thumbnailData} className="w-full h-full object-cover" alt="" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      <Textarea
+        className="text-xs min-h-[40px] resize-none bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+        placeholder={NOTE_HINTS_MAP[String(evidence.status)] || 'Add a note for this condition…'}
+        value={note}
+        onChange={e => setNote(e.target.value)}
+        onBlur={() => { if (note !== (evidence.note || '')) onUpdate({ note, updatedAt: new Date().toISOString() }); }}
+        rows={2}
+      />
+
+      <Button size="sm" variant={isIssue ? 'destructive' : 'default'} className="w-full h-8 text-xs"
+        onClick={() => cameraRef.current?.click()} disabled={capturing}>
+        <Camera className="w-3 h-3 mr-1.5" />
+        {capturing ? 'Saving…' : photos.length > 0 ? 'Add Another Photo' : 'Take Photo'}
+      </Button>
+
+      {viewPhoto && (
+        <Dialog open onOpenChange={closePhoto}>
+          <DialogContent className="sm:max-w-md w-[95vw] p-3 bg-black border-gray-800">
+            <img src={viewUrl} className="w-full rounded max-h-[70dvh] object-contain" alt="" />
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" className="flex-1 text-white border-white/20 hover:bg-white/10" onClick={closePhoto}>Close</Button>
+              <Button size="sm" variant="destructive" onClick={async () => {
+                if (!confirm('Delete this photo? This cannot be undone.')) return;
+                await storage.deletePhoto(viewPhoto.id);
+                onPhotoDeleted(viewPhoto.id);
+                closePhoto();
+              }}><Trash2 className="w-3.5 h-3.5" /></Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------
 // CHECKLIST TAB
 // ------------------------------------------------------------------
-function ChecklistTab({ packet }: { packet: any }) {
+function ChecklistTab({ packet, photos }: { packet: any; photos: any[] }) {
   const items = packet.checklistItems || [];
   const sections = Array.from(new Set(items.map((i: any) => i.section)));
 
@@ -271,11 +421,35 @@ function ChecklistTab({ packet }: { packet: any }) {
   const [dDateTime, setDDateTime] = useState('');
   const [dNotes, setDNotes] = useState('');
 
+  const syncEvidence = (item: any, newStatuses: string[]) => {
+    const existing: any[] = item.conditionEvidence || [];
+    const toEvidence = newStatuses.filter(s => EVIDENCE_STATUS_LIST.includes(s));
+    const kept = existing.filter((ev: any) => toEvidence.includes(ev.status));
+    const existingSet = new Set(kept.map((ev: any) => ev.status));
+    const added = toEvidence.filter(s => !existingSet.has(s)).map(s => ({
+      id: crypto.randomUUID(), status: s,
+      displayLabel: STATUS_LABELS[s] || s.replace(/_/g, ' '),
+      note: '', photoIds: [] as string[], timestamp: '', updatedAt: new Date().toISOString(),
+    }));
+    return [...kept, ...added];
+  };
+
   const updateItemStatuses = async (item: any, newStatuses: string[]) => {
+    const existing: any[] = item.conditionEvidence || [];
+    const prevStatuses = getEffectiveStatuses(item);
+    const removed = prevStatuses.filter(s => EVIDENCE_STATUS_LIST.includes(s) && !newStatuses.includes(s));
+    for (const s of removed) {
+      const ev = existing.find((e: any) => e.status === s);
+      if (ev && (ev.photoIds || []).length > 0) {
+        if (!confirm(`Removing "${STATUS_LABELS[s] || s}" will delete ${ev.photoIds.length} evidence photo(s). Continue?`)) return;
+        for (const pid of ev.photoIds) await storage.deletePhoto(pid);
+      }
+    }
+    const newConditionEvidence = syncEvidence(item, newStatuses);
     const primary = getPrimaryStatus(newStatuses) as ChecklistStatus;
     const newItems = items.map((i: any) =>
       i.id === item.id
-        ? { ...i, statuses: newStatuses, status: primary, updatedAt: new Date().toISOString() }
+        ? { ...i, statuses: newStatuses, status: primary, conditionEvidence: newConditionEvidence, updatedAt: new Date().toISOString() }
         : i
     );
     await storage.updatePacket(packet.id, { checklistItems: newItems });
@@ -285,6 +459,40 @@ function ChecklistTab({ packet }: { packet: any }) {
     const newItems = items.map((i: any) =>
       i.id === itemId ? { ...i, notes, updatedAt: new Date().toISOString() } : i
     );
+    await storage.updatePacket(packet.id, { checklistItems: newItems });
+  };
+
+  const updateSingleEvidence = async (itemId: string, evidenceId: string, changes: any) => {
+    const newItems = items.map((i: any) => {
+      if (i.id !== itemId) return i;
+      const evs = (i.conditionEvidence || []).map((ev: any) => ev.id === evidenceId ? { ...ev, ...changes } : ev);
+      return { ...i, conditionEvidence: evs, updatedAt: new Date().toISOString() };
+    });
+    await storage.updatePacket(packet.id, { checklistItems: newItems });
+  };
+
+  const addPhotoToEvidence = async (itemId: string, evidenceId: string, photoId: string) => {
+    const now = new Date().toISOString();
+    const newItems = items.map((i: any) => {
+      if (i.id !== itemId) return i;
+      const evs = (i.conditionEvidence || []).map((ev: any) =>
+        ev.id === evidenceId
+          ? { ...ev, photoIds: [...(ev.photoIds || []), photoId], timestamp: ev.timestamp || now }
+          : ev
+      );
+      return { ...i, conditionEvidence: evs, updatedAt: now };
+    });
+    await storage.updatePacket(packet.id, { checklistItems: newItems });
+  };
+
+  const removePhotoFromEvidence = async (itemId: string, evidenceId: string, photoId: string) => {
+    const newItems = items.map((i: any) => {
+      if (i.id !== itemId) return i;
+      const evs = (i.conditionEvidence || []).map((ev: any) =>
+        ev.id === evidenceId ? { ...ev, photoIds: (ev.photoIds || []).filter((pid: string) => pid !== photoId) } : ev
+      );
+      return { ...i, conditionEvidence: evs, updatedAt: new Date().toISOString() };
+    });
     await storage.updatePacket(packet.id, { checklistItems: newItems });
   };
 
@@ -430,11 +638,34 @@ function ChecklistTab({ packet }: { packet: any }) {
 
                       {/* Notes */}
                       <Input
-                        placeholder="Add notes…"
+                        placeholder="Add general notes…"
                         className="text-xs h-9 bg-gray-100 dark:bg-gray-900 border-none"
                         value={item.notes}
                         onChange={(e) => updateItemNotes(item.id, e.target.value)}
                       />
+
+                      {/* Per-condition evidence cards */}
+                      {(item.conditionEvidence || []).length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Evidence by Condition</p>
+                          {(item.conditionEvidence as any[]).map((ev: any) => {
+                            const evPhotos = photos.filter((p: any) => p.conditionEvidenceId === ev.id);
+                            return (
+                              <InlineEvidenceCard
+                                key={ev.id}
+                                packetId={packet.id}
+                                checklistItemId={item.id}
+                                evidence={ev}
+                                photos={evPhotos}
+                                isIssue={ISSUE_STATUSES.includes(ev.status)}
+                                onUpdate={(changes: any) => updateSingleEvidence(item.id, ev.id, changes)}
+                                onPhotoAdded={(photoId: string) => addPhotoToEvidence(item.id, ev.id, photoId)}
+                                onPhotoDeleted={(photoId: string) => removePhotoFromEvidence(item.id, ev.id, photoId)}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

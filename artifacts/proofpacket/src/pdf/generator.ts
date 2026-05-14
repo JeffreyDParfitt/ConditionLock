@@ -248,17 +248,96 @@ export async function generatePDF(
     }
   }
 
-  // ── 4. PHOTOS ──────────────────────────────────────────────────────
-  if (options.includePhotos && photos.length > 0) {
+  // ── 4. EVIDENCE BY CONDITION ────────────────────────────────────────
+  if (options.includePhotos) {
+    const itemsWithEvidence = (packet.checklistItems || []).filter(
+      (item: any) => (item.conditionEvidence || []).some((ev: any) =>
+        (ev.photoIds || []).length > 0 || ev.note || ev.severity
+      )
+    );
+    if (itemsWithEvidence.length > 0) {
+      newPage();
+      sectionHeading('Evidence by Condition');
+      const imgW = (pageW - margin * 2 - 12) / 2;
+      const imgH = imgW * 0.65;
+
+      for (const item of itemsWithEvidence) {
+        const evList: any[] = item.conditionEvidence || [];
+        for (const ev of evList) {
+          const evPhotos = photos.filter((p: any) => (p as any).conditionEvidenceId === ev.id);
+          if (evPhotos.length === 0 && !ev.note && !ev.severity) continue;
+
+          checkBreak(28);
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...slate);
+          doc.text(`${item.label}${item.section ? ` (${item.section})` : ''}`, margin, y);
+          y += 5;
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(0, 0, 0);
+          const condLabel = `Condition: ${ev.displayLabel || ev.status.replace(/_/g, ' ')}${ev.severity ? ` — ${ev.severity}` : ''}`;
+          doc.text(condLabel, margin + 3, y);
+          y += 4.5;
+
+          if (ev.note) {
+            doc.setTextColor(...muted);
+            const noteLines = doc.splitTextToSize(`Note: ${ev.note}`, pageW - margin * 2 - 6);
+            doc.text(noteLines, margin + 3, y);
+            y += noteLines.length * 4;
+          }
+          if (ev.timestamp) {
+            doc.setTextColor(...muted);
+            doc.text(`Timestamp: ${formatDate(ev.timestamp)}`, margin + 3, y);
+            y += 4;
+          }
+          doc.setTextColor(0, 0, 0);
+
+          if (evPhotos.length > 0) {
+            checkBreak(imgH + 8);
+            let col = 0;
+            let rowY = y;
+            for (const photo of evPhotos) {
+              if (col === 0 && rowY + imgH + 8 > pageH - 20) { newPage(); rowY = y; }
+              const xPos = margin + 3 + col * (imgW + 6);
+              try {
+                let dataUrl = photo.originalBlob instanceof Blob ? await blobToDataURL(photo.originalBlob) : photo.thumbnailData || '';
+                if (dataUrl) {
+                  doc.addImage(dataUrl, photo.mimeType === 'image/png' ? 'PNG' : 'JPEG', xPos, rowY, imgW, imgH);
+                }
+              } catch {
+                doc.setFillColor(230, 235, 240);
+                doc.rect(xPos, rowY, imgW, imgH, 'F');
+              }
+              col++;
+              if (col >= 2) { col = 0; rowY += imgH + 4; }
+            }
+            y = col === 0 ? rowY : rowY + imgH + 4;
+            y += 4;
+          }
+
+          doc.setDrawColor(220, 225, 235);
+          doc.setLineWidth(0.2);
+          doc.line(margin, y, pageW - margin, y);
+          y += 5;
+        }
+      }
+    }
+  }
+
+  // ── 5. PHOTOS (general / uncategorized) ────────────────────────────
+  const generalPhotos = photos.filter((p: any) => !(p as any).conditionEvidenceId);
+  if (options.includePhotos && generalPhotos.length > 0) {
     newPage();
-    sectionHeading('Photos');
+    sectionHeading('Additional Photos');
 
     const imgW = (pageW - margin * 2 - 8) / 2;
     const imgH = imgW * 0.75;
     let col = 0;
     let rowY = y;
 
-    for (const photo of photos) {
+    for (const photo of generalPhotos) {
       if (col === 0 && rowY + imgH + 20 > pageH - 20) {
         newPage();
         rowY = y;
@@ -269,7 +348,6 @@ export async function generatePDF(
         if (photo.originalBlob instanceof Blob) {
           dataUrl = await blobToDataURL(photo.originalBlob);
         } else {
-          // Legacy fallback: photo might have thumbnailData
           dataUrl = photo.thumbnailData || '';
         }
         if (dataUrl) {

@@ -24,6 +24,19 @@ export type ChecklistStatus =
   | 'included' | 'excluded' | 'present' | 'not_present' | 'returned' | 'not_returned'
   | 'reported' | 'not_reported' | 'needs_follow_up' | 'resolved' | 'unresolved';
 
+export type ConditionSeverity = 'mild' | 'moderate' | 'severe';
+
+export interface ConditionEvidence {
+  id: string;
+  status: string;
+  displayLabel: string;
+  severity?: ConditionSeverity;
+  note: string;
+  photoIds: string[];
+  timestamp: string;
+  updatedAt: string;
+}
+
 export type Phase = 'before' | 'after' | 'both' | 'pickup' | 'return' | 'sale' | 'transfer' | 'handoff' | 'general';
 
 export interface Packet {
@@ -57,6 +70,7 @@ export interface ChecklistItem {
   statuses?: string[];
   notes: string;
   photoIds: string[];
+  conditionEvidence?: ConditionEvidence[];
   addedDuringInspection: boolean;
   createdAt: string;
   updatedAt: string;
@@ -83,6 +97,7 @@ export interface PhotoItem {
   importedAt?: string;
   sha256Hash?: string;
   hashCreatedAt?: string;
+  conditionEvidenceId?: string;
 }
 
 export interface CommunicationLog {
