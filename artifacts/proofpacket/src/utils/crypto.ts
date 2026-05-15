@@ -29,5 +29,5 @@ export function safeName(str: string): string {
 
 export function archiveFileName(packetTitle: string, suffix: string, ext: string): string {
   const d = new Date().toISOString().split('T')[0];
-  return `ProofPacket_${safeName(packetTitle)}_${d}_${suffix}.${ext}`;
+  return `ConditionLock_${safeName(packetTitle)}_${d}_${suffix}.${ext}`;
 }

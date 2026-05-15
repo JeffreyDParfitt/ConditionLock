@@ -27,7 +27,7 @@ const STATUS_CONFIG = {
   extra:     { label: 'Extra / Unmatched',color: 'text-slate-600 dark:text-slate-400',  bg: 'bg-slate-50 dark:bg-slate-900',      border: 'border-slate-200 dark:border-slate-700',  icon: Info },
 } as const;
 
-const HASH_DISCLAIMER = "ProofPacket verifies file integrity by comparing SHA-256 hashes. In-app capture helps strengthen documentation, but it does not prove who took the photo, where it was taken, whether the scene was staged, or whether the packet has legal evidentiary value.";
+const HASH_DISCLAIMER = "Hash verification confirms whether the files being checked match the files recorded in this ConditionLock manifest. It does not prove who took the photos, where they were taken, whether the scene was staged, or whether the record has legal evidentiary value.";
 
 export default function VerifyPacket() {
   const { toast } = useToast();
@@ -64,7 +64,7 @@ export default function VerifyPacket() {
       const text = await file.text();
       const parsed: VerificationManifest = JSON.parse(text);
       if (!parsed.photos || !parsed.packetId || parsed.manifestVersion !== '1.0') {
-        throw new Error('This does not appear to be a valid ProofPacket manifest (v1.0).');
+        throw new Error('This does not appear to be a valid ConditionLock manifest (v1.0).');
       }
       setManifest(parsed);
     } catch (e: any) {
@@ -255,7 +255,7 @@ export default function VerifyPacket() {
   const handleExportResult = () => {
     if (!result) return;
     const lines = [
-      'ProofPacket Verification Result',
+      'ConditionLock Verification Result',
       '================================',
       `Packet:       ${result.packetTitle}`,
       `Type:         ${result.packetType}`,
@@ -282,7 +282,7 @@ export default function VerifyPacket() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ProofPacket_${result.packetTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}_VerificationResult.txt`;
+    a.download = `ConditionLock_${result.packetTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}_VerificationResult.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -314,7 +314,7 @@ export default function VerifyPacket() {
           <h1 className="text-xl font-bold tracking-tight">Verify Packet</h1>
         </div>
         <p className="text-sm text-muted-foreground pl-1">
-          Use this mode if someone sent you a ProofPacket. Upload the verification manifest and photo files you received. ProofPacket checks the files locally on this device and shows whether they match the recorded hashes.
+          Use this mode if someone sent you a ConditionLock. Upload the verification manifest and photo files you received. ConditionLock checks the files locally on this device and shows whether they match the recorded hashes.
         </p>
       </header>
 
@@ -542,7 +542,7 @@ export default function VerifyPacket() {
               const hashExpanded = expandedHashes.has(i);
               const plainEnglish =
                 r.status === 'verified'
-                  ? (r.appCaptured === true ? 'File matches original — captured in ProofPacket.' : 'File received and hash matches the original.')
+                  ? (r.appCaptured === true ? 'File matches original — captured in ConditionLock.' : 'File received and hash matches the original.')
                   : r.status === 'missing'
                   ? 'This file was not provided or could not be matched.'
                   : r.status === 'mismatch'
@@ -569,7 +569,7 @@ export default function VerifyPacket() {
                           ? 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/30'
                           : 'text-gray-500 bg-gray-100 dark:bg-gray-900'
                       }`}>
-                        {r.appCaptured === true ? 'Captured in ProofPacket'
+                        {r.appCaptured === true ? 'Captured in ConditionLock'
                           : r.source === 'imported_document' ? 'Imported Document'
                           : 'Legacy / Unknown source'}
                       </span>

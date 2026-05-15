@@ -60,7 +60,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="space-y-2">
         <div className="flex items-center justify-between">
-          <img src="/logo.png" alt="ProofPacket" className="h-9 w-auto" />
+          <img src="/logo.png" alt="ConditionLock" className="h-9 w-auto" />
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${badge.bg} ${badge.color}`}>
             {badge.label}
           </span>
@@ -110,11 +110,11 @@ export default function Dashboard() {
       {/* ── Rental Vehicle Hero ── */}
       <div className="space-y-3">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">Protect yourself from rental vehicle damage disputes.</h2>
+          <h2 className="text-lg font-bold tracking-tight">Lock in the condition before there's a dispute.</h2>
           <p className="text-sm text-muted-foreground mt-1 leading-snug">
-            Create verified pickup and return condition packets for rental cars, moving trucks, cargo vans, trailers, and car-sharing trips.
+            Verified records for rentals, returns, sales, claims, and handoffs.
           </p>
-          <p className="text-xs text-muted-foreground/70 mt-1">Most people take photos. ProofPacket tells you what they forget to document.</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Most people take photos. ConditionLock tells you what they forget to document.</p>
         </div>
 
         <div className="grid gap-3">
@@ -334,7 +334,7 @@ export default function Dashboard() {
           <div className="space-y-0.5">
             <p className="text-xs font-medium">Fully local. 100% private.</p>
             <p className="text-[11px] text-muted-foreground">
-              ProofPacket runs on your device. Packets, photos, hashes, and archives are not uploaded to any server.
+              ConditionLock runs on your device. Packets, photos, hashes, and archives are not uploaded to any server.
             </p>
           </div>
         </CardContent>

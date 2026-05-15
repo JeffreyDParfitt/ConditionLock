@@ -97,7 +97,7 @@ export function InAppCamera({ open, onClose, onCapture }: InAppCameraProps) {
           {/* Header notice */}
           <div className="absolute top-0 inset-x-0 z-10 pt-3 pb-2 px-4 bg-gradient-to-b from-black/80 to-transparent">
             <p className="text-[10px] text-white/60 text-center leading-tight">
-              Photos are stored only inside ProofPacket — not saved to your camera roll
+              Photos are stored only inside ConditionLock — not saved to your camera roll
             </p>
           </div>
 

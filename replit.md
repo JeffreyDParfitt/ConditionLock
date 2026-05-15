@@ -1,4 +1,4 @@
-# ProofPacket
+# ConditionLock
 
 A mobile-first, fully local web app for documenting property condition before rentals, sales, handoffs, and transfers. All data stored in IndexedDB via Dexie. No accounts, no cloud, no backend.
 
@@ -47,11 +47,11 @@ A mobile-first, fully local web app for documenting property condition before re
 
 ## Positioning
 
-ProofPacket creates verified condition records for physical handoffs, starting with rental vehicles. Most people take photos. ProofPacket tells you what they forget to document.
+ConditionLock creates verified condition records for physical handoffs, starting with rental vehicles. Most people take photos. ConditionLock tells you what they forget to document.
 
-ProofPacket launches first with rental vehicle proof packets, including rental cars, moving trucks, cargo vans, trailers, car-sharing trips, company vehicle handoffs, and military/government travel documentation. The broader system also supports hotels, Airbnbs, apartments, business handoffs, property sales, equipment transfers, and more.
+ConditionLock launches first with rental vehicle proof packets, including rental cars, moving trucks, cargo vans, trailers, car-sharing trips, company vehicle handoffs, and military/government travel documentation. The broader system also supports hotels, Airbnbs, apartments, business handoffs, property sales, equipment transfers, and more.
 
-Military and government travel workflows are designed for local organization and manual export only. ProofPacket does not integrate with DTS, military claims systems, government travel systems, or agency systems.
+Military and government travel workflows are designed for local organization and manual export only. ConditionLock does not integrate with DTS, military claims systems, government travel systems, or agency systems.
 
 ## Product
 
@@ -88,7 +88,7 @@ Selector options are grouped by type in `NewPacketForm.tsx`:
 - **Moving Trucks**: U-Haul, Penske, Budget Truck Rental, Enterprise Truck Rental, Ryder, Home Depot Truck Rental, Lowe's Truck Rental
 - **Always**: Local / Independent, Other (triggers free-text field)
 
-ProofPacket is not affiliated with rental companies or car-sharing platforms. It currently creates API-free exports that users can manually attach to email, rental company portals, car-sharing dispute workflows, or claim forms. Future integrations may include rental vehicle companies, fleet operators, car-sharing platforms, and dispute/claims workflows.
+ConditionLock is not affiliated with rental companies or car-sharing platforms. It currently creates API-free exports that users can manually attach to email, rental company portals, car-sharing dispute workflows, or claim forms. Future integrations may include rental vehicle companies, fleet operators, car-sharing platforms, and dispute/claims workflows.
 
 Company Vehicle Handoff is designed for future integrations with fleet management systems, internal ticketing tools, HR/onboarding workflows, and maintenance systems. Current exports are API-free and can be attached manually to emails, tickets, fleet records, or internal documentation systems.
 

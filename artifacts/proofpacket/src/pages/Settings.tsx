@@ -50,7 +50,7 @@ export default function Settings() {
 
   const handleExportData = async () => {
     if (!limits.hasJsonBackup) {
-      showUpgrade('JSON backup & restore requires ProofPacket Pro.', 'pro');
+      showUpgrade('JSON backup & restore requires ConditionLock Pro.', 'pro');
       return;
     }
     toast({ title: "Preparing backup...", description: "Serializing photos. This may take a moment." });
@@ -82,7 +82,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ProofPacket_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `ConditionLock_Backup_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -92,7 +92,7 @@ export default function Settings() {
 
   const handleImportData = async () => {
     if (!limits.hasJsonBackup) {
-      showUpgrade('Import & restore requires ProofPacket Pro.', 'pro');
+      showUpgrade('Import & restore requires ConditionLock Pro.', 'pro');
       return;
     }
     const input = document.createElement('input');
@@ -330,7 +330,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Watermark Exports</Label>
-              <p className="text-xs text-muted-foreground">Add "ProofPacket" watermark to exported PDFs.</p>
+              <p className="text-xs text-muted-foreground">Add "ConditionLock" watermark to exported PDFs.</p>
             </div>
             <Switch
               checked={settings.watermarkExports}
@@ -348,7 +348,7 @@ export default function Settings() {
             Import / Restore Archive
           </CardTitle>
           <CardDescription>
-            Re-import a ProofPacket archive from your phone, computer, email, or cloud drive. Restored packets are stored locally on this device.
+            Re-import a ConditionLock archive from your phone, computer, email, or cloud drive. Restored packets are stored locally on this device.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -364,7 +364,7 @@ export default function Settings() {
           <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
-              ProofPacket archives are local user-controlled files. If you delete both the local packet and all exported archives, ProofPacket cannot recover the data.
+              ConditionLock archives are local user-controlled files. If you delete both the local packet and all exported archives, ConditionLock cannot recover the data.
             </p>
           </div>
         </CardContent>
@@ -502,7 +502,7 @@ export default function Settings() {
           <div className="space-y-1">
             <h4 className="font-semibold text-sm">Privacy Statement</h4>
             <p className="text-xs text-muted-foreground">
-              Your data is stored locally on this device. ProofPacket does not use accounts, servers, or cloud storage.
+              Your data is stored locally on this device. ConditionLock does not use accounts, servers, or cloud storage.
             </p>
           </div>
         </CardContent>

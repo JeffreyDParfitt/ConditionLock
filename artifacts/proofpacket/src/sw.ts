@@ -1,5 +1,5 @@
 // Basic service worker for offline support and PWA install prompt
-const CACHE_NAME = 'proofpacket-v1';
+const CACHE_NAME = 'conditionlock-v1';
 
 const PRECACHE = [
   '/',

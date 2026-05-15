@@ -8,8 +8,8 @@
  *
  * TODO (production): Replace setEntitlement() calls with RevenueCat / App Store / Google Play
  * purchase verification. Product IDs:
- *   iOS:     com.proofpacket.app.pro / com.proofpacket.app.business
- *   Android: proofpacket_pro / proofpacket_business
+ *   iOS:     com.conditionlock.app.pro / com.conditionlock.app.business
+ *   Android: conditionlock_pro / conditionlock_business
  */
 import { useTrial, getTrialState, setEntitlement } from './useTrial';
 export type { Entitlement } from './useTrial';

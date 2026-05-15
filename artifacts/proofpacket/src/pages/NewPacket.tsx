@@ -25,7 +25,7 @@ export default function NewPacket() {
     // Check template tier gate
     const requiredTier = tierRequiredForTemplate(type);
     if (requiredTier) {
-      showUpgrade(`"${templateName}" requires ${requiredTier === 'business' ? 'Business Pro' : 'ProofPacket Pro'}.`, requiredTier);
+      showUpgrade(`"${templateName}" requires ${requiredTier === 'business' ? 'Business Pro' : 'ConditionLock Pro'}.`, requiredTier);
       return;
     }
 

@@ -24,7 +24,7 @@ export interface ManifestPhotoEntry {
 
 export interface VerificationManifest {
   manifestVersion: '1.0';
-  appName: 'ProofPacket';
+  appName: 'ConditionLock' | 'ProofPacket';
   generatedAt: string;
   packetId: string;
   packetTitle: string;
@@ -73,7 +73,7 @@ export async function buildManifest(
 
   const manifest: VerificationManifest = {
     manifestVersion: '1.0',
-    appName: 'ProofPacket',
+    appName: 'ConditionLock',
     generatedAt: new Date().toISOString(),
     packetId: packet.id,
     packetTitle: packet.title,
@@ -110,19 +110,19 @@ export async function exportVerifiedPacket(
   // Download manifest JSON
   downloadBlob(
     new Blob([manifestJson], { type: 'application/json' }),
-    `ProofPacket_${safeName(title)}_${d}_Manifest.json`
+    `ConditionLock_${safeName(title)}_${d}_Manifest.json`
   );
 
   // Download summary TXT
   const summary = buildSummaryText(manifest);
   downloadBlob(
     new Blob([summary], { type: 'text/plain' }),
-    `ProofPacket_${safeName(title)}_${d}_Summary.txt`
+    `ConditionLock_${safeName(title)}_${d}_Summary.txt`
   );
 
   // Download PDF if provided
   if (pdfBlob) {
-    downloadBlob(pdfBlob, `ProofPacket_${safeName(title)}_${d}_Report.pdf`);
+    downloadBlob(pdfBlob, `ConditionLock_${safeName(title)}_${d}_Report.pdf`);
   }
 }
 
@@ -137,7 +137,7 @@ export async function exportFullArchive(
   const d = new Date().toISOString().split('T')[0];
 
   // packet-data.json
-  const packetJson = JSON.stringify({ ...packet, _exportNote: 'ProofPacket Archive v1' }, null, 2);
+  const packetJson = JSON.stringify({ ...packet, _exportNote: 'ConditionLock Archive v1' }, null, 2);
   const packetHash = await sha256String(packetJson);
   zip.file('packet-data.json', packetJson);
 
@@ -152,7 +152,7 @@ export async function exportFullArchive(
   let pdfHash = '';
   if (pdfBlob) {
     pdfHash = await sha256Blob(pdfBlob);
-    zip.file(`ProofPacket_${safeName(packet.title)}_${d}_Report.pdf`, pdfBlob);
+    zip.file(`ConditionLock_${safeName(packet.title)}_${d}_Report.pdf`, pdfBlob);
   }
 
   // Photos
@@ -180,7 +180,7 @@ export async function exportFullArchive(
   const checksums = [
     `packet-data.json  ${packetHash}`,
     `verification-manifest.json  ${manifest.manifestHash || ''}`,
-    pdfHash ? `ProofPacket_Report.pdf  ${pdfHash}` : null,
+    pdfHash ? `ConditionLock_Report.pdf  ${pdfHash}` : null,
     ...entries.map(e => `photos/originals/${e.archiveFileName}  ${e.sha256}`),
   ].filter(Boolean).join('\n');
   zip.file('checksums.txt', checksums);
@@ -255,7 +255,7 @@ export async function importArchive(file: File): Promise<{
 
 function buildSummaryText(manifest: VerificationManifest): string {
   const lines = [
-    'ProofPacket Verification Summary',
+    'ConditionLock Verification Summary',
     '=================================',
     `Packet Title:    ${manifest.packetTitle}`,
     `Packet Type:     ${manifest.packetType}`,
@@ -280,7 +280,7 @@ function buildSummaryText(manifest: VerificationManifest): string {
 }
 
 function buildReadme(packet: Packet, photoCount: number): string {
-  return `ProofPacket Archive
+  return `ConditionLock Archive
 ===================
 Packet: ${packet.title}
 Type:   ${packet.type}
@@ -298,25 +298,23 @@ Contents:
 - DISCLAIMERS.txt           Legal disclaimers
 
 Restoring:
-Open ProofPacket in your browser and use Import / Restore Archive to restore this packet
+Open ConditionLock in your browser and use Import / Restore Archive to restore this packet
 and original-quality photos from this archive file.
 
 Use this archive if you want to move a packet off your phone, save it to a computer,
 email it to yourself, or store it in iCloud Drive, Google Drive, Dropbox, USB, or an
-external drive. You can import this archive back into ProofPacket later.
+external drive. You can import this archive back into ConditionLock later.
 `;
 }
 
-const HASH_DISCLAIMER = `DISCLAIMER: Hash verification confirms whether the files being checked match the files
-recorded in this ProofPacket manifest. It does not prove who took the photos, where they
-were taken, whether the scene was staged, or whether the packet has legal evidentiary value.`;
+const HASH_DISCLAIMER = `DISCLAIMER: Hash verification confirms whether the files being checked match the files recorded in this ConditionLock manifest. It does not prove who took the photos, where they were taken, whether the scene was staged, or whether the record has legal evidentiary value.`;
 
-const DISCLAIMERS = `ProofPacket Disclaimers
+const DISCLAIMERS = `ConditionLock Disclaimers
 =======================
 
 ARCHIVE DISCLAIMER:
-ProofPacket archives are local user-controlled files. If you delete both the local packet
-and all exported archives, ProofPacket cannot recover the data.
+ConditionLock archives are local user-controlled files. If you delete both the local packet
+and all exported archives, ConditionLock cannot recover the data.
 
 VERIFICATION DISCLAIMER:
 ${HASH_DISCLAIMER}

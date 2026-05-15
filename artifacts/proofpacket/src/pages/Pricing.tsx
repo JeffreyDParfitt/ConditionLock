@@ -46,8 +46,8 @@ export default function Pricing() {
 
   const handleUpgrade = (target: 'pro' | 'business') => {
     // TODO (production): Replace with RevenueCat / App Store / Google Play purchase flow.
-    // iOS products:     com.proofpacket.app.pro / com.proofpacket.app.business
-    // Android products: proofpacket_pro / proofpacket_business
+    // iOS products:     com.conditionlock.app.pro / com.conditionlock.app.business
+    // Android products: conditionlock_pro / conditionlock_business
     setEntitlement(target);
     setLocation('/');
   };
@@ -95,7 +95,7 @@ export default function Pricing() {
                   : 'Trial ends today'}
               </p>
               <p className="text-xs text-green-700/80 dark:text-green-400/80 mt-0.5">
-                Full access to all ProofPacket features during your trial.
+                Full access to all ConditionLock features during your trial.
               </p>
             </div>
           </CardContent>
@@ -105,18 +105,18 @@ export default function Pricing() {
       {/* Upgrade note — shown when user has Pro */}
       {entitlement === 'pro' && (
         <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
-          ProofPacket Pro is active. Upgrade to Business Pro and pay only the difference — $25.00.
+          ConditionLock Pro is active. Upgrade to Business Pro and pay only the difference — $25.00.
         </div>
       )}
 
       <div className="space-y-4">
-        {/* ProofPacket Pro */}
+        {/* ConditionLock Pro */}
         <Card className={`overflow-hidden shadow-xs transition-all ${entitlement === 'pro' ? 'ring-2 ring-blue-500' : 'border-muted'}`}>
           <div className="bg-blue-50 dark:bg-blue-950/40 px-4 pt-4 pb-3 border-b border-blue-100 dark:border-blue-900">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold">ProofPacket Pro</span>
+                <span className="font-semibold">ConditionLock Pro</span>
               </div>
               <div className="flex items-center gap-2">
                 {entitlement === 'pro' && (
@@ -144,11 +144,11 @@ export default function Pricing() {
             </ul>
             {entitlement === 'none' && (
               <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleUpgrade('pro')} data-testid="button-upgrade-pro">
-                Upgrade to ProofPacket Pro — $14.99
+                Upgrade to ConditionLock Pro — $14.99
               </Button>
             )}
             {entitlement === 'pro' && (
-              <div className="text-center text-sm text-blue-700 dark:text-blue-400 font-medium py-1">✓ ProofPacket Pro active</div>
+              <div className="text-center text-sm text-blue-700 dark:text-blue-400 font-medium py-1">✓ ConditionLock Pro active</div>
             )}
             {entitlement === 'business' && (
               <div className="text-center text-sm text-muted-foreground py-1">Included in Business Pro</div>
@@ -162,7 +162,7 @@ export default function Pricing() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-indigo-700" />
-                <span className="font-semibold">ProofPacket Business Pro</span>
+                <span className="font-semibold">ConditionLock Business Pro</span>
               </div>
               <div className="flex items-center gap-2">
                 {entitlement === 'business' && (
@@ -221,7 +221,7 @@ export default function Pricing() {
       {/* Pro-to-Business upgrade note */}
       {entitlement === 'none' && (
         <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
-          Already have ProofPacket Pro? Upgrade to Business Pro later and pay only the difference.
+          Already have ConditionLock Pro? Upgrade to Business Pro later and pay only the difference.
         </p>
       )}
 
@@ -248,7 +248,7 @@ export default function Pricing() {
             <Archive className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="space-y-1 text-[11px] text-muted-foreground leading-relaxed">
               <p className="font-medium text-foreground">Moving phones?</p>
-              <p>Export a Full Packet Archive to move packets to another phone, computer, email, iCloud Drive, Google Drive, Dropbox, USB, or external drive. Import it into ProofPacket on the new device.</p>
+              <p>Export a Full Packet Archive to move packets to another phone, computer, email, iCloud Drive, Google Drive, Dropbox, USB, or external drive. Import it into ConditionLock on the new device.</p>
               <p>Export/import transfers your packet files and original-quality photos. It does not transfer app store purchase entitlements between Apple and Google.</p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function Pricing() {
       </p>
 
       <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
-        ProofPacket runs on your device. Your packets, photos, hashes, verification results, and archives are not uploaded to ProofPacket servers because ProofPacket does not use servers.
+        ConditionLock runs on your device. Your records, original-quality photos, hashes, verification results, and archives are not uploaded to ConditionLock servers because ConditionLock does not use servers.
       </p>
     </div>
   );

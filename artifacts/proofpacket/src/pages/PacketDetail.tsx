@@ -193,7 +193,7 @@ export default function PacketDetail() {
               <div className="flex flex-wrap gap-2">
                 {photos.filter((p: any) => p.appCaptured === true).length > 0 && (
                   <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-800">
-                    ✓ {photos.filter((p: any) => p.appCaptured === true).length} captured in ProofPacket
+                    ✓ {photos.filter((p: any) => p.appCaptured === true).length} captured in ConditionLock
                   </span>
                 )}
                 {photos.filter((p: any) => p.sha256Hash).length > 0 && (
@@ -915,7 +915,7 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
   };
 
   const getSourceLabel = (photo: any): string => {
-    if (photo.source === 'in_app_camera' || photo.appCaptured === true) return 'Captured in ProofPacket';
+    if (photo.source === 'in_app_camera' || photo.appCaptured === true) return 'Captured in ConditionLock';
     if (photo.source === 'imported_document') return 'Imported Document';
     if (photo.source === 'legacy_import') return 'Legacy / Imported';
     return 'Unknown source (legacy)';
@@ -933,8 +933,8 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
       {/* Evidence photos section */}
       <div className="space-y-3">
         <div className="text-[11px] bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-2 leading-relaxed text-green-800 dark:text-green-300">
-          <span className="font-semibold block mb-0.5">Photos stay inside ProofPacket — not saved to your camera roll.</span>
-          Gallery import is not available for evidence photos. ProofPacket uses in-app capture only, keeping photos tied to the inspection record and harder to dispute.
+          <span className="font-semibold block mb-0.5">Photos stay inside ConditionLock — not saved to your camera roll.</span>
+          Gallery import is not available for evidence photos. ConditionLock uses in-app capture only, keeping photos tied to the inspection record and harder to dispute.
         </div>
 
         {atPhotoLimit ? (
@@ -953,7 +953,7 @@ function PhotosTab({ packet, photos }: { packet: any, photos: any[] }) {
         )}
 
         <p className="text-[10px] text-muted-foreground text-center">
-          Photos are stored inside ProofPacket only — not in your camera roll or photo library. Camera permission required.
+          Photos are stored inside ConditionLock only — not in your camera roll or photo library. Camera permission required.
         </p>
       </div>
 
@@ -1272,7 +1272,7 @@ function SignaturesTab({ packet }: { packet: any }) {
         open={sigUpgradeOpen}
         onClose={() => setSigUpgradeOpen(false)}
         requiredTier="pro"
-        reason="Acknowledgment signatures require ProofPacket Pro."
+        reason="Acknowledgment signatures require ConditionLock Pro."
       />
 
       {!limits.hasSignatures ? (
@@ -1392,10 +1392,10 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
   });
 
   const handleVerifiedExport = () => {
-    if (!limits.hasVerifiedExport) { showUpgrade('Export Verified Packet requires ProofPacket Pro.', 'pro'); return; }
+    if (!limits.hasVerifiedExport) { showUpgrade('Export Verified Packet requires ConditionLock Pro.', 'pro'); return; }
     if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available in this browser.", variant: "destructive" }); return; }
     withBusy('verified', async () => {
-      const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
+      const exportedBy = settings.userName || settings.userEmail || 'ConditionLock User';
       await exportVerifiedPacket(packet, photos, exportedBy);
       await storage.logActivity({ packetId: packet.id, activityType: 'export_verified', description: 'Verified Packet exported (manifest + summary)', timestamp: new Date().toISOString() });
       toast({ title: "Verified Packet exported", description: "Manifest JSON and summary downloaded." });
@@ -1403,14 +1403,14 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
   };
 
   const handleFullArchive = () => {
-    if (!limits.hasArchiveExport) { showUpgrade('Export Full Archive requires ProofPacket Pro.', 'pro'); return; }
+    if (!limits.hasArchiveExport) { showUpgrade('Export Full Archive requires ConditionLock Pro.', 'pro'); return; }
     if (!cryptoOk) { toast({ title: "Crypto unavailable", description: "Web Crypto API not available in this browser.", variant: "destructive" }); return; }
     withBusy('archive', async () => {
       const confirmed = window.confirm(
-        `This will create a ZIP archive of "${packet.title}" with all photos, manifest, and metadata.\n\nSave the file somewhere safe — ProofPacket cannot recover deleted local data without an archive.\n\nProceed?`
+        `This will create a ZIP archive of "${packet.title}" with all photos, manifest, and metadata.\n\nSave the file somewhere safe — ConditionLock cannot recover deleted local data without an archive.\n\nProceed?`
       );
       if (!confirmed) return;
-      const exportedBy = settings.userName || settings.userEmail || 'ProofPacket User';
+      const exportedBy = settings.userName || settings.userEmail || 'ConditionLock User';
       await exportFullArchive(packet, photos, exportedBy);
       await storage.logActivity({ packetId: packet.id, activityType: 'export_archive', description: 'Full Packet Archive exported (ZIP)', timestamp: new Date().toISOString() });
       toast({ title: "Archive exported", description: "Full packet archive ZIP downloaded." });
@@ -1466,7 +1466,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
             </Button>
           )}
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            ProofPacket does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney for your situation.
+            ConditionLock does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney for your situation.
           </p>
         </CardContent>
       </Card>
@@ -1566,7 +1566,7 @@ function ExportTab({ packet, settings, photos }: { packet: any, settings: any, p
       <Card className="bg-muted/30 border-muted">
         <CardContent className="p-4">
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            <strong>Disclaimer:</strong> Verified Packet export helps receivers check whether files match the exported manifest. It does not create legal certification or replace professional advice. Company names are provided only to help organize your packet. ProofPacket is not affiliated with or endorsed by any rental company, car-sharing platform, hotel, property manager, insurer, government agency, military branch, or other listed entity.
+            <strong>Disclaimer:</strong> ConditionLock is an organization and documentation tool. It does not provide legal, insurance, medical, safety, code-compliance, inspection, appraisal, valuation, reimbursement, or professional advice. Company names are provided only to help organize your record. ConditionLock is not affiliated with or endorsed by any rental company, car-sharing platform, hotel, property manager, insurer, government agency, military branch, moving company, fleet operator, or other listed company.
           </p>
         </CardContent>
       </Card>
@@ -1942,10 +1942,10 @@ function buildDisputeText(packet: any): string {
 
   lines.push('');
   lines.push('STATEMENT');
-  lines.push('I am disputing this charge/issue. My ProofPacket documents the condition at pickup and return. It includes odometer/fuel or battery records, exterior/interior photos, documented damage, communication logs, receipts where available, and a verification manifest with SHA-256 hashes for the original photo files.');
+  lines.push('I am disputing this charge/issue. My ConditionLock documents the condition at pickup and return. It includes odometer/fuel or battery records, exterior/interior photos, documented damage, communication logs, receipts where available, and a verification manifest with SHA-256 hashes for the original photo files.');
   lines.push('');
   lines.push('DISCLAIMER');
-  lines.push('This summary was generated by ProofPacket. ProofPacket is not a legal service and does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney regarding your specific situation.');
+  lines.push('This summary was generated by ConditionLock. ConditionLock is not a legal service and does not provide legal advice. Consult your rental agreement, insurance policy, platform terms, or an attorney regarding your specific situation.');
 
   return lines.join('\n');
 }
@@ -2009,10 +2009,10 @@ function buildTravelSummaryText(packet: any): string {
 
   lines.push('');
   lines.push('STATEMENT');
-  lines.push(`This ProofPacket documents vehicle / rental / lodging condition and supporting receipts for ${ctx}. It includes pickup/return condition, odometer/fuel or battery records where applicable, photos, receipts, communication logs, and a verification manifest with SHA-256 hashes for original photo files.`);
+  lines.push(`This ConditionLock documents vehicle / rental / lodging condition and supporting receipts for ${ctx}. It includes pickup/return condition, odometer/fuel or battery records where applicable, photos, receipts, communication logs, and a verification manifest with SHA-256 hashes for original photo files.`);
   lines.push('');
   lines.push('DISCLAIMER');
-  lines.push('ProofPacket helps organize supporting documentation. It does not replace DTS, travel office guidance, claims office guidance, finance office guidance, JTR rules, rental company policies, insurance policies, employer policies, or official instructions. Military, government, and company names are provided only to help organize your packet. ProofPacket is not affiliated with or endorsed by the Department of Defense, any military branch, government agency, or other listed entity.');
+  lines.push('ConditionLock helps organize supporting documentation. It does not replace DTS, travel office guidance, claims office guidance, finance office guidance, JTR rules, rental company policies, insurance policies, employer policies, or official instructions. Military, government, and company names are provided only to help organize your packet. ConditionLock is not affiliated with or endorsed by the Department of Defense, any military branch, government agency, or other listed entity.');
 
   return lines.join('\n');
 }

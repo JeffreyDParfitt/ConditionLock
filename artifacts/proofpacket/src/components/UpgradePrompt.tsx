@@ -12,7 +12,7 @@ interface UpgradePromptProps {
 
 const TIER_DETAILS = {
   pro: {
-    name: 'ProofPacket Pro',
+    name: 'ConditionLock Pro',
     price: '$14.99',
     period: 'one-time',
     icon: Zap,

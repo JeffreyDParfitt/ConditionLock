@@ -395,7 +395,7 @@ export default function NewPacketForm() {
                   <CardContent className="flex gap-2 p-3">
                     <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Company names are provided only to help organize your packet. ProofPacket is not affiliated with or endorsed by these companies.
+                      Company names are provided only to help organize your record. ConditionLock is not affiliated with or endorsed by any rental company, car-sharing platform, hotel, property manager, insurer, government agency, military branch, moving company, fleet operator, or other listed company.
                     </p>
                   </CardContent>
                 </Card>
@@ -828,7 +828,7 @@ export default function NewPacketForm() {
               <Card className="bg-muted/30 border-muted">
                 <CardContent className="p-3">
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Fill in travel context if this packet is for military, government, or company travel. Leave blank for personal rentals. ProofPacket does not connect to DTS, government travel systems, or employer systems.
+                    Fill in travel context if this packet is for military, government, or company travel. Leave blank for personal rentals. ConditionLock does not connect to DTS, government travel systems, or employer systems.
                   </p>
                 </CardContent>
               </Card>

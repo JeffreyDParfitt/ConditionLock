@@ -9,8 +9,8 @@ export function TrialLockScreen() {
 
   const handleUpgrade = (tier: 'pro' | 'business') => {
     // TODO (production): Replace with RevenueCat / App Store / Google Play purchase flow.
-    // iOS products:     com.proofpacket.app.pro / com.proofpacket.app.business
-    // Android products: proofpacket_pro / proofpacket_business
+    // iOS products:     com.conditionlock.app.pro / com.conditionlock.app.business
+    // Android products: conditionlock_pro / conditionlock_business
     setEntitlement(tier);
   };
 
@@ -31,9 +31,9 @@ export function TrialLockScreen() {
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
           <Shield className="w-9 h-9 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Your 3-day ProofPacket trial has ended</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Your 3-day ConditionLock trial has ended</h1>
         <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-          Choose ProofPacket Pro or Business Pro to continue creating, editing, verifying, exporting, and restoring packets.
+          Choose ConditionLock Pro or Business Pro to continue creating, editing, verifying, exporting, and restoring packets.
         </p>
       </div>
 
@@ -44,7 +44,7 @@ export function TrialLockScreen() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold">ProofPacket Pro</span>
+                <span className="font-semibold">ConditionLock Pro</span>
                 <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase">Most Popular</span>
               </div>
               <div className="text-right">
@@ -60,7 +60,7 @@ export function TrialLockScreen() {
               onClick={() => handleUpgrade('pro')}
               data-testid="button-upgrade-pro-lock"
             >
-              Upgrade to ProofPacket Pro — $14.99
+              Upgrade to ConditionLock Pro — $14.99
             </Button>
           </CardContent>
         </Card>
@@ -112,7 +112,7 @@ export function TrialLockScreen() {
           <div className="space-y-1">
             <p className="text-xs font-medium">Your packet data stays local</p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Export a Full Packet Archive to move packets to another phone, computer, email, or cloud drive. Archives can be imported back into ProofPacket later. Go to <strong>Settings</strong> to export your data.
+              Export a Full Packet Archive to move packets to another phone, computer, email, or cloud drive. Archives can be imported back into ConditionLock later. Go to <strong>Settings</strong> to export your data.
             </p>
           </div>
         </CardContent>

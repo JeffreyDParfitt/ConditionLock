@@ -1,6 +1,6 @@
 {
-  "name": "ProofPacket",
-  "short_name": "ProofPacket",
+  "name": "ConditionLock",
+  "short_name": "ConditionLock",
   "description": "Verified condition records for rental vehicles, property handoffs, and more.",
   "start_url": "/",
   "display": "standalone",
