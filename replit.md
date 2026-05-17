@@ -49,6 +49,10 @@ A mobile-first, fully local web app for documenting property condition before re
 
 ConditionLock creates verified condition records for physical handoffs, starting with rental vehicles. Most people take photos. ConditionLock tells you what they forget to document.
 
+ConditionLock starts with rental vehicles because both consumers and business travelers face the same handoff problem: what condition was the vehicle in at pickup and return? The same workflow expands from individual renters to company vehicles, fleet handoffs, military/government travel, property, equipment, and business transfers.
+
+Rental vehicle packets (car, moving truck, cargo van, trailer) can be used for personal trips, business travel, government travel, contractor travel, company-paid rentals, or military travel — all covered by ConditionLock Pro. Business Pro is for company/team workflows, fleet handoffs, commercial leases, equipment transfers, business changeovers, supervisor review, and business-specific roles.
+
 ConditionLock launches first with rental vehicle proof packets, including rental cars, moving trucks, cargo vans, trailers, car-sharing trips, company vehicle handoffs, and military/government travel documentation. The broader system also supports hotels, Airbnbs, apartments, business handoffs, property sales, equipment transfers, and more.
 
 Military and government travel workflows are designed for local organization and manual export only. ConditionLock does not integrate with DTS, military claims systems, government travel systems, or agency systems.

@@ -151,6 +151,22 @@ function SectionDivider({ label }: { label: string }) {
   );
 }
 
+// ─── Use context options ──────────────────────────────────────────────────────
+
+const USE_CONTEXT_OPTIONS = [
+  'Personal',
+  'Business travel',
+  'Military TDY / TAD',
+  'PCS move',
+  'Government travel',
+  'Contractor travel',
+  'Company-paid rental',
+  'Employee use',
+  'Other',
+];
+
+const MILITARY_GOVT_CONTEXTS = ['Military TDY / TAD', 'PCS move', 'Government travel'];
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function NewPacketForm() {
@@ -161,6 +177,9 @@ export default function NewPacketForm() {
   const isRental = isRentalVehicleType(type);
   const isCompanyVehicle = type === 'company_vehicle_handoff';
   const isVehicle = isRental || isCompanyVehicle;
+
+  // Show use-context selector for rental vehicles and relevant stay/rental non-vehicle types
+  const showUseContext = isRental || ['hotel', 'airbnb', 'apartment_home', 'moving_storage', 'equipment_rental'].includes(type);
 
   const companyOptions = companyOptionsForType(type);
 
@@ -820,99 +839,100 @@ export default function NewPacketForm() {
           )}
 
           {/* ─────────────────────────────────────────────────────────────────
-              MILITARY / GOVERNMENT TRAVEL (optional, vehicle packets only)
+              USE CONTEXT (optional — rental vehicles, stays, and other relevant types)
           ───────────────────────────────────────────────────────────────── */}
-          {isVehicle && (
+          {showUseContext && (
             <>
-              <SectionDivider label="Travel Context (Optional)" />
+              <SectionDivider label="Use Context (Optional)" />
               <Card className="bg-muted/30 border-muted">
-                <CardContent className="p-3">
+                <CardContent className="p-3 space-y-1.5">
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Fill in travel context if this packet is for military, government, or company travel. Leave blank for personal rentals. ConditionLock does not connect to DTS, government travel systems, or employer systems.
+                    Rental vehicle packets can be used for personal trips, business travel, government travel, contractor travel, company-paid rentals, or military travel.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Personal vs. business context helps tailor templates and export language. It does not automatically change your plan.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    ConditionLock does not connect to DTS, government travel systems, or employer systems.
                   </p>
                 </CardContent>
               </Card>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Travel Context</label>
+                <label className="text-sm font-medium">Use context</label>
                 <NativeSelect
                   value={form.watch('travelContext') || ''}
                   onChange={v => form.setValue('travelContext', v)}
-                  options={[
-                    'Personal',
-                    'Business',
-                    'Military TDY / TAD',
-                    'PCS Move',
-                    'Government Travel',
-                    'Contractor Travel',
-                    'Company Vehicle',
-                    'Other',
-                  ]}
-                  placeholder="Select travel context… (optional)"
+                  options={USE_CONTEXT_OPTIONS}
+                  placeholder="Select context… (optional)"
                 />
               </div>
 
               {form.watch('travelContext') && !['Personal', ''].includes(form.watch('travelContext') || '') && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="travelOrderNumber" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Travel Order / Auth # <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g. 12345678" /></FormControl>
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="dtsVoucherNumber" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>DTS / Voucher Ref <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
-                        <FormControl><Input {...field} placeholder="e.g. DTS-2024-001" /></FormControl>
-                      </FormItem>
-                    )} />
-                  </div>
-
-                  <FormField control={form.control} name="dutyStation" render={({ field }) => (
+                  <FormField control={form.control} name="travelOrderNumber" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Duty Station / Destination <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
-                      <FormControl><Input {...field} placeholder="e.g. Fort Bragg, NC" /></FormControl>
+                      <FormLabel>Travel Order / Authorization # <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                      <FormControl><Input {...field} placeholder="e.g. 12345678 or TA-2024-001" /></FormControl>
                     </FormItem>
                   )} />
 
-                  {form.watch('travelContext') === 'PCS Move' && (
+                  {MILITARY_GOVT_CONTEXTS.includes(form.watch('travelContext') || '') && (
                     <>
                       <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="moveOrigin" render={({ field }) => (
+                        <FormField control={form.control} name="dtsVoucherNumber" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Origin</FormLabel>
-                            <FormControl><Input {...field} placeholder="e.g. Camp Pendleton, CA" /></FormControl>
+                            <FormLabel>DTS / Voucher Ref <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. DTS-2024-001" /></FormControl>
                           </FormItem>
                         )} />
-                        <FormField control={form.control} name="moveDestination" render={({ field }) => (
+                        <FormField control={form.control} name="dutyStation" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Destination</FormLabel>
-                            <FormControl><Input {...field} placeholder="e.g. Fort Hood, TX" /></FormControl>
+                            <FormLabel>Duty Station / Destination <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. Fort Bragg, NC" /></FormControl>
                           </FormItem>
                         )} />
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Personally Procured Move (PPM)?</label>
-                        <NativeSelect
-                          value={form.watch('isPersonallyProcuredMove') || ''}
-                          onChange={v => form.setValue('isPersonallyProcuredMove', v)}
-                          options={[
-                            'Yes — I arranged and paid for my own move',
-                            'No — Government arranged',
-                          ]}
-                          placeholder="Select…"
-                        />
-                      </div>
+                      {form.watch('travelContext') === 'PCS move' && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="moveOrigin" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Origin</FormLabel>
+                                <FormControl><Input {...field} placeholder="e.g. Camp Pendleton, CA" /></FormControl>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="moveDestination" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Destination</FormLabel>
+                                <FormControl><Input {...field} placeholder="e.g. Fort Hood, TX" /></FormControl>
+                              </FormItem>
+                            )} />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Personally Procured Move (PPM)?</label>
+                            <NativeSelect
+                              value={form.watch('isPersonallyProcuredMove') || ''}
+                              onChange={v => form.setValue('isPersonallyProcuredMove', v)}
+                              options={[
+                                'Yes — I arranged and paid for my own move',
+                                'No — Government arranged',
+                              ]}
+                              placeholder="Select…"
+                            />
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
 
                   <FormField control={form.control} name="officialTravelNotes" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Official Travel Notes <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
+                      <FormLabel>Travel / Context Notes <span className="text-muted-foreground font-normal text-xs">(opt.)</span></FormLabel>
                       <FormControl>
-                        <Textarea {...field} className="resize-none" rows={2} placeholder="e.g. Weight ticket on file, receipts attached, leave dates..." />
+                        <Textarea {...field} className="resize-none" rows={2} placeholder="e.g. Business trip purpose, cost center, weight ticket on file, receipts attached…" />
                       </FormControl>
                     </FormItem>
                   )} />

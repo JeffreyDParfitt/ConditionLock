@@ -1,0 +1,162 @@
+```text
+Update ConditionLock pricing, template gating, and onboarding logic so rental cars, moving trucks, cargo vans, and trailers are not treated as personal-only workflows.
+
+Important context:
+Business users also rent cars, moving trucks, cargo vans, and trailers. A rental vehicle packet can be used by:
+- personal travelers
+- business travelers
+- military TDY/TAD travelers
+- government travelers
+- contractors
+- company-paid travelers
+- employees using temporary rental vehicles
+
+Do not automatically require Business Pro just because a user selects “business travel,” “government travel,” “contractor travel,” or “company-paid rental.”
+
+Plan logic should be based on workflow complexity, not just the vehicle type.
+
+ConditionLock Pro should include individual/prosumer rental, travel, return, stay, claim, sale, and handoff workflows.
+
+ConditionLock Pro includes:
+- Rental Car Packet
+- Moving Truck / Van Packet
+- Cargo Van Packet
+- Trailer / Tow Equipment Packet
+- Hotel Stay
+- Airbnb / Short-Term Rental
+- Apartment / Home Rental
+- Personal Vehicle Sale / As-Is Transfer
+- Property Sale / Home Sale
+- Accident / Insurance Claim
+- Military / Government Travel personal documentation
+- Business travel rental vehicle documentation for a single user
+- Government travel rental vehicle documentation for a single user
+- Contractor travel rental vehicle documentation for a single user
+- Company-paid rental vehicle documentation for a single user
+- Custom Personal Packet
+
+ConditionLock Business Pro should include everything in Pro plus workflows that are clearly business/team/commercial.
+
+ConditionLock Business Pro includes:
+- Company Vehicle Handoff
+- Fleet Vehicle Handoff
+- Employee Vehicle Assignment
+- Supervisor/manager review workflows
+- Team/company packet roles
+- Business / Commercial Lease
+- Business Changeover / As-Is Sale
+- Equipment Rental for business/commercial use
+- Equipment Sale / As-Is Transfer for business/commercial use
+- Commercial Kitchen
+- Office / Warehouse / Retail Space
+- Asset Inventory
+- Buyer/Seller/Tenant/Landlord business signature roles
+- Business Handoff Packet export preset
+- Advanced CSV exports for assets/equipment/checklists
+- Business-branded reports if implemented later
+
+Add a use context field to Rental Car, Moving Truck / Van, Cargo Van, Trailer, Hotel, Travel, and other relevant packet setup screens.
+
+Field label:
+Use context
+
+Options:
+- Personal
+- Business travel
+- Military TDY/TAD
+- PCS move
+- Government travel
+- Contractor travel
+- Company-paid rental
+- Employee use
+- Other
+
+Behavior:
+- This field should customize copy, summaries, export language, and optional fields.
+- This field should not automatically force Business Pro.
+- A solo business traveler using a rental car can use ConditionLock Pro.
+- A military/government traveler documenting a rental car can use ConditionLock Pro.
+- A contractor documenting their own rental car can use ConditionLock Pro.
+- A company managing multiple employees, vehicles, fleet records, supervisor approvals, business assets, equipment transfers, or commercial handoffs requires Business Pro.
+
+Update Business Pro upgrade triggers.
+
+Do NOT show a Business Pro upgrade screen merely because the user selected:
+- Business travel
+- Government travel
+- Contractor travel
+- Company-paid rental
+- Military TDY/TAD
+- PCS move
+- Employee use
+
+Only show Business Pro upgrade when the user selects or tries to use:
+- Company Vehicle Handoff
+- Fleet Vehicle Handoff
+- Employee Vehicle Assignment
+- Business / Commercial Lease
+- Business Changeover / As-Is Sale
+- Business asset inventory
+- Supervisor/manager workflows
+- Team/company roles
+- Advanced business export features
+- Commercial equipment transfer workflows
+- Business Handoff Packet export preset
+
+Update pricing screen copy.
+
+ConditionLock Pro:
+“For individuals, solo travelers, business travelers, military/government travelers, and contractors documenting rentals, returns, stays, claims, sales, and personal handoffs.”
+
+ConditionLock Business Pro:
+“For companies, teams, fleets, commercial spaces, equipment handoffs, business changeovers, supervisor workflows, advanced exports, and business-specific records.”
+
+Add this explanatory copy to pricing/onboarding:
+“Rental vehicle packets can be used for personal trips, business travel, government travel, contractor travel, company-paid rentals, or military travel.”
+
+Add this explanatory copy:
+“Business Pro is for company/team workflows, fleet handoffs, commercial leases, equipment transfers, business changeovers, advanced exports, supervisor review, and business-specific roles.”
+
+Add this copy:
+“Not sure which plan you need? Start with Pro. You can upgrade to Business Pro later and pay only the difference.”
+
+Add this copy:
+“Personal vs. business context helps tailor templates and export language. It does not automatically change your plan.”
+
+Keep current pricing:
+- 3-day free trial
+- no free tier
+- ConditionLock Pro: $14.99 one-time purchase
+- ConditionLock Business Pro: $39.99 one-time purchase
+- Upgrade from Pro to Business Pro: $25.00
+- Purchases are platform-based and tied to the app store account used for purchase.
+
+Keep archive portability copy:
+“Your packet data is portable. You can export a Full Packet Archive from one device and import it into ConditionLock on another device, including across iOS and Android. Export/import transfers your packet files and original-quality photos. It does not transfer app store purchase entitlements between Apple and Google.”
+
+Update app/README positioning:
+“ConditionLock starts with rental vehicles because both consumers and business travelers face the same handoff problem: what condition was the vehicle in at pickup and return? The same workflow expands from individual renters to company vehicles, fleet handoffs, military/government travel, property, equipment, and business transfers.”
+
+Keep all existing features:
+- local-first MVP
+- no backend
+- no accounts
+- no cloud sync
+- no analytics
+- no server verification
+- original-quality in-app captured evidence photos
+- no gallery uploads for verified evidence photos
+- imported documents/receipts allowed and labeled separately
+- SHA-256 hashing
+- verified packet export
+- receiver-side verification
+- full archive export/import
+- custom entries
+- multi-select statuses
+- military/government travel fields
+- company affiliation disclaimers
+- pricing/trial logic
+- Pro-to-Business upgrade logic
+
+Do not add backend, accounts, cloud sync, analytics, server verification, rental company API integration, DTS integration, government API integration, or fleet management backend.
+```

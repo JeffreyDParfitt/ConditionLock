@@ -6,34 +6,40 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, Check, Zap, Building2, Shield, Clock, RotateCcw, Archive } from 'lucide-react';
 
 const PRO_FEATURES = [
-  'Unlimited proof packets',
-  'Unlimited original-quality photos',
-  'PDF export',
-  'Verified Packet export (SHA-256 manifest)',
+  'Unlimited packets & original-quality photos',
+  'PDF Condition Report export',
+  'Verified Record export (SHA-256 manifest)',
   'Full Packet Archive export & import',
+  'Receiver-side Verify Packet mode',
   'Acknowledgment signatures',
   'JSON backup & restore',
-  'Car Rental, Hotel, Airbnb / Short-Term Rental',
-  'Apartment / Home Rental, Property Sale / Home Sale',
-  'Vehicle Sale / As-Is Transfer, Moving / Storage',
-  'Accident / Insurance Claim template',
-  'General Item Sale / As-Is Transfer, Custom',
+  'Rental Car — personal, business travel, military, govt, contractor',
+  'Moving Truck / Van & Cargo Van Packet',
+  'Trailer / Tow Equipment Packet',
+  'Custom Rental Vehicle Packet',
+  'Hotel Stay Packet',
+  'Airbnb / Short-Term Rental Packet',
+  'Apartment / Home Rental Packet',
+  'Personal Vehicle Sale / As-Is Transfer',
+  'Property Sale / Home Sale Packet',
+  'Accident / Insurance Claim Packet',
+  'Military / Government Travel personal documentation',
+  'Moving / Storage & Equipment Rental',
   'All deep checklists (kitchen, bathroom, flip/lift/look under)',
   'Before / After / Pickup / Return / Sale / Transfer phases',
-  'Receiver-side Verify Packet mode',
+  'Custom packet type',
 ];
 
 const BUSINESS_EXTRAS = [
+  'Company Vehicle Handoff',
+  'Fleet Vehicle Handoff & Employee Vehicle Assignment',
   'Business / Commercial Lease template',
   'Business Changeover / As-Is Sale template',
-  'Equipment Rental & Equipment Sale / As-Is Transfer',
+  'Equipment Rental & Equipment Sale for commercial use',
   'Commercial kitchen, office, retail, warehouse, workshop checklists',
   'Asset inventory with included / excluded tracking',
-  'Serial & model number fields',
-  'Keys & access card tracking',
-  'POS & electronics checklist',
-  'Furniture / fixture / equipment checklist',
-  'Buyer / seller / tenant / landlord signature roles',
+  'Serial & model number fields, keys & access card tracking',
+  'Buyer / seller / tenant / landlord business signature roles',
   'Business-specific PDF titles & disclaimers',
   'ZIP export of original-quality photos',
   'Save verification results locally',
@@ -131,7 +137,7 @@ export default function Pricing() {
               <span className="text-2xl font-bold">$14.99</span>
               <span className="text-sm text-muted-foreground">one-time</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">For rentals, hotels, Airbnbs, homes, car rentals, vehicle sales, property sales, claims, and personal proof packets.</p>
+            <p className="text-xs text-muted-foreground mt-1">For individuals, solo travelers, business travelers, military/government travelers, and contractors documenting rentals, returns, stays, claims, sales, and personal handoffs.</p>
           </div>
           <CardContent className="p-4 space-y-4">
             <ul className="space-y-2">
@@ -189,7 +195,7 @@ export default function Pricing() {
             {entitlement === 'none' && (
               <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-1 font-medium">Upgrade from Pro: $25.00</p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">For commercial leases, business changeovers, as-is business sales, equipment transfers, kitchens, offices, warehouses, and asset handoffs.</p>
+            <p className="text-xs text-muted-foreground mt-1">For companies, teams, fleets, commercial spaces, equipment handoffs, business changeovers, supervisor workflows, advanced exports, and business-specific records.</p>
           </div>
           <CardContent className="p-4 space-y-4">
             <p className="text-sm font-medium text-muted-foreground">Everything in Pro, plus:</p>
@@ -218,10 +224,29 @@ export default function Pricing() {
         </Card>
       </div>
 
+      {/* Explanatory copy — plan guidance */}
+      <Card className="bg-muted/30 border-muted">
+        <CardContent className="p-4 space-y-2.5 text-[11px] text-muted-foreground leading-relaxed">
+          <p>
+            <span className="font-medium text-foreground">Rental vehicles and Pro: </span>
+            Rental vehicle packets (car, moving truck, cargo van, trailer) can be used for personal trips, business travel, government travel, contractor travel, company-paid rentals, or military travel. All of these work with ConditionLock Pro.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Business Pro is for: </span>
+            Company/team workflows, fleet vehicle handoffs, commercial leases, equipment transfers, business changeovers, supervisor review, advanced exports, and business-specific roles.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Not sure? </span>
+            Start with Pro. You can upgrade to Business Pro later and pay only the difference — $25.00.
+          </p>
+          <p>Personal vs. business context helps tailor templates and export language. It does not automatically change your plan.</p>
+        </CardContent>
+      </Card>
+
       {/* Pro-to-Business upgrade note */}
       {entitlement === 'none' && (
         <p className="text-xs text-center text-muted-foreground leading-relaxed max-w-sm mx-auto">
-          Already have ConditionLock Pro? Upgrade to Business Pro later and pay only the difference.
+          Already have ConditionLock Pro? Upgrade to Business Pro later and pay only the difference — $25.00.
         </p>
       )}
 
