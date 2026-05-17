@@ -1,0 +1,64 @@
+Create a YC coding-agent-session export file.
+
+Create a markdown file in the project root named:
+yc-agent-session.md
+
+Purpose:
+This file will be uploaded to the YC application question asking for an AI coding agent session or transcript.
+
+If you cannot export the exact Replit Agent transcript, create a detailed coding session summary from the project history and current codebase.
+
+Include:
+1. Project name: ConditionLock
+2. One-line description: Verified condition records for physical handoffs, starting with rental vehicles.
+3. AI tools used: Replit Agent, ChatGPT, Gemini
+4. Tech stack: React, TypeScript, Vite, Tailwind, local-first storage, client-side exports, SHA-256 hashing plan, no backend MVP
+5. Original product direction and how it evolved
+6. Major features implemented or specified:
+   - rental vehicle launch focus
+   - rental car packets
+   - moving truck / van packets
+   - company vehicle handoff
+   - military/government travel documentation
+   - all broader packet templates
+   - original-quality photo storage
+   - in-app-only evidence photo capture
+   - multi-select status tags
+   - SHA-256 hashing
+   - verified packet export
+   - receiver-side Verify Packet mode
+   - portable archives
+   - archive import/restore
+   - documents/receipts
+   - dispute summaries
+   - required shot score
+   - custom entries
+   - activity history
+   - 3-day trial
+   - Pro / Business Pro pricing
+   - platform-based purchase language
+   - Pro-to-Business upgrade difference
+   - local-first/no-cloud-runtime design
+7. Important product constraints:
+   - no backend
+   - no cloud sync
+   - no accounts
+   - no analytics
+   - no server verification
+   - no gallery uploads for verified evidence photos
+   - imported documents allowed but labeled separately
+8. Key build/debugging steps:
+   - build requires PORT=3000 and BASE_PATH=/
+   - command: PORT=3000 BASE_PATH=/ pnpm --filter "./artifacts/proofpacket" run build
+   - sourcemap/chunk warnings were non-blocking
+   - GitHub repo pushed successfully
+9. Current MVP state
+10. Next steps:
+   - deploy web/PWA beta
+   - get testers
+   - record demo video
+   - wrap with Capacitor later
+   - optional cloud backup/receiver links later
+
+Keep it professional, concise, and readable.
+Do not include private secrets, tokens, credentials, or irrelevant logs.
