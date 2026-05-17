@@ -1,0 +1,783 @@
+Create a detailed YC coding-agent-session export file.
+
+Create a markdown file in the project root named:
+
+yc-agent-session.md
+
+Purpose:
+This file will be uploaded to the YC application question asking for an AI coding agent session or transcript.
+
+I want this file to include the actual style of prompts I gave you, how the project evolved from those prompts, implementation summaries, selected code excerpts, build/debugging history, current product state, and YC positioning work.
+
+If you cannot export the literal full Replit Agent transcript, reconstruct a detailed session log from the current project, Git history, files, and the product requirements I gave you.
+
+Keep the file professional, readable, and under 25MB.
+
+Do not include secrets, API keys, passwords, credentials, private tokens, or irrelevant logs.
+
+Structure the file like this:
+
+# ConditionLock — AI Coding Agent Session Export
+
+## 1. Project Overview
+
+Project name:
+ConditionLock
+
+Original working name:
+ProofPacket
+
+One-line description:
+Verified condition records for physical handoffs, starting with rental vehicles.
+
+Current positioning:
+ConditionLock creates verified condition records for rentals, returns, sales, claims, and handoffs. The launch wedge is rental vehicles: rental cars, moving trucks/vans, cargo vans, trailers, car-sharing trips, company vehicles, and military/government travel documentation.
+
+Broader template system:
+The app also supports hotels, Airbnbs, apartments, commercial leases, business changeovers, property sales, equipment rentals/sales, insurance/accident documentation, and custom packets.
+
+Current MVP status:
+This is a local-first web/PWA MVP in development. The app is not wrapped for iOS/Android yet. Mobile wrapping with Capacitor is planned later.
+
+## 2. AI Tools Used
+
+Include:
+- Replit Agent for implementation inside the codebase
+- ChatGPT for product requirements, Replit prompts, feature design, debugging, naming, pricing, YC positioning, app-store planning, and launch strategy
+- Gemini for additional review/iteration support where applicable
+- GitHub for version control
+- Replit Shell for builds, commits, and pushes
+
+## 3. Tech Stack
+
+Include:
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Local-first web/PWA architecture
+- IndexedDB-style storage / local storage where applicable
+- Client-side PDF/export flow
+- SHA-256 hashing plan using browser Web Crypto API
+- No backend MVP
+- No account system
+- No cloud runtime
+- Future mobile wrapper planned with Capacitor
+- Future optional cloud backup/receiver access roadmap
+
+## 4. Development Philosophy / Constraints
+
+Include:
+- MVP must run locally.
+- No backend.
+- No cloud storage.
+- No accounts.
+- No analytics.
+- No server verification.
+- No Firebase, Supabase, or AWS backend.
+- Original-quality photos must be preserved.
+- Verified evidence photos must be taken inside the app, not uploaded from the phone gallery.
+- Documents/receipts can be imported separately and labeled as imported documents.
+- Receiver verification must happen locally.
+- Users must be able to export/import archives to move packets between devices.
+- Future cloud backup and receiver download access are possible later, but not part of the MVP runtime.
+- Cloud build services may be used later only for compiling iOS because the founder does not own a Mac, not for app runtime or user data.
+
+## 5. Reconstructed Prompt / Session Log
+
+Create a chronological section showing the kinds of prompts I gave you.
+
+Use this format for each entry:
+
+### Prompt 1 — Initial Product Build
+
+User prompt:
+> Build a mobile-first local-only web app called ProofPacket.
+> The app should help people create timestamped proof-of-condition packets for rentals, stays, returns, handoffs, leases, claims, sales, as-is transfers, business changeovers, and disputes.
+> No backend. No server database. No login. No accounts. No paid APIs. No cloud AI. Store everything locally. Use React, TypeScript, Tailwind, IndexedDB, and client-side PDF export.
+
+Agent response / implementation summary:
+Explain what was built or changed:
+- Created the basic app structure
+- Added packet types
+- Added local-first data models
+- Added dashboard/new packet/packet detail flows
+- Added export/settings areas if implemented
+- Added template architecture if implemented
+
+Files/modules likely changed:
+Inspect the repo and list actual files if possible. If exact files cannot be determined, use approximate modules:
+- src/pages
+- src/components
+- src/templates
+- src/storage
+- src/types
+- src/pdf
+- src/utils
+
+### Prompt 2 — Expand Templates Beyond Landlord/Tenant
+
+User prompt:
+> Add car rentals, insurance claims after an accident, hotel rentals, AirBnB, apartment/home rentals, business leasing spaces like offices and kitchens, business changeovers, property sale, car/home sale, and general as-is transfers.
+
+Agent response / implementation summary:
+Explain:
+- Expanded packet categories
+- Added business/commercial templates
+- Added vehicle/property/equipment sale templates
+- Added accident/insurance claim template
+- Added template selector categories
+
+### Prompt 3 — Deep Inspection Requirements
+
+User prompt:
+> For apartment/home rentals/hotels, make sure to open cabinets and check the interior of items that can open/close.
+> Check locks and hinges.
+> Inside the toilet tank, etc.
+> For cushions, flip them over.
+
+Agent response / implementation summary:
+Explain:
+- Added Open & Inspect sections
+- Added Open/Close/Lock/Hinge checklist
+- Added Bathroom Deep Check
+- Added Kitchen Deep Check
+- Added Flip/Lift/Look Under checklist
+- Added hidden/easy-to-miss issues
+
+### Prompt 4 — Add More Items During Inspection
+
+User prompt:
+> There should be an option to select more items in the middle of an inspection just in case the user forgets and doesn’t have to start over.
+
+Agent response / implementation summary:
+Explain:
+- Added Add More Items / Add Custom Check / Add Area / Add Asset / Add Unexpected Issue
+- Added addedDuringInspection flag
+- Added PDF section for additional items
+- Made added items editable/deletable without resetting progress
+
+### Prompt 5 — Photo Storage Requirements
+
+User prompt:
+> The photos that are taken should not only be in the phone album.
+> Store them inside the app so they don’t accidentally get deleted.
+> Not compressed. Same quality.
+
+Agent response / implementation summary:
+Explain:
+- Specified original-quality Blob/File storage
+- No compression/resizing for original evidence photos
+- Thumbnails only for display
+- Local IndexedDB storage
+- Export backups recommended
+- Original-quality photos should be used for PDF/ZIP/archive exports where possible
+
+### Prompt 6 — Pricing and Trial
+
+User prompt:
+> NO FREE TIER.
+> I want a 3 day free trial, then after three days, you must pay for Pro or Business.
+> These prices are per device/platform/app store account.
+> Purchases are platform-based and tied to the app store account used for purchase.
+> Pro can upgrade to Business by paying only the difference.
+
+Agent response / implementation summary:
+Explain:
+- Removed Free tier
+- Added 3-day trial logic
+- Added Pro $14.99
+- Added Business Pro $39.99
+- Added Pro-to-Business upgrade $25
+- Added local simulated entitlement toggles for development
+- Added platform-based purchase copy
+- Added same-platform restore/cross-platform purchase limitation copy
+- Added note that iOS-to-Android or Android-to-iOS may require a new purchase because Apple and Google entitlements do not automatically transfer without a backend/account system
+- Added archive export/import so packet data can move across devices and platforms even if purchase entitlement does not
+
+### Prompt 7 — Photo Hashing and Receiver Verification
+
+User prompt:
+> Add some sort of hash to these high quality photos so there can be a receiver side — property manager, etc. — so they also have proof of the documented findings.
+> Sender/receiver should be on the same app, just have a selection option for what you want to be.
+
+Agent response / implementation summary:
+Explain:
+- Added SHA-256 photo hash concept
+- Added verification manifest
+- Added Export Verified Packet
+- Added Verify Packet mode inside the same app
+- Receiver can upload manifest/photos locally and compare hashes
+- Added verification statuses: verified, missing, mismatch, extra/unmatched
+- Added verification disclaimers
+- Clarified that hash verification confirms file integrity, not who took the photo, where it was taken, whether the scene was staged, or legal evidentiary value
+
+### Prompt 8 — Portable Archives / Restore
+
+User prompt:
+> Each side should be able to download these files to their PC in case they want to clear up space on their phones, and redownload to phones from email or cloud drives.
+
+Agent response / implementation summary:
+Explain:
+- Added Full Packet Archive export
+- Added import/restore flow
+- Added photos ZIP
+- Added archive filenames
+- Added storage management copy
+- Added import photos by hash concept
+- Added receiver verification result export/import
+- Added ability to save archives to PC, email, iCloud Drive, Google Drive, Dropbox, USB, external storage, then re-import later
+
+### Prompt 9 — Rental Vehicle Wedge
+
+User prompt:
+> Let’s do rental cars first.
+> And U-Haul.
+> What about Avis or Budget?
+> Also companies that require drivers to use company cars.
+
+Agent response / implementation summary:
+Explain:
+- Refocused first-run experience around rental vehicles
+- Added Rental Car Packet
+- Added Moving Truck / Van Packet
+- Added broader rental company selector examples:
+  - Avis
+  - Budget
+  - Enterprise
+  - Hertz
+  - National
+  - Alamo
+  - Sixt
+  - Thrifty
+  - Dollar
+  - Fox
+  - Turo
+  - Getaround
+  - Zipcar
+  - U-Haul
+  - Penske
+  - Budget Truck Rental
+  - Enterprise Truck Rental
+  - Ryder
+  - Home Depot Truck Rental
+  - Lowe’s Truck Rental
+  - Local / Independent
+  - Other
+- Added company affiliation disclaimer
+- Added Company Vehicle Handoff packet
+- Added fleet/company car checkout/return/transfer workflows
+
+### Prompt 10 — Keep Broader Features
+
+User prompt:
+> Can I keep the other features we already added?
+
+Agent response / implementation summary:
+Explain:
+- Kept all broader packet types under More Packet Types
+- Kept rental vehicles as the launch focus, not the only supported use case
+- Preserved hotel, Airbnb, apartment, business lease, business changeover, property sale, equipment sale/rental, insurance/accident, and custom workflows
+
+### Prompt 11 — Military / Government Travel Support
+
+User prompt:
+> This will be great for military personnel traveling as well.
+> Add military/government travel, TDY/TAD, PCS, PPM, rental cars, moving trucks, lodging, receipts, and supporting documentation.
+
+Agent response / implementation summary:
+Explain:
+- Added Travel type/context field
+- Added Military TDY/TAD, PCS move, Government travel, Contractor travel options
+- Added optional travel authorization/DTS/voucher fields
+- Added PCS/PPM moving truck fields
+- Added Military/Government Travel Packet export preset
+- Added receipt/document checklist
+- Added disclaimers:
+  - no DoD/military/GSA/DTS/government affiliation
+  - not official guidance
+  - does not replace DTS, travel office guidance, claims office guidance, finance office guidance, JTR rules, rental company policies, insurance policies, or employer policies
+
+### Prompt 12 — Additional High-Value Features
+
+User prompt:
+> What else am I missing?
+> Add required shot score, wide shot plus close-up damage pairing, reported-to-company field, return location proof, fuel/charging receipt capture, mileage calculator, dispute summary, activity history, storage estimate, documents/receipts, offline verifier if possible, app/template/manifest versions.
+
+Agent response / implementation summary:
+Explain:
+- Added or specified Required Shot Score
+- Added Damage Report Builder
+- Added Reported-to-Company/Supervisor/Receiver fields
+- Added Return Location Proof
+- Added Fuel/Charging Documentation
+- Added Mileage Calculator
+- Added Create Dispute Summary
+- Added Activity History
+- Added Storage Estimate
+- Added Documents/Receipts section
+- Added optional verify.html roadmap
+- Added app/template/manifest/export version fields
+
+### Prompt 13 — Flexible Custom Entries
+
+User prompt:
+> Also allow for custom entries in case something unexpected comes up.
+
+Agent response / implementation summary:
+Explain:
+- Added global Add Custom Entry option
+- Custom Entry types:
+  - Custom Checklist Item
+  - Custom Damage / Issue
+  - Custom Photo Note
+  - Custom Document / Receipt
+  - Custom Area / Location
+  - Custom Equipment / Accessory
+  - Custom Person / Contact
+  - Custom Communication Log
+  - Custom Return / Handoff Note
+  - Custom Travel / Reimbursement Note
+  - Other / General Note
+- Custom entries appear immediately
+- Labeled Custom / Added during inspection
+- Included in PDFs, archives, manifests where relevant, dispute summaries, and travel summaries
+
+### Prompt 14 — Multi-Select Statuses
+
+User prompt:
+> Users should be able to select multiple options, like dirty and damaged.
+
+Agent response / implementation summary:
+Explain:
+- Changed single status to multi-select status tags / statuses array
+- Kept backward compatibility with old status field
+- Added chips/pill UI behavior
+- Exclusive statuses like Not Applicable and Not Checked
+- Updated PDF/export/manifest/filter behavior
+- Examples:
+  - dirty + damaged
+  - missing + reported
+  - included + not working
+  - present + dirty
+  - returned + damaged
+
+### Prompt 15 — In-App Camera Only
+
+User prompt:
+> Add photos must be taken with the app.
+> Not the phone’s camera app and photos are not able to be uploaded from the phone’s gallery to prevent fraud.
+
+Agent response / implementation summary:
+Explain:
+- Evidence photos must be captured inside the app
+- Gallery uploads disabled for verified evidence photos
+- Documents/receipts can still be imported separately
+- Added appCaptured/source/verificationEligible metadata
+- Added PDF/manifest/receiver verification labels
+- Added careful wording:
+  - helps reduce fraud
+  - supports stronger documentation
+  - does not fully prevent fraud
+  - not legally certified
+  - not guaranteed authentic
+
+### Prompt 16 — Branding / Naming
+
+User prompt:
+> Search trademarks/databases for ProofPacket and ProofVault.
+> Change the name because ProofPacket and ProofVault look crowded.
+> I need a name that encompasses all templates.
+> Search for ConditionLock.
+
+Agent response / implementation summary:
+Explain:
+- Found ProofPacket/ProofVault concerns from public searches
+- Chose ConditionLock as a cleaner working name
+- Added rename plan from ProofPacket to ConditionLock
+- Updated app name, pricing tiers, export names, disclaimers, README, product positioning
+- Current product positioning:
+  “ConditionLock creates verified condition records for physical handoffs, starting with rental vehicles.”
+
+### Prompt 17 — Logo / Icon Planning
+
+User prompt:
+> Now we need a logo for the web app and mobile icons.
+> Don’t make the icon logo yet.
+> Okay, create the in-app logo and icon.
+
+Agent response / implementation summary:
+Explain:
+- Logo/icon design direction:
+  - verified records
+  - documentation
+  - trust
+  - protection
+  - condition lock/seal concept
+  - modern blue/teal SaaS style
+- App icon should work for iOS/Android/PWA later
+- In-app logo should be used for header/branding
+- Mention generated visual concepts if present, but do not embed huge image files in this markdown unless small links/paths are useful
+
+### Prompt 18 — GitHub / Build / Deployment Debugging
+
+User prompt:
+> How do I push this to GitHub?
+> Build failed because PORT was missing.
+> Then BASE_PATH was missing.
+> Help me push all updates.
+
+Agent response / implementation summary:
+Include actual build/debug notes:
+- Initial workspace build failed because PORT environment variable was required.
+- ProofPacket/ConditionLock build required:
+  PORT=3000 BASE_PATH=/ pnpm --filter "./artifacts/proofpacket" run build
+- Sourcemap and chunk warnings were non-blocking.
+- Git commands used:
+  git status
+  git add .
+  git commit -m "..."
+  git push
+- GitHub repo:
+  https://github.com/JeffreyDParfitt/proofpacket.git
+- Branch:
+  main
+- Successful pushes occurred after build passed.
+- One command error was caused by typing `commit -m` instead of `git commit -m`, and another by using `git add` without a path instead of `git add .`.
+
+### Prompt 19 — App Store / Mobile Wrapping Planning
+
+User prompt:
+> Walk me through how to wrap this for iOS and Android. I do not own a Mac.
+> I don’t want any of this running from the cloud.
+
+Agent response / implementation summary:
+Explain:
+- Planned Capacitor wrapper for current React/Vite app
+- Android can be built locally/cloud
+- iOS requires Mac or cloud build service
+- Clarified that cloud build does not mean cloud runtime
+- Runtime remains local-first
+- Future app store launch guide includes Apple Developer, Google Play, Codemagic, RevenueCat/IAP
+- Payments are app-store based
+- Cloud build service would only compile the app package; the installed app would still run locally with no backend
+
+### Prompt 20 — Future Cloud Backend Roadmap
+
+User prompt:
+> Eventually moving this to a cloud backend would be the goal.
+> Store it locally and with backups with receiver download access.
+
+Agent response / implementation summary:
+Explain:
+- Current MVP remains local-first
+- Future roadmap:
+  - optional accounts
+  - optional encrypted cloud backup
+  - cross-device restore
+  - receiver download links
+  - cloud packet sharing
+  - team/fleet accounts
+  - property/fleet/business integrations
+  - B2B SaaS pricing
+- Important principle:
+  local-first should remain available; cloud should be optional
+
+### Prompt 21 — YC Application Positioning
+
+User prompt:
+> Can I apply to YC with this?
+> Maybe incorporate Yardi/Airbnb/rental companies later?
+> Rental cars first.
+> Can I apply with web app and no beta testers?
+> What do I need for YC?
+
+Agent response / implementation summary:
+Explain:
+- YC positioning evolved from app utility to verified condition-record layer
+- Current wedge: rental vehicles
+- Bigger vision: verified records for physical handoffs
+- Future cloud backend and receiver download access
+- Future integrations:
+  - rental companies
+  - fleet operators
+  - property managers
+  - Airbnb/Yardi-style systems
+  - claims workflows
+- YC answers drafted
+- Founder video and demo video scripts drafted
+- No beta users yet but MVP in progress
+- Web/PWA version is acceptable for application; app store wrapping can come later
+
+## 6. Current Product State
+
+Summarize current product state based on the codebase:
+- What currently exists
+- What is partially implemented
+- What is specified but future/roadmap
+- Any known limitations
+
+Be honest. Do not overclaim.
+
+Use labels:
+- Implemented
+- Partially implemented
+- Specified / planned
+- Future roadmap
+
+Mention:
+- Web/PWA MVP in development
+- Not yet wrapped for iOS/Android
+- Not yet deployed to app stores
+- No beta users yet
+- No revenue yet
+- Product is being prepared for demo/testing
+
+## 7. Build Commands and Debugging
+
+Include this build command:
+
+PORT=3000 BASE_PATH=/ pnpm --filter "./artifacts/proofpacket" run build
+
+Include Git commands:
+
+git status
+git add .
+git commit -m "Update ConditionLock MVP"
+git push
+
+Mention:
+- `PORT` and `BASE_PATH` were required by Vite config.
+- Sourcemap/chunk-size warnings did not block builds.
+- GitHub pushes succeeded.
+- Current GitHub repository:
+  https://github.com/JeffreyDParfitt/proofpacket.git
+
+## 8. What This Session Demonstrates
+
+Explain:
+- I used AI coding tools to turn a broad idea into a structured product.
+- I narrowed the wedge to rental vehicles while preserving a broad template system.
+- I designed privacy/local-first constraints.
+- I iterated on user trust:
+  - in-app photos
+  - original-quality files
+  - hashes
+  - manifests
+  - receiver verification
+  - archives
+  - no gallery evidence uploads
+- I used AI to debug builds and push to GitHub.
+- I used AI to refine pricing, trial logic, mobile wrapping, app-store planning, and YC positioning.
+
+## 9. Selected Code Excerpts
+
+Include short, readable excerpts from the actual codebase that demonstrate important product and technical decisions.
+
+Do not dump the entire codebase.
+
+For each excerpt:
+- Include the file path
+- Include a short explanation of what the code does
+- Include only the most relevant code block
+- Keep each code excerpt short enough to read
+- Do not include secrets, credentials, tokens, or private keys
+
+Include code excerpts for these areas if they exist in the codebase:
+
+### Excerpt 1 — Packet/data model definitions
+
+Show TypeScript types/interfaces for packets, checklist items, photos, verification, custom entries, statuses, or exports.
+
+Look for files such as:
+- artifacts/proofpacket/src/types
+- artifacts/proofpacket/src/types.ts
+- artifacts/proofpacket/src/lib/types
+- artifacts/proofpacket/src/storage
+- artifacts/proofpacket/src/templates
+
+Explain why this matters:
+This shows how ConditionLock represents local-first condition records with packets, photos, statuses, hashes, custom entries, and exports.
+
+### Excerpt 2 — Template system
+
+Show how packet templates are defined, especially:
+- Rental Car Packet
+- Moving Truck / Van Packet
+- Company Vehicle Handoff
+- Military / Government Travel fields
+- More Packet Types
+
+Look for files such as:
+- artifacts/proofpacket/src/templates
+- artifacts/proofpacket/src/data/templates
+- artifacts/proofpacket/src/lib/templates
+
+Explain why this matters:
+This shows how the product handles many vertical workflows while keeping rental vehicles as the launch wedge.
+
+### Excerpt 3 — Local storage / persistence
+
+Show how the app stores packets/photos/data locally.
+
+Look for files such as:
+- artifacts/proofpacket/src/storage
+- artifacts/proofpacket/src/storage/actions.ts
+- artifacts/proofpacket/src/storage/db.ts
+- artifacts/proofpacket/src/lib/storage
+
+Explain why this matters:
+This shows the local-first MVP architecture and no-backend design.
+
+### Excerpt 4 — Photo handling
+
+Show code related to:
+- original-quality photo storage
+- app-captured photo metadata
+- photo source
+- verificationEligible
+- no-compression behavior
+- thumbnails if used
+
+Look for files such as:
+- artifacts/proofpacket/src/utils/photo.ts
+- artifacts/proofpacket/src/storage/actions.ts
+- artifacts/proofpacket/src/components/photo
+- artifacts/proofpacket/src/pages
+
+Explain why this matters:
+The trust model depends on preserving original-quality evidence photos and distinguishing in-app captured photos from imported documents.
+
+### Excerpt 5 — SHA-256 hashing / verification
+
+Show code that calculates or stores hashes, or planned hash utilities if implemented.
+
+Look for files such as:
+- artifacts/proofpacket/src/utils/hash.ts
+- artifacts/proofpacket/src/utils/crypto.ts
+- artifacts/proofpacket/src/utils/photo.ts
+- artifacts/proofpacket/src/verification
+- artifacts/proofpacket/src/export
+
+Explain why this matters:
+The hash system is what lets a receiver verify whether files match the exported manifest.
+
+### Excerpt 6 — Verified packet export / manifest generation
+
+Show code that creates:
+- verification manifest
+- manifest hash
+- PDF/export metadata
+- photo hash entries
+
+Look for files such as:
+- artifacts/proofpacket/src/pdf/generator.ts
+- artifacts/proofpacket/src/export
+- artifacts/proofpacket/src/utils/export
+- artifacts/proofpacket/src/verification
+
+Explain why this matters:
+This shows how ConditionLock turns local records into portable reports and verifiable archives.
+
+### Excerpt 7 — Receiver-side Verify Packet mode
+
+Show code that compares uploaded file hashes against the manifest if implemented.
+
+Look for files such as:
+- artifacts/proofpacket/src/pages/VerifyPacket.tsx
+- artifacts/proofpacket/src/components/verification
+- artifacts/proofpacket/src/utils/verification
+
+Explain why this matters:
+This shows the two-sided workflow: sender creates a record, receiver verifies file integrity locally.
+
+### Excerpt 8 — Pricing / trial / entitlements
+
+Show code for:
+- 3-day trial
+- Pro / Business Pro
+- simulated unlocks
+- Pro-to-Business upgrade difference
+- platform-based purchase copy if present in UI
+
+Look for files such as:
+- artifacts/proofpacket/src/pages/Pricing.tsx
+- artifacts/proofpacket/src/hooks/useTier.ts
+- artifacts/proofpacket/src/lib/entitlements.ts
+- artifacts/proofpacket/src/settings
+
+Explain why this matters:
+This shows the early monetization model and development placeholder before real app-store IAP/RevenueCat.
+
+### Excerpt 9 — Multi-select statuses
+
+Show code for:
+- statuses array
+- status chips
+- compatibility with old single status
+- filtering by status
+
+Look for files such as:
+- artifacts/proofpacket/src/components
+- artifacts/proofpacket/src/types
+- artifacts/proofpacket/src/pages/PacketDetail.tsx
+- artifacts/proofpacket/src/components/StatusSelector.tsx
+
+Explain why this matters:
+Real-world condition can be multiple states at once, such as dirty and damaged.
+
+### Excerpt 10 — Build/config code
+
+Show key config:
+- Vite config requiring PORT and BASE_PATH
+- package scripts
+- Capacitor config if present
+- PWA manifest if present
+
+Look for:
+- artifacts/proofpacket/vite.config.ts
+- artifacts/proofpacket/package.json
+- artifacts/proofpacket/capacitor.config.ts
+- artifacts/proofpacket/public/manifest.json
+
+Explain why this matters:
+This shows the build environment, local web app output, and future mobile/PWA path.
+
+Important:
+If any requested feature is only specified but not fully implemented yet, clearly label it as:
+“planned/specification”
+or
+“partially implemented”
+Do not make it sound complete if it is not complete.
+
+## 10. Code / Architecture Notes for YC
+
+Include:
+- The codebase is a local-first MVP.
+- The product intentionally avoids a backend for the MVP.
+- The web/PWA version is the first build.
+- Mobile wrapping with Capacitor is planned later.
+- Optional cloud backup and receiver access are roadmap items, not required for the MVP.
+- Current GitHub repository:
+  https://github.com/JeffreyDParfitt/proofpacket.git
+
+## 11. Next Steps
+
+Include:
+- finish MVP polish
+- deploy web/PWA beta
+- record product demo
+- apply to YC
+- test with rental car/moving truck users
+- test with military/government travelers if possible
+- test with company vehicle/fleet users if possible
+- wrap Android/iOS later with Capacitor
+- add real app-store purchases / RevenueCat later
+- optional cloud backup/receiver links later
+- explore B2B/fleet/property integrations later
+
+## 12. Final Summary
+
+End with a concise paragraph:
+
+This AI coding session took ConditionLock from a broad local-first “proof packet” concept to a focused MVP for verified condition records, starting with rental vehicles. The session shows how AI coding tools were used not only to generate code, but to refine product strategy, design the trust model, create no-backend constraints, debug builds, push to GitHub, and prepare for YC.
