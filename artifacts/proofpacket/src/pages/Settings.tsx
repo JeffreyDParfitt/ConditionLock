@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload, Archive, AlertTriangle, RotateCcw, Timer, XCircle } from "lucide-react";
+import { Trash2, Download, Database, ShieldAlert, Zap, Building2, Lock, Upload, Archive, AlertTriangle, RotateCcw, Timer, XCircle, Car, HelpCircle } from "lucide-react";
 import { importArchive } from "@/utils/manifest";
 import { useToast } from "@/hooks/use-toast";
 import { templates } from "@/templates";
 import { useTier, TIER_LIMITS } from "@/hooks/useTier";
 import { useTrial, setEntitlement, resetTrial, simulateTrialExpired, clearSimulation } from "@/hooks/useTrial";
+import { useOnboarding, setUsageIntent, resetOnboarding, type UsageIntent } from "@/hooks/useOnboarding";
 import { Link } from "wouter";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
@@ -23,6 +24,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { tier, limits } = useTier();
   const trial = useTrial();
+  const { usageIntent, completed: onboardingCompleted } = useOnboarding();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
   const [upgradeTier, setUpgradeTier] = useState<'pro' | 'business'>('pro');
@@ -312,6 +314,43 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Usage Intent */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Usage Intent</CardTitle>
+          <CardDescription>
+            Tailors recommended templates and wording. Does not change your plan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(
+            [
+              { value: 'personal', icon: Car,        label: 'Personal / Solo Use',    desc: 'Rental cars, moving trucks, hotels, personal sales, travel.' },
+              { value: 'business', icon: Building2,  label: 'Business / Team Use',    desc: 'Company vehicles, fleet handoffs, equipment, commercial leases.' },
+              { value: 'unsure',   icon: HelpCircle, label: 'Not Sure Yet',           desc: 'Start with personal templates; switch any time.' },
+            ] as { value: UsageIntent; icon: typeof Car; label: string; desc: string }[]
+          ).map(({ value, icon: Icon, label, desc }) => {
+            const isActive = usageIntent === value;
+            return (
+              <button
+                key={value}
+                className="w-full text-left"
+                onClick={() => { setUsageIntent(value); toast({ title: 'Usage intent updated', description: label }); }}
+              >
+                <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${isActive ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-muted hover:border-muted-foreground/30'}`}>
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>{label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+                  </div>
+                  {isActive && <div className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                </div>
+              </button>
+            );
+          })}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Export Preferences</CardTitle>
@@ -430,7 +469,8 @@ export default function Settings() {
             Replace these toggles with RevenueCat / App Store / Google Play checks before release.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
+
           {/* Trial controls */}
           <div className="space-y-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Trial</p>
@@ -447,12 +487,49 @@ export default function Settings() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-xs border-red-300 text-red-700 hover:bg-red-50"
+                className="h-9 text-xs border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400"
                 onClick={() => { simulateTrialExpired(); toast({ title: 'Trial simulated as expired' }); }}
                 data-testid="button-simulate-expired"
               >
                 <Timer className="w-3.5 h-3.5 mr-1.5" /> Simulate Expired
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs col-span-2"
+                onClick={() => { clearSimulation(); resetTrial(); toast({ title: 'Trial active', description: 'Simulation cleared and fresh trial started.' }); }}
+                data-testid="button-simulate-trial-active"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Simulate Trial Active
+              </Button>
+            </div>
+          </div>
+
+          {/* Onboarding controls */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Onboarding</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs"
+                onClick={() => { resetOnboarding(); toast({ title: 'Onboarding reset', description: 'Onboarding screen will show on next app load.' }); }}
+                data-testid="button-reset-onboarding"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset Onboarding
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs"
+                onClick={() => { resetTrial(); resetOnboarding(); toast({ title: 'Reset complete', description: 'Trial and onboarding both reset.' }); }}
+                data-testid="button-reset-trial-and-onboarding"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset Trial + Onboarding
+              </Button>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              Onboarding: <strong>{onboardingCompleted ? `completed · intent: ${usageIntent ?? 'none'}` : 'not completed'}</strong>
             </div>
           </div>
 

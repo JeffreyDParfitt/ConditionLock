@@ -4,8 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/Navigation";
 import { useTrial } from "@/hooks/useTrial";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { TrialLockScreen } from "@/components/TrialLockScreen";
 
+import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import PacketsList from "@/pages/PacketsList";
 import NewPacket from "@/pages/NewPacket";
@@ -24,7 +26,13 @@ const OPEN_ROUTES = ['/pricing', '/settings'];
 
 function Router() {
   const { isLocked } = useTrial();
+  const { completed: onboardingCompleted } = useOnboarding();
   const [location] = useLocation();
+
+  // Show onboarding before anything else on first launch
+  if (!onboardingCompleted) {
+    return <Onboarding />;
+  }
 
   const isOpenRoute = OPEN_ROUTES.some(r => location.startsWith(r));
 

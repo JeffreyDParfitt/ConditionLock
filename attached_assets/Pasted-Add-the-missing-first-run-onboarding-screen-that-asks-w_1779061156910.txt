@@ -1,0 +1,114 @@
+Add the missing first-run onboarding screen that asks whether the user is using ConditionLock for personal or business/team use.
+
+Problem:
+The app currently reaches the trial/paywall or main app without asking the user whether they are a personal, business, or unsure user.
+
+Add a first-run onboarding step before the main dashboard and before template selection.
+
+Onboarding screen title:
+“What are you using ConditionLock for?”
+
+Subtitle:
+“This helps tailor templates and wording. You can change this later in Settings.”
+
+Options:
+
+1. Personal / Solo Use
+Description:
+“Rental cars, moving trucks, hotels, Airbnbs, apartments, personal sales, travel documentation, and personal proof records.”
+
+2. Business / Team Use
+Description:
+“Company vehicles, employee handoffs, equipment transfers, commercial leases, business changeovers, fleet records, and business proof records.”
+
+3. Not Sure Yet
+Description:
+“Start with common personal templates. You can switch or upgrade later.”
+
+When the user selects one, store:
+
+usageIntent: 'personal' | 'business' | 'unsure'
+onboardingCompleted: true
+onboardingCompletedAt: ISO timestamp
+
+Important behavior:
+- This screen should appear only if onboardingCompleted is not true.
+- Reset Trial in developer settings should optionally allow resetting onboarding too.
+- Add a developer/testing button called “Reset Onboarding” so I can see this first screen again during testing.
+- If the user already completed onboarding, do not show it again unless reset in developer settings.
+- Add usage intent setting under Settings so it can be changed later.
+
+Plan logic:
+- Selecting Business / Team Use should NOT automatically require Business Pro.
+- Selecting Personal / Solo Use should NOT permanently hide business templates.
+- Selecting Not Sure Yet should default to personal template recommendations.
+- The choice should only customize recommended templates, copy, and screen ordering.
+
+Dashboard behavior after onboarding:
+
+If usageIntent is personal:
+Show primary actions:
+- Start Rental Car Packet
+- Start Moving Truck / Van Packet
+- Verify Received Packet
+- More Packet Types
+
+If usageIntent is business:
+Show primary actions:
+- Start Rental Car Packet
+- Start Moving Truck / Van Packet
+- Start Company Vehicle Handoff
+- Verify Received Packet
+- More Packet Types
+
+If usageIntent is unsure:
+Show primary actions:
+- Start Rental Car Packet
+- Start Moving Truck / Van Packet
+- Verify Received Packet
+- More Packet Types
+
+Pricing copy:
+Keep this note visible somewhere in onboarding or pricing:
+“Personal vs. business context helps tailor templates and export language. It does not automatically change your plan.”
+
+Business Pro should only be required when the user selects actual Business Pro workflows, such as:
+- Company Vehicle Handoff
+- Fleet Vehicle Handoff
+- Employee Vehicle Assignment
+- Business / Commercial Lease
+- Business Changeover / As-Is Sale
+- Business asset inventory
+- Supervisor/manager workflows
+- Team/company roles
+- Advanced business export features
+- Commercial equipment transfer workflows
+- Business Handoff Packet export preset
+
+Do not show Business Pro upgrade just because the user selected:
+- Business travel
+- Government travel
+- Contractor travel
+- Company-paid rental
+- Military TDY/TAD
+- PCS move
+- Employee use
+
+Developer testing:
+Add these buttons in Settings under “Developer testing only”:
+- Reset Trial
+- Reset Onboarding
+- Reset Trial and Onboarding
+- Simulate Trial Active
+- Simulate Trial Expired
+- Simulate Pro Unlock
+- Simulate Business Pro Unlock
+- Clear Simulated Unlocks
+
+Reset Onboarding should:
+- set onboardingCompleted to false
+- clear usageIntent
+- clear onboardingCompletedAt
+- return user to onboarding screen on refresh or next app load
+
+Do not add backend, accounts, cloud sync, analytics, or server verification.

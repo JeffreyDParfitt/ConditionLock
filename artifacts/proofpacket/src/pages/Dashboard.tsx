@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useTier } from "@/hooks/useTier";
 import { useToast } from "@/hooks/use-toast";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import type { VerificationResult } from "@/types";
 
 const RESULT_CONFIG = {
@@ -27,6 +28,10 @@ export default function Dashboard() {
   const verificationResults = useDexieQuery(() => storage.getVerificationResults()) || [];
   const { tier, isTrial, trialDaysRemaining, trialHoursRemaining, trialStatus } = useTier();
   const { toast } = useToast();
+  const { usageIntent } = useOnboarding();
+
+  // Business intent shows Company Vehicle as a primary card; personal/unsure do not
+  const showCompanyVehicleCard = usageIntent === 'business';
 
   const recentPackets = packets.slice(0, 4);
   const recentResults = verificationResults.slice(0, 3);
@@ -160,26 +165,28 @@ export default function Dashboard() {
             </Card>
           </button>
 
-          <button
-            className="w-full text-left"
-            onClick={() => setLocation('/packets/new/company_vehicle_handoff')}
-            data-testid="card-company-vehicle"
-          >
-            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all group border-muted">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-muted/70 transition-colors">
-                  <KeyRound className="w-6 h-6 text-foreground/70" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-base leading-tight">Start Company Vehicle Packet</div>
-                  <div className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                    Fleet cars, delivery vans, service trucks, pool vehicles, and employer-assigned vehicles.
+          {showCompanyVehicleCard && (
+            <button
+              className="w-full text-left"
+              onClick={() => setLocation('/packets/new/company_vehicle_handoff')}
+              data-testid="card-company-vehicle"
+            >
+              <Card className="cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all group border-muted">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-muted/70 transition-colors">
+                    <KeyRound className="w-6 h-6 text-foreground/70" />
                   </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-              </CardContent>
-            </Card>
-          </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base leading-tight">Start Company Vehicle Packet</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                      Fleet cars, delivery vans, service trucks, pool vehicles, and employer-assigned vehicles.
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </CardContent>
+              </Card>
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
