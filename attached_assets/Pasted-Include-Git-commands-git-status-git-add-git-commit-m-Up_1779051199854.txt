@@ -1,0 +1,259 @@
+Include Git commands:
+
+git status
+git add .
+git commit -m "Update ConditionLock MVP"
+git push
+
+Mention:
+
+PORT and BASE_PATH were required by Vite config.
+Sourcemap/chunk-size warnings did not block builds.
+GitHub pushes succeeded.
+Current GitHub repository:
+https://github.com/JeffreyDParfitt/proofpacket.git
+8. What This Session Demonstrates
+
+Explain:
+
+I used AI coding tools to turn a broad idea into a structured product.
+I narrowed the wedge to rental vehicles while preserving a broad template system.
+I designed privacy/local-first constraints.
+I iterated on user trust:
+in-app photos
+original-quality files
+hashes
+manifests
+receiver verification
+archives
+no gallery evidence uploads
+I used AI to debug builds and push to GitHub.
+I used AI to refine pricing, trial logic, mobile wrapping, app-store planning, and YC positioning.
+9. Selected Code Excerpts
+
+Include short, readable excerpts from the actual codebase that demonstrate important product and technical decisions.
+
+Do not dump the entire codebase.
+
+For each excerpt:
+
+Include the file path
+Include a short explanation of what the code does
+Include only the most relevant code block
+Keep each code excerpt short enough to read
+Do not include secrets, credentials, tokens, or private keys
+
+Include code excerpts for these areas if they exist in the codebase:
+
+Excerpt 1 — Packet/data model definitions
+
+Show TypeScript types/interfaces for packets, checklist items, photos, verification, custom entries, statuses, or exports.
+
+Look for files such as:
+
+artifacts/proofpacket/src/types
+artifacts/proofpacket/src/types.ts
+artifacts/proofpacket/src/lib/types
+artifacts/proofpacket/src/storage
+artifacts/proofpacket/src/templates
+
+Explain why this matters:
+This shows how ConditionLock represents local-first condition records with packets, photos, statuses, hashes, custom entries, and exports.
+
+Excerpt 2 — Template system
+
+Show how packet templates are defined, especially:
+
+Rental Car Packet
+Moving Truck / Van Packet
+Company Vehicle Handoff
+Military / Government Travel fields
+More Packet Types
+
+Look for files such as:
+
+artifacts/proofpacket/src/templates
+artifacts/proofpacket/src/data/templates
+artifacts/proofpacket/src/lib/templates
+
+Explain why this matters:
+This shows how the product handles many vertical workflows while keeping rental vehicles as the launch wedge.
+
+Excerpt 3 — Local storage / persistence
+
+Show how the app stores packets/photos/data locally.
+
+Look for files such as:
+
+artifacts/proofpacket/src/storage
+artifacts/proofpacket/src/storage/actions.ts
+artifacts/proofpacket/src/storage/db.ts
+artifacts/proofpacket/src/lib/storage
+
+Explain why this matters:
+This shows the local-first MVP architecture and no-backend design.
+
+Excerpt 4 — Photo handling
+
+Show code related to:
+
+original-quality photo storage
+app-captured photo metadata
+photo source
+verificationEligible
+no-compression behavior
+thumbnails if used
+
+Look for files such as:
+
+artifacts/proofpacket/src/utils/photo.ts
+artifacts/proofpacket/src/storage/actions.ts
+artifacts/proofpacket/src/components/photo
+artifacts/proofpacket/src/pages
+
+Explain why this matters:
+The trust model depends on preserving original-quality evidence photos and distinguishing in-app captured photos from imported documents.
+
+Excerpt 5 — SHA-256 hashing / verification
+
+Show code that calculates or stores hashes, or planned hash utilities if implemented.
+
+Look for files such as:
+
+artifacts/proofpacket/src/utils/hash.ts
+artifacts/proofpacket/src/utils/crypto.ts
+artifacts/proofpacket/src/utils/photo.ts
+artifacts/proofpacket/src/verification
+artifacts/proofpacket/src/export
+
+Explain why this matters:
+The hash system is what lets a receiver verify whether files match the exported manifest.
+
+Excerpt 6 — Verified packet export / manifest generation
+
+Show code that creates:
+
+verification manifest
+manifest hash
+PDF/export metadata
+photo hash entries
+
+Look for files such as:
+
+artifacts/proofpacket/src/pdf/generator.ts
+artifacts/proofpacket/src/export
+artifacts/proofpacket/src/utils/export
+artifacts/proofpacket/src/verification
+
+Explain why this matters:
+This shows how ConditionLock turns local records into portable reports and verifiable archives.
+
+Excerpt 7 — Receiver-side Verify Packet mode
+
+Show code that compares uploaded file hashes against the manifest if implemented.
+
+Look for files such as:
+
+artifacts/proofpacket/src/pages/VerifyPacket.tsx
+artifacts/proofpacket/src/components/verification
+artifacts/proofpacket/src/utils/verification
+
+Explain why this matters:
+This shows the two-sided workflow: sender creates a record, receiver verifies file integrity locally.
+
+Excerpt 8 — Pricing / trial / entitlements
+
+Show code for:
+
+3-day trial
+Pro / Business Pro
+simulated unlocks
+Pro-to-Business upgrade difference
+platform-based purchase copy if present in UI
+
+Look for files such as:
+
+artifacts/proofpacket/src/pages/Pricing.tsx
+artifacts/proofpacket/src/hooks/useTier.ts
+artifacts/proofpacket/src/lib/entitlements.ts
+artifacts/proofpacket/src/settings
+
+Explain why this matters:
+This shows the early monetization model and development placeholder before real app-store IAP/RevenueCat.
+
+Excerpt 9 — Multi-select statuses
+
+Show code for:
+
+statuses array
+status chips
+compatibility with old single status
+filtering by status
+
+Look for files such as:
+
+artifacts/proofpacket/src/components
+artifacts/proofpacket/src/types
+artifacts/proofpacket/src/pages/PacketDetail.tsx
+artifacts/proofpacket/src/components/StatusSelector.tsx
+
+Explain why this matters:
+Real-world condition can be multiple states at once, such as dirty and damaged.
+
+Excerpt 10 — Build/config code
+
+Show key config:
+
+Vite config requiring PORT and BASE_PATH
+package scripts
+Capacitor config if present
+PWA manifest if present
+
+Look for:
+
+artifacts/proofpacket/vite.config.ts
+artifacts/proofpacket/package.json
+artifacts/proofpacket/capacitor.config.ts
+artifacts/proofpacket/public/manifest.json
+
+Explain why this matters:
+This shows the build environment, local web app output, and future mobile/PWA path.
+
+Important:
+If any requested feature is only specified but not fully implemented yet, clearly label it as:
+“planned/specification”
+or
+“partially implemented”
+Do not make it sound complete if it is not complete.
+
+10. Code / Architecture Notes for YC
+
+Include:
+
+The codebase is a local-first MVP.
+The product intentionally avoids a backend for the MVP.
+The web/PWA version is the first build.
+Mobile wrapping with Capacitor is planned later.
+Optional cloud backup and receiver access are roadmap items, not required for the MVP.
+Current GitHub repository:
+https://github.com/JeffreyDParfitt/proofpacket.git
+11. Next Steps
+
+Include:
+
+finish MVP polish
+deploy web/PWA beta
+record product demo
+apply to YC
+test with rental car/moving truck users
+test with military/government travelers if possible
+test with company vehicle/fleet users if possible
+wrap Android/iOS later with Capacitor
+add real app-store purchases / RevenueCat later
+optional cloud backup/receiver links later
+explore B2B/fleet/property integrations later
+12. Final Summary
+
+End with a concise paragraph:
+
+This AI coding session took ConditionLock from a broad local-first “proof packet” concept to a focused MVP for verified condition records, starting with rental vehicles. The session shows how AI coding tools were used not only to generate code, but to refine product strategy, design the trust model, create no-backend constraints, debug builds, push to GitHub, and prepare for YC.
