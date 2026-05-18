@@ -168,9 +168,13 @@ export async function generatePDF(
       ['Date Range', [packet.startDate, packet.endDate].filter(Boolean).join(' to ') || '—'],
       ['Notes', packet.notes || '—'],
     ];
-    // Additional type-specific details
+    // Additional type-specific details (skip raw JSON blobs and internal fields)
+    const SKIP_DETAIL_KEYS = new Set([
+      'bedConfigsJson', 'bathroomConfigsJson', 'propertyBathroomConfigsJson',
+    ]);
     if (packet.details) {
       Object.entries(packet.details).forEach(([k, v]) => {
+        if (SKIP_DETAIL_KEYS.has(k)) return;
         if (v !== undefined && v !== '') {
           const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
           rows.push([label, typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)]);
@@ -186,6 +190,114 @@ export async function generatePDF(
       headStyles: { fillColor: navy },
     });
     y = (doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // ── 2b. BEDS AND SLEEPING ARRANGEMENTS ─────────────────────────────
+  const bedConfigsRaw = packet.details?.bedConfigsJson;
+  if (options.includeSummary && bedConfigsRaw && typeof bedConfigsRaw === 'string') {
+    let bedCfg: any = null;
+    try { bedCfg = JSON.parse(bedConfigsRaw); } catch { /* ignore */ }
+    if (bedCfg) {
+      checkBreak(20);
+      sectionHeading('Beds and Sleeping Arrangements');
+
+      const bedSummaryRows: [string, string][] = [];
+      if (bedCfg.beds?.length > 0) {
+        bedSummaryRows.push(['Total beds', String(bedCfg.beds.length)]);
+        const types = (bedCfg.beds as any[]).map((b: any) => b.bedType).filter(Boolean);
+        if (types.length > 0) bedSummaryRows.push(['Bed types', types.join(', ')]);
+      }
+      if (bedCfg.rollawayRequested !== undefined) bedSummaryRows.push(['Rollaway requested', bedCfg.rollawayRequested ? 'Yes' : 'No']);
+      if (bedCfg.rollawayProvided !== undefined) bedSummaryRows.push(['Rollaway provided', bedCfg.rollawayProvided ? 'Yes' : 'No']);
+      if (bedCfg.cribRequested !== undefined) bedSummaryRows.push(['Crib requested', bedCfg.cribRequested ? 'Yes' : 'No']);
+      if (bedCfg.cribProvided !== undefined) bedSummaryRows.push(['Crib provided', bedCfg.cribProvided ? 'Yes' : 'No']);
+      if (bedCfg.sofaBedPresent) bedSummaryRows.push(['Sofa bed present', 'Yes']);
+      if (bedCfg.sofaBedUsed) bedSummaryRows.push(['Sofa bed used / opened', 'Yes']);
+      if (bedCfg.extraBeddingProvided) bedSummaryRows.push(['Extra bedding provided', 'Yes']);
+      if (bedCfg.airMattressPresent) bedSummaryRows.push(['Air mattress present', 'Yes']);
+      if (bedCfg.numberOfPillows) bedSummaryRows.push(['Pillows', bedCfg.numberOfPillows]);
+      if (bedCfg.numberOfBlankets) bedSummaryRows.push(['Blankets', bedCfg.numberOfBlankets]);
+      if (bedCfg.numberOfLinenSets) bedSummaryRows.push(['Linen sets', bedCfg.numberOfLinenSets]);
+      if (bedCfg.notes) bedSummaryRows.push(['Notes', bedCfg.notes]);
+
+      if (bedSummaryRows.length > 0) {
+        autoTable(doc, {
+          startY: y,
+          body: bedSummaryRows,
+          theme: 'striped',
+          styles: { fontSize: 9, cellPadding: 2.5 },
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55, textColor: slate }, 1: {} },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      // Per-bed details
+      if (bedCfg.beds?.length > 0) {
+        const bedRows: [string, string, string, string][] = (bedCfg.beds as any[]).map((b: any) => [
+          b.label || '—',
+          b.bedType || '—',
+          b.assignedRoom || '—',
+          [
+            b.conditionStatuses?.join(', '),
+            b.mattressCondition && `Mattress: ${b.mattressCondition}`,
+            b.beddingCondition && `Bedding: ${b.beddingCondition}`,
+            b.notes,
+          ].filter(Boolean).join('; ') || '—',
+        ]);
+
+        checkBreak(16);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...slate);
+        doc.text('Individual Beds', margin, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Bed', 'Type', 'Room / Area', 'Condition / Notes']],
+          body: bedRows,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: slate, fontSize: 8 },
+          columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 30 }, 2: { cellWidth: 35 } },
+          margin: { left: margin, right: margin },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      // Issue summary: beds with flagged conditions
+      const issueBeds = (bedCfg.beds as any[] || []).filter((b: any) =>
+        (b.conditionStatuses || []).some((s: string) =>
+          ['Dirty', 'Damaged', 'Stained', 'Odor', 'Missing bedding', 'Needs follow-up'].includes(s)
+        ) || b.notes
+      );
+      if (issueBeds.length > 0) {
+        checkBreak(16);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(160, 40, 40);
+        doc.text('Bed Issue Summary', margin, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        autoTable(doc, {
+          startY: y,
+          head: [['Bed', 'Issues', 'Notes']],
+          body: issueBeds.map((b: any) => [
+            b.label || '—',
+            (b.conditionStatuses || []).join(', ') || '—',
+            b.notes || '—',
+          ]),
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [160, 40, 40] as [number,number,number], fontSize: 8 },
+          margin: { left: margin, right: margin },
+        });
+        y = (doc as any).lastAutoTable.finalY + 12;
+      }
+    }
   }
 
   // ── 3. CHECKLIST ───────────────────────────────────────────────────

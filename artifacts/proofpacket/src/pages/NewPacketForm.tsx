@@ -25,6 +25,8 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import PropertyLayoutSetup from "@/components/PropertyLayoutSetup";
 import type { GeneratedSection } from "@/utils/propertyChecklist";
+import BedSetup from "@/components/BedSetup";
+import type { BedSection, BedLayoutConfig } from "@/utils/bedChecklist";
 
 // ─── Company / platform lists ────────────────────────────────────────────────
 
@@ -238,6 +240,9 @@ function getBodyStyleDefaults(bodyStyle: string) {
   return { hasRearHatch, hasSlidingDoor, hasCargoDoor, hasRamp, hasLiftgate };
 }
 
+// Packet types where bed setup applies
+const BED_SETUP_TYPES: PacketType[] = ['hotel', 'airbnb'];
+
 // Packet types where the body style section applies
 const VEHICLE_BODY_STYLE_TYPES: PacketType[] = [
   'car_rental', 'moving_truck_van', 'trailer_tow_equipment', 'custom_rental_vehicle',
@@ -347,6 +352,22 @@ export default function NewPacketForm() {
     setPropertyDetails(details);
   }, []);
 
+  // Bed setup sections and config (emitted from BedSetup)
+  const isBedSetupType = BED_SETUP_TYPES.includes(type);
+  const [bedSections, setBedSections] = useState<BedSection[]>([]);
+  const [bedLayoutConfig, setBedLayoutConfig] = useState<BedLayoutConfig | null>(null);
+
+  const handleBedSectionsChange = useCallback((sections: BedSection[]) => {
+    setBedSections(sections);
+  }, []);
+
+  const handleBedConfigChange = useCallback((config: BedLayoutConfig) => {
+    setBedLayoutConfig(config);
+  }, []);
+
+  // Available rooms for bed assignment (Airbnb: pull from property room sections)
+  const availableRoomsForBeds = propertyRoomSections.map(s => s.name);
+
   // Auto-populate door config and feature flags when body style changes
   useEffect(() => {
     if (watchedBodyStyle) {
@@ -397,7 +418,25 @@ export default function NewPacketForm() {
       }))
     );
 
-    const checklistItems = [...templateItems, ...roomItems];
+    // Bed sections from BedSetup
+    const bedChecklistItems = bedSections.flatMap(section =>
+      section.items.map(item => ({
+        id: crypto.randomUUID(),
+        packetId: "",
+        section: section.name,
+        label: item.label,
+        description: item.description,
+        phase: item.phase,
+        status: item.status,
+        notes: "",
+        photoIds: [],
+        addedDuringInspection: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }))
+    );
+
+    const checklistItems = [...templateItems, ...roomItems, ...bedChecklistItems];
 
     const details: Record<string, string | boolean | undefined> = {};
 
@@ -490,6 +529,24 @@ export default function NewPacketForm() {
       for (const [k, v] of Object.entries(propertyDetails)) {
         details[k] = v;
       }
+    }
+
+    // Bed layout details (from BedSetup)
+    if (isBedSetupType && bedLayoutConfig) {
+      details.bedConfigsJson = JSON.stringify(bedLayoutConfig);
+      if (bedLayoutConfig.rollawayRequested) details.bedRollawayRequested = true;
+      if (bedLayoutConfig.rollawayProvided) details.bedRollawayProvided = true;
+      if (bedLayoutConfig.cribRequested) details.bedCribRequested = true;
+      if (bedLayoutConfig.cribProvided) details.bedCribProvided = true;
+      if (bedLayoutConfig.sofaBedPresent) details.bedSofaBedPresent = true;
+      if (bedLayoutConfig.extraBeddingProvided) details.bedExtraBeddingProvided = true;
+      if (bedLayoutConfig.numberOfPillows) details.bedNumberOfPillows = bedLayoutConfig.numberOfPillows;
+      if (bedLayoutConfig.numberOfBlankets) details.bedNumberOfBlankets = bedLayoutConfig.numberOfBlankets;
+      if (bedLayoutConfig.numberOfLinenSets) details.bedNumberOfLinenSets = bedLayoutConfig.numberOfLinenSets;
+      if (bedLayoutConfig.notes) details.bedNotes = bedLayoutConfig.notes;
+      const bedTypes = bedLayoutConfig.beds.map(b => b.bedType).filter(Boolean);
+      if (bedTypes.length > 0) details.bedTypes = bedTypes.join(', ');
+      details.bedCount = String(bedLayoutConfig.beds.length);
     }
 
     const companyForPacket = isCompanyVehicle
@@ -1009,6 +1066,19 @@ export default function NewPacketForm() {
                     packetType={type}
                     onSectionsChange={handlePropertySectionsChange}
                     onDetailsChange={handlePropertyDetailsChange}
+                  />
+                </>
+              )}
+
+              {/* Bed and sleeping arrangement setup */}
+              {isBedSetupType && (
+                <>
+                  <SectionDivider label="Beds & Sleeping Arrangements" />
+                  <BedSetup
+                    packetType={type}
+                    availableRooms={availableRoomsForBeds}
+                    onSectionsChange={handleBedSectionsChange}
+                    onConfigChange={handleBedConfigChange}
                   />
                 </>
               )}
