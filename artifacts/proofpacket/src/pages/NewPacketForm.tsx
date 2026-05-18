@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams } from "wouter";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,9 +18,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ChevronLeft, Info } from "lucide-react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
+import PropertyLayoutSetup from "@/components/PropertyLayoutSetup";
+import type { GeneratedSection } from "@/utils/propertyChecklist";
 
 // ─── Company / platform lists ────────────────────────────────────────────────
 
@@ -108,6 +113,11 @@ const schema = z.object({
   keysIssued: z.string().optional(),
   fuelCardIssued: z.string().optional(),
   transponderIssued: z.string().optional(),
+
+  // Vehicle body style
+  vehicleBodyStyle: z.string().optional(),
+  vehicleBodyStyleOther: z.string().optional(),
+  doorConfiguration: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -166,6 +176,79 @@ const USE_CONTEXT_OPTIONS = [
 ];
 
 const MILITARY_GOVT_CONTEXTS = ['Military TDY / TAD', 'PCS move', 'Government travel'];
+
+// ─── Vehicle body style constants ─────────────────────────────────────────────
+
+const VEHICLE_BODY_STYLES = [
+  'Sedan',
+  'Coupe',
+  'Hatchback',
+  'Wagon / Estate',
+  'SUV / Crossover',
+  'Pickup Truck — Regular Cab',
+  'Pickup Truck — Extended Cab',
+  'Pickup Truck — Crew Cab',
+  'Minivan',
+  'Cargo Van',
+  'Passenger Van',
+  'Box Truck',
+  'Moving Truck',
+  'Semi-Trailer / Trailer',
+  'Flatbed Trailer',
+  'Enclosed Trailer',
+  'Open Trailer / Utility',
+  'RV / Motorhome',
+  'Motorcycle',
+  'Boat',
+  'Other',
+];
+
+function getDoorSuggestion(bodyStyle: string): string {
+  switch (bodyStyle) {
+    case 'Sedan': return '4 doors — driver, passenger, rear driver, rear passenger';
+    case 'Coupe': return '2 doors — driver and passenger';
+    case 'Hatchback': return '4 doors + rear hatch (5th door)';
+    case 'Wagon / Estate': return '4 doors + rear hatch/liftgate';
+    case 'SUV / Crossover': return '4 doors + rear hatch/liftgate';
+    case 'Pickup Truck — Regular Cab': return '2 doors — driver and passenger';
+    case 'Pickup Truck — Extended Cab': return '2 main doors + 2 suicide rear doors';
+    case 'Pickup Truck — Crew Cab': return '4 doors — full-size front and rear';
+    case 'Minivan': return '2 front doors + 2 sliding side doors + rear liftgate';
+    case 'Cargo Van': return '2 front cab doors + sliding side door (L or R/both) + rear cargo doors';
+    case 'Passenger Van': return '2 front cab doors + side sliding door + rear hatch';
+    case 'Box Truck': return 'Cab doors + rear roll-up cargo door';
+    case 'Moving Truck': return 'Cab doors + rear roll-up cargo door';
+    case 'Semi-Trailer / Trailer': return 'Rear swing cargo doors (no cab)';
+    case 'Flatbed Trailer': return 'No doors — open flatbed';
+    case 'Enclosed Trailer': return 'Rear door(s) + optional side door';
+    case 'Open Trailer / Utility': return 'No doors — open utility frame';
+    case 'RV / Motorhome': return 'Main entry door + driver/passenger cab doors';
+    case 'Motorcycle': return 'No doors applicable';
+    case 'Boat': return 'No doors — check hatches, storage, and compartments';
+    default: return '';
+  }
+}
+
+function getBodyStyleDefaults(bodyStyle: string) {
+  const hasRearHatch = ['Hatchback', 'Wagon / Estate', 'SUV / Crossover', 'Minivan', 'Passenger Van'].includes(bodyStyle);
+  const hasSlidingDoor = ['Minivan', 'Cargo Van', 'Passenger Van'].includes(bodyStyle);
+  const hasCargoDoor = ['Cargo Van', 'Box Truck', 'Moving Truck', 'Semi-Trailer / Trailer', 'Enclosed Trailer'].includes(bodyStyle);
+  const hasRamp = ['Moving Truck', 'Box Truck', 'Enclosed Trailer', 'Open Trailer / Utility'].includes(bodyStyle);
+  const hasLiftgate = ['Box Truck', 'Moving Truck'].includes(bodyStyle);
+  return { hasRearHatch, hasSlidingDoor, hasCargoDoor, hasRamp, hasLiftgate };
+}
+
+// Packet types where the body style section applies
+const VEHICLE_BODY_STYLE_TYPES: PacketType[] = [
+  'car_rental', 'moving_truck_van', 'trailer_tow_equipment', 'custom_rental_vehicle',
+  'company_vehicle_handoff', 'vehicle_sale_as_is_transfer', 'accident_claim',
+];
+
+// Packet types where property room setup applies
+const PROPERTY_LAYOUT_TYPES: PacketType[] = [
+  'hotel', 'airbnb', 'apartment_home', 'property_sale_home_sale',
+  'business_commercial_lease', 'business_changeover_as_is_sale',
+];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -231,14 +314,55 @@ export default function NewPacketForm() {
       isPersonallyProcuredMove: "",
       moveOrigin: "",
       moveDestination: "",
+      vehicleBodyStyle: "",
+      vehicleBodyStyleOther: "",
+      doorConfiguration: "",
     },
   });
 
   const rentalCompany = useWatch({ control: form.control, name: 'rentalCompany' });
   const showCustomCompany = rentalCompany === 'Other';
 
+  const watchedBodyStyle = useWatch({ control: form.control, name: 'vehicleBodyStyle' });
+
+  const isVehicleBodyStyleApplicable = VEHICLE_BODY_STYLE_TYPES.includes(type);
+  const isPropertyType = PROPERTY_LAYOUT_TYPES.includes(type);
+
+  // Boolean feature flags for vehicle body style (auto-populated, user-adjustable)
+  const [hasRearHatch, setHasRearHatch] = useState(false);
+  const [hasSlidingDoor, setHasSlidingDoor] = useState(false);
+  const [hasCargoDoor, setHasCargoDoor] = useState(false);
+  const [hasRamp, setHasRamp] = useState(false);
+  const [hasLiftgate, setHasLiftgate] = useState(false);
+
+  // Property layout sections and details (emitted from PropertyLayoutSetup)
+  const [propertyRoomSections, setPropertyRoomSections] = useState<GeneratedSection[]>([]);
+  const [propertyDetails, setPropertyDetails] = useState<Record<string, string | boolean>>({});
+
+  const handlePropertySectionsChange = useCallback((sections: GeneratedSection[]) => {
+    setPropertyRoomSections(sections);
+  }, []);
+
+  const handlePropertyDetailsChange = useCallback((details: Record<string, string | boolean>) => {
+    setPropertyDetails(details);
+  }, []);
+
+  // Auto-populate door config and feature flags when body style changes
+  useEffect(() => {
+    if (watchedBodyStyle) {
+      const suggestion = getDoorSuggestion(watchedBodyStyle);
+      if (suggestion) form.setValue('doorConfiguration', suggestion);
+      const defaults = getBodyStyleDefaults(watchedBodyStyle);
+      setHasRearHatch(defaults.hasRearHatch);
+      setHasSlidingDoor(defaults.hasSlidingDoor);
+      setHasCargoDoor(defaults.hasCargoDoor);
+      setHasRamp(defaults.hasRamp);
+      setHasLiftgate(defaults.hasLiftgate);
+    }
+  }, [watchedBodyStyle, form]);
+
   async function onSubmit(values: FormValues) {
-    const checklistItems = template?.sections.flatMap(section =>
+    const templateItems = template?.sections.flatMap(section =>
       section.items.map(item => ({
         id: crypto.randomUUID(),
         packetId: "",
@@ -254,6 +378,26 @@ export default function NewPacketForm() {
         updatedAt: new Date().toISOString(),
       }))
     ) || [];
+
+    // Append per-room checklist items from property layout setup
+    const roomItems = propertyRoomSections.flatMap(section =>
+      section.items.map(item => ({
+        id: crypto.randomUUID(),
+        packetId: "",
+        section: section.name,
+        label: item.label,
+        description: item.description,
+        phase: item.phase,
+        status: item.status,
+        notes: "",
+        photoIds: [],
+        addedDuringInspection: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }))
+    );
+
+    const checklistItems = [...templateItems, ...roomItems];
 
     const details: Record<string, string | boolean | undefined> = {};
 
@@ -325,6 +469,27 @@ export default function NewPacketForm() {
       if (values.isPersonallyProcuredMove) details.isPersonallyProcuredMove = values.isPersonallyProcuredMove;
       if (values.moveOrigin) details.moveOrigin = values.moveOrigin;
       if (values.moveDestination) details.moveDestination = values.moveDestination;
+    }
+
+    // Vehicle body style details
+    if (isVehicleBodyStyleApplicable && values.vehicleBodyStyle) {
+      details.vehicleBodyStyle = values.vehicleBodyStyle;
+      if (values.vehicleBodyStyle === 'Other' && values.vehicleBodyStyleOther) {
+        details.vehicleBodyStyleOther = values.vehicleBodyStyleOther;
+      }
+      if (values.doorConfiguration) details.doorConfiguration = values.doorConfiguration;
+      details.hasRearHatch = hasRearHatch;
+      details.hasSlidingDoor = hasSlidingDoor;
+      details.hasCargoDoor = hasCargoDoor;
+      details.hasRamp = hasRamp;
+      details.hasLiftgate = hasLiftgate;
+    }
+
+    // Property layout details (from PropertyLayoutSetup)
+    if (isPropertyType) {
+      for (const [k, v] of Object.entries(propertyDetails)) {
+        details[k] = v;
+      }
     }
 
     const companyForPacket = isCompanyVehicle
@@ -835,6 +1000,86 @@ export default function NewPacketForm() {
                   <FormControl><Input {...field} /></FormControl>
                 </FormItem>
               )} />
+
+              {/* Property room / area setup */}
+              {isPropertyType && (
+                <>
+                  <SectionDivider label="Rooms & Areas" />
+                  <PropertyLayoutSetup
+                    packetType={type}
+                    onSectionsChange={handlePropertySectionsChange}
+                    onDetailsChange={handlePropertyDetailsChange}
+                  />
+                </>
+              )}
+            </>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────────
+              VEHICLE BODY STYLE & CONFIGURATION
+          ───────────────────────────────────────────────────────────────── */}
+          {isVehicleBodyStyleApplicable && (
+            <>
+              <SectionDivider label="Body Style & Configuration (Optional)" />
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Body Style</label>
+                <NativeSelect
+                  value={form.watch('vehicleBodyStyle') || ''}
+                  onChange={v => form.setValue('vehicleBodyStyle', v)}
+                  options={VEHICLE_BODY_STYLES}
+                  placeholder="Select body style…"
+                />
+              </div>
+
+              {form.watch('vehicleBodyStyle') === 'Other' && (
+                <FormField control={form.control} name="vehicleBodyStyleOther" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Describe body style</FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Cab-over truck, Golf cart" /></FormControl>
+                  </FormItem>
+                )} />
+              )}
+
+              {form.watch('vehicleBodyStyle') && (
+                <FormField control={form.control} name="doorConfiguration" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Door configuration</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g. 4 doors + rear hatch" />
+                    </FormControl>
+                    <p className="text-[11px] text-muted-foreground">Auto-suggested — edit to match the actual vehicle</p>
+                  </FormItem>
+                )} />
+              )}
+
+              {form.watch('vehicleBodyStyle') && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Special access / features present</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Rear hatch</Label>
+                      <Switch checked={hasRearHatch} onCheckedChange={setHasRearHatch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Sliding door</Label>
+                      <Switch checked={hasSlidingDoor} onCheckedChange={setHasSlidingDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo door</Label>
+                      <Switch checked={hasCargoDoor} onCheckedChange={setHasCargoDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Ramp</Label>
+                      <Switch checked={hasRamp} onCheckedChange={setHasRamp} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Liftgate</Label>
+                      <Switch checked={hasLiftgate} onCheckedChange={setHasLiftgate} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
