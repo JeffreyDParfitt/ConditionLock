@@ -50,9 +50,27 @@ const ALL_COMPANY_OPTIONS = [
   ...OTHER_OPTIONS,
 ];
 
-const VEHICLE_TYPES = [
-  'Car', 'SUV', 'Pickup Truck', 'Cargo Van', 'Box Truck', 'Moving Truck',
-  'Trailer', 'Tow Dolly', 'RV / Motorhome', 'Motorcycle', 'Boat', 'Other',
+const VEHICLE_TYPE_BODY_STYLES = [
+  'Sedan',
+  'Coupe',
+  'Hatchback',
+  'Wagon',
+  'SUV / Crossover',
+  'Pickup Truck — 2-door / regular cab',
+  'Pickup Truck — extended cab',
+  'Pickup Truck — crew cab',
+  'Minivan',
+  'Passenger Van',
+  'Cargo Van',
+  'Box Truck',
+  'Moving Truck',
+  'Flatbed Truck',
+  'Trailer',
+  'Tow Dolly / Car Carrier',
+  'RV / Motorhome',
+  'Motorcycle',
+  'Boat',
+  'Other',
 ];
 
 const FUEL_LEVELS = ['Full', '7/8', '3/4', '5/8', '1/2', '3/8', '1/4', '1/8', 'Empty / Reserve'];
@@ -116,7 +134,10 @@ const schema = z.object({
   fuelCardIssued: z.string().optional(),
   transponderIssued: z.string().optional(),
 
-  // Vehicle body style
+  // Vehicle type / body style (unified canonical field)
+  vehicleTypeBodyStyle: z.string().optional(),
+  vehicleTypeBodyStyleOther: z.string().optional(),
+  // Legacy fields — preserved for backward compat
   vehicleBodyStyle: z.string().optional(),
   vehicleBodyStyleOther: z.string().optional(),
   doorConfiguration: z.string().optional(),
@@ -179,65 +200,45 @@ const USE_CONTEXT_OPTIONS = [
 
 const MILITARY_GOVT_CONTEXTS = ['Military TDY / TAD', 'PCS move', 'Government travel'];
 
-// ─── Vehicle body style constants ─────────────────────────────────────────────
-
-const VEHICLE_BODY_STYLES = [
-  'Sedan',
-  'Coupe',
-  'Hatchback',
-  'Wagon / Estate',
-  'SUV / Crossover',
-  'Pickup Truck — Regular Cab',
-  'Pickup Truck — Extended Cab',
-  'Pickup Truck — Crew Cab',
-  'Minivan',
-  'Cargo Van',
-  'Passenger Van',
-  'Box Truck',
-  'Moving Truck',
-  'Semi-Trailer / Trailer',
-  'Flatbed Trailer',
-  'Enclosed Trailer',
-  'Open Trailer / Utility',
-  'RV / Motorhome',
-  'Motorcycle',
-  'Boat',
-  'Other',
-];
+// ─── Vehicle type / body style helpers ────────────────────────────────────────
 
 function getDoorSuggestion(bodyStyle: string): string {
   switch (bodyStyle) {
     case 'Sedan': return '4 doors — driver, passenger, rear driver, rear passenger';
     case 'Coupe': return '2 doors — driver and passenger';
     case 'Hatchback': return '4 doors + rear hatch (5th door)';
-    case 'Wagon / Estate': return '4 doors + rear hatch/liftgate';
+    case 'Wagon': return '4 doors + rear hatch/liftgate';
     case 'SUV / Crossover': return '4 doors + rear hatch/liftgate';
-    case 'Pickup Truck — Regular Cab': return '2 doors — driver and passenger';
-    case 'Pickup Truck — Extended Cab': return '2 main doors + 2 suicide rear doors';
-    case 'Pickup Truck — Crew Cab': return '4 doors — full-size front and rear';
+    case 'Pickup Truck — 2-door / regular cab': return '2 doors — driver and passenger + cargo bed + tailgate';
+    case 'Pickup Truck — extended cab': return '2 main doors + 2 smaller rear doors + cargo bed + tailgate';
+    case 'Pickup Truck — crew cab': return '4 doors — full-size front and rear + cargo bed + tailgate';
     case 'Minivan': return '2 front doors + 2 sliding side doors + rear liftgate';
-    case 'Cargo Van': return '2 front cab doors + sliding side door (L or R/both) + rear cargo doors';
     case 'Passenger Van': return '2 front cab doors + side sliding door + rear hatch';
+    case 'Cargo Van': return '2 front cab doors + sliding side door + rear cargo doors';
     case 'Box Truck': return 'Cab doors + rear roll-up cargo door';
     case 'Moving Truck': return 'Cab doors + rear roll-up cargo door';
-    case 'Semi-Trailer / Trailer': return 'Rear swing cargo doors (no cab)';
-    case 'Flatbed Trailer': return 'No doors — open flatbed';
-    case 'Enclosed Trailer': return 'Rear door(s) + optional side door';
-    case 'Open Trailer / Utility': return 'No doors — open utility frame';
+    case 'Flatbed Truck': return 'Cab doors only — open flatbed';
+    case 'Trailer': return 'Rear cargo doors or open — no cab';
+    case 'Tow Dolly / Car Carrier': return 'No cab — check straps, ramps, and wheel trays';
     case 'RV / Motorhome': return 'Main entry door + driver/passenger cab doors';
     case 'Motorcycle': return 'No doors applicable';
-    case 'Boat': return 'No doors — check hatches, storage, and compartments';
+    case 'Boat': return 'No doors — check hatches, hull, storage, and compartments';
     default: return '';
   }
 }
 
 function getBodyStyleDefaults(bodyStyle: string) {
-  const hasRearHatch = ['Hatchback', 'Wagon / Estate', 'SUV / Crossover', 'Minivan', 'Passenger Van'].includes(bodyStyle);
+  const hasRearHatch = ['Hatchback', 'Wagon', 'SUV / Crossover', 'Minivan', 'Passenger Van', 'RV / Motorhome'].includes(bodyStyle);
   const hasSlidingDoor = ['Minivan', 'Cargo Van', 'Passenger Van'].includes(bodyStyle);
-  const hasCargoDoor = ['Cargo Van', 'Box Truck', 'Moving Truck', 'Semi-Trailer / Trailer', 'Enclosed Trailer'].includes(bodyStyle);
-  const hasRamp = ['Moving Truck', 'Box Truck', 'Enclosed Trailer', 'Open Trailer / Utility'].includes(bodyStyle);
+  const hasCargoDoor = ['Cargo Van', 'Box Truck', 'Moving Truck', 'Trailer'].includes(bodyStyle);
+  const hasRamp = ['Moving Truck', 'Box Truck', 'Trailer', 'Tow Dolly / Car Carrier'].includes(bodyStyle);
   const hasLiftgate = ['Box Truck', 'Moving Truck'].includes(bodyStyle);
-  return { hasRearHatch, hasSlidingDoor, hasCargoDoor, hasRamp, hasLiftgate };
+  const hasTailgate = ['Pickup Truck — 2-door / regular cab', 'Pickup Truck — extended cab', 'Pickup Truck — crew cab', 'Flatbed Truck'].includes(bodyStyle);
+  const hasTrailerHitch = ['Pickup Truck — 2-door / regular cab', 'Pickup Truck — extended cab', 'Pickup Truck — crew cab', 'Flatbed Truck', 'Tow Dolly / Car Carrier'].includes(bodyStyle);
+  const hasTowEquipment = ['Tow Dolly / Car Carrier', 'Trailer'].includes(bodyStyle);
+  const hasCargoBed = ['Pickup Truck — 2-door / regular cab', 'Pickup Truck — extended cab', 'Pickup Truck — crew cab', 'Flatbed Truck'].includes(bodyStyle);
+  const hasStorageCompartments = ['RV / Motorhome', 'Boat'].includes(bodyStyle);
+  return { hasRearHatch, hasSlidingDoor, hasCargoDoor, hasRamp, hasLiftgate, hasTailgate, hasTrailerHitch, hasTowEquipment, hasCargoBed, hasStorageCompartments };
 }
 
 // Packet types where bed setup applies
@@ -319,6 +320,8 @@ export default function NewPacketForm() {
       isPersonallyProcuredMove: "",
       moveOrigin: "",
       moveDestination: "",
+      vehicleTypeBodyStyle: "",
+      vehicleTypeBodyStyleOther: "",
       vehicleBodyStyle: "",
       vehicleBodyStyleOther: "",
       doorConfiguration: "",
@@ -328,17 +331,22 @@ export default function NewPacketForm() {
   const rentalCompany = useWatch({ control: form.control, name: 'rentalCompany' });
   const showCustomCompany = rentalCompany === 'Other';
 
-  const watchedBodyStyle = useWatch({ control: form.control, name: 'vehicleBodyStyle' });
+  const watchedVehicleTypeBodyStyle = useWatch({ control: form.control, name: 'vehicleTypeBodyStyle' });
 
   const isVehicleBodyStyleApplicable = VEHICLE_BODY_STYLE_TYPES.includes(type);
   const isPropertyType = PROPERTY_LAYOUT_TYPES.includes(type);
 
-  // Boolean feature flags for vehicle body style (auto-populated, user-adjustable)
+  // Feature flags for vehicle type / body style (auto-populated, user-adjustable)
   const [hasRearHatch, setHasRearHatch] = useState(false);
   const [hasSlidingDoor, setHasSlidingDoor] = useState(false);
   const [hasCargoDoor, setHasCargoDoor] = useState(false);
   const [hasRamp, setHasRamp] = useState(false);
   const [hasLiftgate, setHasLiftgate] = useState(false);
+  const [hasTailgate, setHasTailgate] = useState(false);
+  const [hasTrailerHitch, setHasTrailerHitch] = useState(false);
+  const [hasTowEquipment, setHasTowEquipment] = useState(false);
+  const [hasCargoBed, setHasCargoBed] = useState(false);
+  const [hasStorageCompartments, setHasStorageCompartments] = useState(false);
 
   // Property layout sections and details (emitted from PropertyLayoutSetup)
   const [propertyRoomSections, setPropertyRoomSections] = useState<GeneratedSection[]>([]);
@@ -368,19 +376,24 @@ export default function NewPacketForm() {
   // Available rooms for bed assignment (Airbnb: pull from property room sections)
   const availableRoomsForBeds = propertyRoomSections.map(s => s.name);
 
-  // Auto-populate door config and feature flags when body style changes
+  // Auto-populate door config and feature flags when vehicle type / body style changes
   useEffect(() => {
-    if (watchedBodyStyle) {
-      const suggestion = getDoorSuggestion(watchedBodyStyle);
+    if (watchedVehicleTypeBodyStyle) {
+      const suggestion = getDoorSuggestion(watchedVehicleTypeBodyStyle);
       if (suggestion) form.setValue('doorConfiguration', suggestion);
-      const defaults = getBodyStyleDefaults(watchedBodyStyle);
+      const defaults = getBodyStyleDefaults(watchedVehicleTypeBodyStyle);
       setHasRearHatch(defaults.hasRearHatch);
       setHasSlidingDoor(defaults.hasSlidingDoor);
       setHasCargoDoor(defaults.hasCargoDoor);
       setHasRamp(defaults.hasRamp);
       setHasLiftgate(defaults.hasLiftgate);
+      setHasTailgate(defaults.hasTailgate);
+      setHasTrailerHitch(defaults.hasTrailerHitch);
+      setHasTowEquipment(defaults.hasTowEquipment);
+      setHasCargoBed(defaults.hasCargoBed);
+      setHasStorageCompartments(defaults.hasStorageCompartments);
     }
-  }, [watchedBodyStyle, form]);
+  }, [watchedVehicleTypeBodyStyle, form]);
 
   async function onSubmit(values: FormValues) {
     const templateItems = template?.sections.flatMap(section =>
@@ -451,7 +464,8 @@ export default function NewPacketForm() {
       if (values.vehicleYear) details.vehicleYear = values.vehicleYear;
       if (values.vehicleMake) details.vehicleMake = values.vehicleMake;
       if (values.vehicleModel) details.vehicleModel = values.vehicleModel;
-      if (values.vehicleType) details.vehicleType = values.vehicleType;
+      if (values.vehicleTypeBodyStyle) details.vehicleTypeBodyStyle = values.vehicleTypeBodyStyle;
+      if (values.vehicleTypeBodyStyleOther) details.vehicleTypeBodyStyleOther = values.vehicleTypeBodyStyleOther;
       if (values.licensePlate) details.licensePlate = values.licensePlate;
       if (values.vin) details.vin = values.vin;
       if (values.unitNumber) details.unitNumber = values.unitNumber;
@@ -480,7 +494,8 @@ export default function NewPacketForm() {
       if (values.vehicleYear) details.vehicleYear = values.vehicleYear;
       if (values.vehicleMake) details.vehicleMake = values.vehicleMake;
       if (values.vehicleModel) details.vehicleModel = values.vehicleModel;
-      if (values.vehicleType) details.vehicleType = values.vehicleType;
+      if (values.vehicleTypeBodyStyle) details.vehicleTypeBodyStyle = values.vehicleTypeBodyStyle;
+      if (values.vehicleTypeBodyStyleOther) details.vehicleTypeBodyStyleOther = values.vehicleTypeBodyStyleOther;
       if (values.licensePlate) details.licensePlate = values.licensePlate;
       if (values.vin) details.vin = values.vin;
       if (values.driverName) details.driverName = values.driverName;
@@ -510,18 +525,24 @@ export default function NewPacketForm() {
       if (values.moveDestination) details.moveDestination = values.moveDestination;
     }
 
-    // Vehicle body style details
-    if (isVehicleBodyStyleApplicable && values.vehicleBodyStyle) {
-      details.vehicleBodyStyle = values.vehicleBodyStyle;
-      if (values.vehicleBodyStyle === 'Other' && values.vehicleBodyStyleOther) {
-        details.vehicleBodyStyleOther = values.vehicleBodyStyleOther;
-      }
+    // Vehicle type / body style configuration details
+    // Resolve canonical value: prefer new unified field, fallback to legacy vehicleBodyStyle
+    const resolvedVtbs = values.vehicleTypeBodyStyle || values.vehicleBodyStyle || '';
+    if (isVehicleBodyStyleApplicable && resolvedVtbs) {
+      details.vehicleTypeBodyStyle = resolvedVtbs;
+      const resolvedOther = values.vehicleTypeBodyStyleOther || values.vehicleBodyStyleOther || '';
+      if (resolvedVtbs === 'Other' && resolvedOther) details.vehicleTypeBodyStyleOther = resolvedOther;
       if (values.doorConfiguration) details.doorConfiguration = values.doorConfiguration;
       details.hasRearHatch = hasRearHatch;
       details.hasSlidingDoor = hasSlidingDoor;
       details.hasCargoDoor = hasCargoDoor;
       details.hasRamp = hasRamp;
       details.hasLiftgate = hasLiftgate;
+      details.hasTailgate = hasTailgate;
+      details.hasTrailerHitch = hasTrailerHitch;
+      details.hasTowEquipment = hasTowEquipment;
+      details.hasCargoBed = hasCargoBed;
+      details.hasStorageCompartments = hasStorageCompartments;
     }
 
     // Property layout details (from PropertyLayoutSetup)
@@ -710,15 +731,82 @@ export default function NewPacketForm() {
                 )} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Vehicle Type <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Vehicle type / body style <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
                 <NativeSelect
-                  value={form.watch('vehicleType') || ''}
-                  onChange={v => form.setValue('vehicleType', v)}
-                  options={VEHICLE_TYPES}
-                  placeholder="Select vehicle type…"
+                  value={form.watch('vehicleTypeBodyStyle') || ''}
+                  onChange={v => form.setValue('vehicleTypeBodyStyle', v)}
+                  options={VEHICLE_TYPE_BODY_STYLES}
+                  placeholder="Select type / body style…"
                 />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">Choose the option that best describes the vehicle so ConditionLock can tailor doors, cargo areas, ramps, hatches, and required photos.</p>
               </div>
+
+              {form.watch('vehicleTypeBodyStyle') === 'Other' && (
+                <FormField control={form.control} name="vehicleTypeBodyStyleOther" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom vehicle type / body style</FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Golf cart, Cab-over truck, 3-wheel cycle" /></FormControl>
+                  </FormItem>
+                )} />
+              )}
+
+              {watchedVehicleTypeBodyStyle && (
+                <FormField control={form.control} name="doorConfiguration" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Door / access configuration <span className="text-muted-foreground font-normal text-xs">(auto-suggested — edit to match)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. 4 doors + rear hatch" /></FormControl>
+                  </FormItem>
+                )} />
+              )}
+
+              {watchedVehicleTypeBodyStyle && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Features / access present</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Rear hatch / liftgate</Label>
+                      <Switch checked={hasRearHatch} onCheckedChange={setHasRearHatch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Sliding door</Label>
+                      <Switch checked={hasSlidingDoor} onCheckedChange={setHasSlidingDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo door</Label>
+                      <Switch checked={hasCargoDoor} onCheckedChange={setHasCargoDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Ramp</Label>
+                      <Switch checked={hasRamp} onCheckedChange={setHasRamp} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Liftgate</Label>
+                      <Switch checked={hasLiftgate} onCheckedChange={setHasLiftgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tailgate</Label>
+                      <Switch checked={hasTailgate} onCheckedChange={setHasTailgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo bed</Label>
+                      <Switch checked={hasCargoBed} onCheckedChange={setHasCargoBed} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Trailer hitch</Label>
+                      <Switch checked={hasTrailerHitch} onCheckedChange={setHasTrailerHitch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tow equipment</Label>
+                      <Switch checked={hasTowEquipment} onCheckedChange={setHasTowEquipment} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Storage compartments</Label>
+                      <Switch checked={hasStorageCompartments} onCheckedChange={setHasStorageCompartments} />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="licensePlate" render={({ field }) => (
@@ -877,15 +965,82 @@ export default function NewPacketForm() {
                 )} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Vehicle Type <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Vehicle type / body style <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
                 <NativeSelect
-                  value={form.watch('vehicleType') || ''}
-                  onChange={v => form.setValue('vehicleType', v)}
-                  options={VEHICLE_TYPES}
-                  placeholder="Select vehicle type…"
+                  value={form.watch('vehicleTypeBodyStyle') || ''}
+                  onChange={v => form.setValue('vehicleTypeBodyStyle', v)}
+                  options={VEHICLE_TYPE_BODY_STYLES}
+                  placeholder="Select type / body style…"
                 />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">Choose the option that best describes the vehicle so ConditionLock can tailor doors, cargo areas, ramps, hatches, and required photos.</p>
               </div>
+
+              {form.watch('vehicleTypeBodyStyle') === 'Other' && (
+                <FormField control={form.control} name="vehicleTypeBodyStyleOther" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom vehicle type / body style</FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Golf cart, Cab-over truck, 3-wheel cycle" /></FormControl>
+                  </FormItem>
+                )} />
+              )}
+
+              {watchedVehicleTypeBodyStyle && (
+                <FormField control={form.control} name="doorConfiguration" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Door / access configuration <span className="text-muted-foreground font-normal text-xs">(auto-suggested — edit to match)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. 4 doors + rear hatch" /></FormControl>
+                  </FormItem>
+                )} />
+              )}
+
+              {watchedVehicleTypeBodyStyle && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Features / access present</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Rear hatch / liftgate</Label>
+                      <Switch checked={hasRearHatch} onCheckedChange={setHasRearHatch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Sliding door</Label>
+                      <Switch checked={hasSlidingDoor} onCheckedChange={setHasSlidingDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo door</Label>
+                      <Switch checked={hasCargoDoor} onCheckedChange={setHasCargoDoor} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Ramp</Label>
+                      <Switch checked={hasRamp} onCheckedChange={setHasRamp} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Liftgate</Label>
+                      <Switch checked={hasLiftgate} onCheckedChange={setHasLiftgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tailgate</Label>
+                      <Switch checked={hasTailgate} onCheckedChange={setHasTailgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo bed</Label>
+                      <Switch checked={hasCargoBed} onCheckedChange={setHasCargoBed} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Trailer hitch</Label>
+                      <Switch checked={hasTrailerHitch} onCheckedChange={setHasTrailerHitch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tow equipment</Label>
+                      <Switch checked={hasTowEquipment} onCheckedChange={setHasTowEquipment} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Storage compartments</Label>
+                      <Switch checked={hasStorageCompartments} onCheckedChange={setHasStorageCompartments} />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <FormField control={form.control} name="vin" render={({ field }) => (
                 <FormItem>
@@ -1086,49 +1241,48 @@ export default function NewPacketForm() {
           )}
 
           {/* ─────────────────────────────────────────────────────────────────
-              VEHICLE BODY STYLE & CONFIGURATION
+              VEHICLE TYPE / BODY STYLE (sale and accident types — not shown
+              inline above since they lack a vehicle details section)
           ───────────────────────────────────────────────────────────────── */}
-          {isVehicleBodyStyleApplicable && (
+          {isVehicleBodyStyleApplicable && !isVehicle && (
             <>
-              <SectionDivider label="Body Style & Configuration (Optional)" />
+              <SectionDivider label="Vehicle Type / Body Style (Optional)" />
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Body Style</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Vehicle type / body style</label>
                 <NativeSelect
-                  value={form.watch('vehicleBodyStyle') || ''}
-                  onChange={v => form.setValue('vehicleBodyStyle', v)}
-                  options={VEHICLE_BODY_STYLES}
-                  placeholder="Select body style…"
+                  value={form.watch('vehicleTypeBodyStyle') || ''}
+                  onChange={v => form.setValue('vehicleTypeBodyStyle', v)}
+                  options={VEHICLE_TYPE_BODY_STYLES}
+                  placeholder="Select type / body style…"
                 />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">Choose the option that best describes the vehicle so ConditionLock can tailor doors, cargo areas, ramps, hatches, and required photos.</p>
               </div>
 
-              {form.watch('vehicleBodyStyle') === 'Other' && (
-                <FormField control={form.control} name="vehicleBodyStyleOther" render={({ field }) => (
+              {form.watch('vehicleTypeBodyStyle') === 'Other' && (
+                <FormField control={form.control} name="vehicleTypeBodyStyleOther" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Describe body style</FormLabel>
-                    <FormControl><Input {...field} placeholder="e.g. Cab-over truck, Golf cart" /></FormControl>
+                    <FormLabel>Custom vehicle type / body style</FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. Golf cart, Cab-over truck, 3-wheel cycle" /></FormControl>
                   </FormItem>
                 )} />
               )}
 
-              {form.watch('vehicleBodyStyle') && (
+              {watchedVehicleTypeBodyStyle && (
                 <FormField control={form.control} name="doorConfiguration" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Door configuration</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. 4 doors + rear hatch" />
-                    </FormControl>
-                    <p className="text-[11px] text-muted-foreground">Auto-suggested — edit to match the actual vehicle</p>
+                    <FormLabel>Door / access configuration <span className="text-muted-foreground font-normal text-xs">(auto-suggested — edit to match)</span></FormLabel>
+                    <FormControl><Input {...field} placeholder="e.g. 4 doors + rear hatch" /></FormControl>
                   </FormItem>
                 )} />
               )}
 
-              {form.watch('vehicleBodyStyle') && (
+              {watchedVehicleTypeBodyStyle && (
                 <div className="space-y-2">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Special access / features present</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Features / access present</p>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <Label className="text-sm font-normal">Rear hatch</Label>
+                      <Label className="text-sm font-normal">Rear hatch / liftgate</Label>
                       <Switch checked={hasRearHatch} onCheckedChange={setHasRearHatch} />
                     </div>
                     <div className="flex items-center justify-between gap-2">
@@ -1146,6 +1300,26 @@ export default function NewPacketForm() {
                     <div className="flex items-center justify-between gap-2">
                       <Label className="text-sm font-normal">Liftgate</Label>
                       <Switch checked={hasLiftgate} onCheckedChange={setHasLiftgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tailgate</Label>
+                      <Switch checked={hasTailgate} onCheckedChange={setHasTailgate} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Cargo bed</Label>
+                      <Switch checked={hasCargoBed} onCheckedChange={setHasCargoBed} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Trailer hitch</Label>
+                      <Switch checked={hasTrailerHitch} onCheckedChange={setHasTrailerHitch} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Tow equipment</Label>
+                      <Switch checked={hasTowEquipment} onCheckedChange={setHasTowEquipment} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-sm font-normal">Storage compartments</Label>
+                      <Switch checked={hasStorageCompartments} onCheckedChange={setHasStorageCompartments} />
                     </div>
                   </div>
                 </div>

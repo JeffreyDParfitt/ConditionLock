@@ -171,13 +171,25 @@ export async function generatePDF(
     // Additional type-specific details (skip raw JSON blobs and internal fields)
     const SKIP_DETAIL_KEYS = new Set([
       'bedConfigsJson', 'bathroomConfigsJson', 'propertyBathroomConfigsJson',
+      // Legacy vehicle fields — replaced by vehicleTypeBodyStyle
+      'vehicleType', 'vehicleBodyStyle', 'vehicleBodyStyleOther',
+      // vehicleTypeBodyStyleOther is embedded in vehicleTypeBodyStyle display
+      'vehicleTypeBodyStyleOther',
     ]);
+    const DETAIL_LABEL_OVERRIDES: Record<string, string> = {
+      vehicleTypeBodyStyle: 'Vehicle type / body style',
+    };
     if (packet.details) {
       Object.entries(packet.details).forEach(([k, v]) => {
         if (SKIP_DETAIL_KEYS.has(k)) return;
         if (v !== undefined && v !== '') {
-          const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
-          rows.push([label, typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)]);
+          const label = DETAIL_LABEL_OVERRIDES[k] ?? k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+          // For vehicleTypeBodyStyle 'Other', show the custom value instead
+          let displayValue = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v);
+          if (k === 'vehicleTypeBodyStyle' && v === 'Other' && packet.details.vehicleTypeBodyStyleOther) {
+            displayValue = String(packet.details.vehicleTypeBodyStyleOther);
+          }
+          rows.push([label, displayValue]);
         }
       });
     }

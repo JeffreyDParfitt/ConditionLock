@@ -1629,7 +1629,11 @@ function VehicleDetailsCard({ packet }: { packet: any }) {
 
   const rows: Array<[string, string]> = [];
   if (vehicleParts.length > 0) rows.push(['Vehicle', vehicleParts.join(' ')]);
-  if (d.vehicleType) rows.push(['Type', d.vehicleType]);
+  // Prefer unified vehicleTypeBodyStyle; fall back to legacy vehicleBodyStyle or vehicleType
+  const vtbsDisplay = d.vehicleTypeBodyStyle
+    ? (d.vehicleTypeBodyStyle === 'Other' && d.vehicleTypeBodyStyleOther ? String(d.vehicleTypeBodyStyleOther) : String(d.vehicleTypeBodyStyle))
+    : (d.vehicleBodyStyle ? String(d.vehicleBodyStyle) : (d.vehicleType ? String(d.vehicleType) : null));
+  if (vtbsDisplay) rows.push(['Type / body style', vtbsDisplay]);
   if (d.licensePlate) rows.push(['License Plate', d.licensePlate]);
   if (d.unitNumber) rows.push(['Unit #', d.unitNumber]);
   if (d.vin) rows.push(['VIN', d.vin]);
