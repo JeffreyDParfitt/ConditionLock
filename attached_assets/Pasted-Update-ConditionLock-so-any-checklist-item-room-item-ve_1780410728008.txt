@@ -1,0 +1,270 @@
+Update ConditionLock so any checklist item, room item, vehicle item, bed item, fixture, equipment item, or custom issue that is marked with damage-related or issue-related statuses requires both a wide shot and a close-up photo.
+
+Goal:
+If a user marks an item as damaged/problematic, the app should prompt them to capture:
+- a wide shot showing the full item or surrounding context
+- a close-up shot showing the exact damage/detail
+
+This should reduce incomplete documentation and make damage evidence more useful in disputes.
+
+PART 1 — DEFINE WHEN DAMAGE PHOTO PAIR IS REQUIRED
+
+Create logic so a damage photo pair is triggered when an item receives one or more issue-related statuses.
+
+Damage/issue-triggering statuses include, but are not limited to:
+- damaged
+- scratch
+- dent
+- chip
+- crack
+- scuff
+- paint damage
+- rust
+- loose
+- missing
+- dirty
+- stained
+- torn
+- odor
+- sticky
+- broken
+- not working
+- warning light
+- unusual noise
+- leaking
+- clogged
+- slow drain
+- mold/mildew
+- water damage
+- hole
+- unsafe
+- missing part
+- quantity mismatch
+- incorrect
+- unreadable
+- incomplete
+- disputed
+- unresolved
+- custom issue
+
+Do NOT require damage photo pairs for neutral/non-damage statuses such as:
+- good
+- works
+- attached
+- signed
+- reviewed
+- documented
+- full
+- provided
+- returned
+- acknowledged
+- pending
+unless the user manually adds an issue or custom issue.
+
+If an item has multiple statuses and at least one is issue-related, require the photo pair.
+
+PART 2 — REQUIRED PHOTO TYPES
+
+For each triggered item, require these photo roles:
+
+1. Wide shot
+Label:
+“Wide shot / context photo”
+
+Description:
+“Capture the full item and surrounding area so it’s clear where the damage or issue is located.”
+
+Examples:
+- full side of vehicle with dent visible
+- full room wall with stain area visible
+- full bed with stained section visible
+- full bathroom sink/toilet/shower visible
+- full cargo area with damaged section visible
+
+2. Close-up shot
+Label:
+“Close-up / detail photo”
+
+Description:
+“Capture a close-up of the exact damage, defect, stain, missing part, or problem area.”
+
+Examples:
+- close-up of scratch or dent
+- close-up of stained bedding
+- close-up of cracked mirror
+- close-up of leaking pipe area
+- close-up of tire sidewall damage
+
+Optional third photo type:
+Add optional additional supporting photo:
+“Extra supporting photo”
+This is optional, not required.
+
+PART 3 — ITEM UI BEHAVIOR
+
+When a triggering status is selected:
+- show a visible alert:
+  “This item needs damage photos: 1 wide shot and 1 close-up.”
+- show two photo placeholders:
+  - Wide shot required
+  - Close-up required
+- mark the item as incomplete until both are provided
+
+If only one of the two is provided:
+- show status:
+  “Damage photo pair incomplete”
+- show which one is missing:
+  - Missing wide shot
+  - Missing close-up
+
+If both are provided:
+- show status:
+  “Damage photo pair complete”
+
+If the user removes all issue-related statuses from the item:
+- damage photo pair requirement should be removed
+- already captured photos should remain attached unless user deletes them
+- item can be marked complete without the pair if no damage/issue status remains
+
+PART 4 — DATA MODEL
+
+Add photo role metadata for item-linked photos.
+
+Each photo linked to an item should support:
+- photoRole: 'wide' | 'closeup' | 'supporting' | 'general'
+- linkedItemId
+- linkedItemLabel
+- linkedIssueStatuses
+- capturedInApp
+- verificationEligible
+- originalQuality
+- timestamp
+- notes
+
+Each checklist item / issue record should support:
+- requiresDamagePhotoPair: boolean
+- wideShotProvided: boolean
+- closeUpProvided: boolean
+- damagePhotoPairComplete: boolean
+
+PART 5 — TEMPLATE-WIDE APPLICATION
+
+Apply this behavior across all relevant templates:
+- Rental Car Packet
+- Moving Truck / Van Packet
+- Cargo Van Packet
+- Trailer / Tow Equipment Packet
+- Company Vehicle Handoff
+- Fleet Vehicle Handoff
+- Personal Vehicle Sale / As-Is Transfer
+- Accident / Insurance Claim
+- Hotel Stay
+- Airbnb / Short-Term Rental
+- Apartment / Home Rental
+- Property Sale / Home Sale
+- Business / Commercial Lease
+- Business Changeover / As-Is Sale
+- Commercial Kitchen
+- Office / Warehouse / Retail Space
+- Equipment Rental / Sale
+- Custom Packet types
+
+Apply this to all relevant item types:
+- vehicle exterior items
+- vehicle glass
+- tires/wheels
+- vehicle interior items
+- cargo areas
+- room surfaces
+- doors/locks/hinges
+- bathrooms
+- toilets
+- kitchen appliances
+- beds/bedding
+- furniture/cushions
+- exterior/patio/balcony/yard
+- equipment/accessories
+- custom issues
+
+PART 6 — DAMAGE SUMMARY / WORKFLOW
+
+Add a Damage / Issue Summary view for each packet.
+
+For each item with issue-related statuses, show:
+- item name
+- statuses
+- wide shot present? yes/no
+- close-up present? yes/no
+- notes
+- reported to other party? yes/no
+
+Add summary counters:
+- total issue items
+- issue items with complete damage photo pairs
+- issue items missing wide shot
+- issue items missing close-up
+- issue items missing both
+
+Add a quick filter:
+- Show issue items missing required photos
+
+PART 7 — PDF / EXPORT / ARCHIVE
+
+Update exports so issue items clearly show:
+- statuses
+- wide shot
+- close-up
+- supporting photo(s) if present
+- notes
+- reported fields if relevant
+
+In the PDF, for each issue item, label photos clearly:
+- Wide shot
+- Close-up
+- Supporting photo
+
+If only one required photo exists, show a warning:
+“Damage photo pair incomplete”
+
+In the Full Packet Archive / manifest, include photo role metadata:
+- photoRole
+- linkedItemId
+- linkedItemLabel
+
+PART 8 — RECEIVER VERIFICATION / REVIEW
+
+If Verify Packet mode exists, receiver-side review should also show whether issue items include:
+- wide shot
+- close-up
+
+This does not need to enforce new verification logic beyond file integrity, but it should make the evidence structure clearer.
+
+PART 9 — CUSTOM ISSUES
+
+If user creates a custom issue manually, automatically require:
+- 1 wide shot
+- 1 close-up
+
+Show copy:
+“Custom issues should include a wide shot and a close-up so the issue is clear in context and detail.”
+
+PART 10 — UX COPY
+
+Add helpful copy throughout:
+- “For damage, capture one wide shot and one close-up.”
+- “Wide shot shows context. Close-up shows detail.”
+- “This helps make the issue easier to understand later.”
+- “Something damaged? Don’t forget both the context photo and the detail photo.”
+
+PART 11 — ACCEPTANCE CRITERIA
+
+- Damage/issue-related statuses trigger a required damage photo pair
+- Required pair = 1 wide shot + 1 close-up
+- App clearly indicates missing required photos
+- Item remains incomplete until required photos are provided
+- Removing issue statuses removes the requirement
+- Photo roles are stored in data/export
+- PDFs label wide vs close-up damage photos clearly
+- Damage summary shows which items still need required photos
+- Custom issues also require the pair
+- No backend, accounts, cloud sync, analytics, or server verification

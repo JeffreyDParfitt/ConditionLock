@@ -1,0 +1,697 @@
+Update ConditionLock so each checklist item, room item, vehicle item, document, equipment item, and custom entry uses a context-specific selection menu instead of the same generic status options everywhere.
+
+Problem:
+Currently many sections use the same cookie-cutter status options. This makes the app feel generic and less useful. A tire, fuel gauge, hotel bed, bathroom sink, cabinet hinge, receipt, rollaway bed, and business document should not all have the same status menu.
+
+Goal:
+Create item-specific condition/status menus based on the item type, category, and template context.
+
+Keep multi-select status behavior:
+- Users can select multiple relevant statuses when appropriate.
+- Example: dirty + damaged.
+- Example: present + stained + odor.
+- Example: returned + damaged.
+- Example: works + cosmetic damage.
+- “Not applicable” and “Not checked” should remain exclusive statuses.
+
+PART 1 — CREATE STATUS OPTION GROUPS
+
+Create reusable status option groups. Each checklist item should reference the most appropriate group.
+
+Suggested groups:
+
+1. General Condition
+Use for broad/default items only.
+Options:
+- good
+- damaged
+- dirty
+- missing
+- not checked
+- not applicable
+- unknown
+- needs follow-up
+- custom note
+
+2. Vehicle Exterior
+Use for bumpers, panels, hood, roof, trunk exterior, doors exterior, mirrors, windows exterior.
+Options:
+- good
+- scratch
+- dent
+- chip
+- crack
+- scuff
+- paint damage
+- rust
+- loose
+- missing
+- dirty
+- stained
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+3. Vehicle Glass
+Use for windshield, side windows, rear window, mirrors, lights if glass/plastic.
+Options:
+- good
+- chip
+- crack
+- scratched
+- shattered
+- fogged/cloudy
+- loose
+- missing
+- dirty
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+4. Vehicle Tires / Wheels
+Use for tires, rims, hubcaps, spare tire.
+Options:
+- good
+- worn
+- low tread
+- flat
+- low pressure
+- sidewall damage
+- rim scratched
+- rim bent
+- hubcap missing
+- spare missing
+- dirty
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+5. Vehicle Interior
+Use for seats, dashboard, console, carpet, trunk/cargo area, interior doors.
+Options:
+- good
+- dirty
+- stained
+- torn
+- cracked
+- scratched
+- odor
+- sticky
+- missing part
+- not working
+- not checked
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+6. Vehicle Controls / Mechanical / Electrical
+Use for lights, wipers, horn, AC/heat, windows, locks, backup camera, liftgate, ramp, cargo door.
+Options:
+- works
+- not working
+- intermittent
+- damaged
+- loose
+- missing
+- warning light
+- unusual noise
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+7. Fuel / Battery / Odometer
+Use for odometer, fuel gauge, EV battery level, charging cable, fuel receipt, charging receipt.
+Options:
+- documented
+- photo captured
+- matches agreement
+- does not match agreement
+- full
+- partial
+- low
+- empty
+- missing receipt
+- receipt attached
+- not checked
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+8. Moving Truck / Cargo Area
+Use for cargo box, cargo floor, cargo walls, cargo ceiling, ramp, cargo door, latch, pads/dolly.
+Options:
+- good
+- dirty
+- damaged
+- scratched
+- dented
+- cracked
+- stained
+- odor
+- wet
+- debris
+- missing
+- not working
+- hard to open/close
+- lock/latch issue
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+9. Door / Lock / Hinge
+Use for room doors, vehicle doors, cabinets, drawers, locks, hinges, latches.
+Options:
+- works
+- not working
+- loose
+- broken
+- hard to open
+- hard to close
+- lock issue
+- latch issue
+- hinge issue
+- squeaks
+- sticks
+- missing hardware
+- damaged
+- dirty
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+10. Bathroom Fixture
+Use for sinks, faucets, toilets, tubs, showers, drains, mirrors, fans/vents.
+Options:
+- good
+- dirty
+- stained
+- cracked
+- chipped
+- leaking
+- clogged
+- slow drain
+- low water pressure
+- no hot water
+- mold/mildew
+- odor
+- loose
+- missing
+- not working
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+11. Toilet Specific
+Use for toilet exterior, bowl, tank, flush handle, seat, lid.
+Options:
+- clean
+- dirty
+- stained
+- cracked
+- loose seat
+- broken seat
+- leaking
+- running water
+- does not flush
+- tank issue
+- bowl issue
+- odor
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+12. Kitchen Appliance
+Use for fridge, freezer, oven, stove, microwave, dishwasher, sink, disposal, hood vent.
+Options:
+- works
+- not working
+- dirty
+- stained
+- odor
+- damaged
+- cracked
+- missing part
+- leaking
+- rust
+- mold/mildew
+- not cooling
+- not heating
+- unusual noise
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+13. Furniture / Upholstery / Cushions
+Use for couches, chairs, cushions, mattresses, tables, desks, dressers.
+Options:
+- good
+- dirty
+- stained
+- torn
+- scratched
+- dented
+- broken
+- loose
+- missing part
+- odor
+- sagging
+- unstable
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+14. Bed / Bedding / Rollaway / Crib
+Use for hotel beds, Airbnb beds, rollaways, cribs, sofa beds, bedding, pillows.
+Options:
+- clean
+- dirty
+- stained
+- torn
+- odor
+- damaged
+- missing linens
+- missing pillow
+- missing blanket
+- bedframe damaged
+- mattress damaged
+- uncomfortable/sagging
+- not provided
+- provided
+- requested
+- not requested
+- not checked
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+15. Room Surface
+Use for floors, walls, ceilings, baseboards, windowsills.
+Options:
+- good
+- dirty
+- stained
+- scratched
+- dented
+- cracked
+- chipped paint
+- hole
+- water damage
+- mold/mildew
+- odor
+- loose
+- missing
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+16. Exterior / Yard / Patio / Balcony
+Use for exterior areas, patios, decks, balconies, yards, fences, pools/hot tubs where applicable.
+Options:
+- good
+- dirty
+- damaged
+- cracked
+- loose
+- rust
+- unsafe
+- debris
+- water damage
+- missing item
+- not working
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+17. Equipment / Accessory
+Use for dollies, pads, straps, keys, fobs, fuel cards, toll transponders, tools, work equipment.
+Options:
+- present
+- not present
+- included
+- excluded
+- returned
+- not returned
+- missing
+- damaged
+- dirty
+- not working
+- expired
+- wrong item
+- quantity mismatch
+- not checked
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+18. Document / Receipt
+Use for rental agreement, receipt, fuel receipt, return receipt, bill of sale, lease form, insurance doc, W-9, COI later.
+Options:
+- attached
+- missing
+- unreadable
+- incomplete
+- incorrect
+- expired
+- unsigned
+- signed
+- pending
+- reviewed
+- not reviewed
+- not applicable
+- needs follow-up
+- custom issue
+
+19. Claim / Insurance / Incident
+Use for claim letters, damage notices, repair estimates, incident records.
+Options:
+- received
+- sent
+- pending
+- disputed
+- resolved
+- unresolved
+- attached
+- missing
+- needs follow-up
+- reported
+- not reported
+- custom issue
+
+20. Communication Log
+Use for phone calls, emails, texts, app messages, front desk/counter reports, supervisor reports.
+Options:
+- sent
+- received
+- no response
+- acknowledged
+- denied
+- pending
+- escalated
+- reported
+- not reported
+- screenshot attached
+- needs follow-up
+- custom note
+
+21. Signature / Acknowledgment
+Use for renter, receiver, manager, host, buyer, seller, supervisor, driver signatures.
+Options:
+- signed
+- refused to sign
+- unavailable
+- not required
+- pending
+- acknowledged
+- disputed
+- witness present
+- notes attached
+- not applicable
+
+22. Business / Commercial Space
+Use for offices, conference rooms, kitchens, warehouses, retail floors, mechanical rooms, loading docks.
+Options:
+- good
+- dirty
+- damaged
+- missing item
+- not working
+- unsafe
+- access issue
+- lock issue
+- utility issue
+- water damage
+- electrical issue
+- not checked
+- not safe to check
+- not applicable
+- reported
+- needs follow-up
+- custom issue
+
+PART 2 — MAP ITEM CATEGORIES TO STATUS GROUPS
+
+Update the checklist/template data so each item has a statusOptionGroup or conditionMenuType.
+
+Examples:
+
+Vehicle:
+- bumper -> Vehicle Exterior
+- windshield -> Vehicle Glass
+- tires -> Vehicle Tires / Wheels
+- rims -> Vehicle Tires / Wheels
+- seats -> Vehicle Interior
+- odometer -> Fuel / Battery / Odometer
+- fuel gauge -> Fuel / Battery / Odometer
+- EV battery -> Fuel / Battery / Odometer
+- headlights -> Vehicle Controls / Mechanical / Electrical
+- door locks -> Door / Lock / Hinge
+- cargo door -> Moving Truck / Cargo Area
+- ramp -> Moving Truck / Cargo Area
+
+Hotel/Airbnb/Apartment:
+- bed -> Bed / Bedding / Rollaway / Crib
+- pillow -> Bed / Bedding / Rollaway / Crib
+- couch/cushion -> Furniture / Upholstery / Cushions
+- toilet -> Toilet Specific
+- sink -> Bathroom Fixture
+- shower/tub -> Bathroom Fixture
+- cabinets/drawers -> Door / Lock / Hinge
+- doors/locks/hinges -> Door / Lock / Hinge
+- floor/walls/ceiling -> Room Surface
+- fridge/microwave/oven -> Kitchen Appliance
+- balcony/patio -> Exterior / Yard / Patio / Balcony
+
+Documents:
+- rental agreement -> Document / Receipt
+- return receipt -> Document / Receipt
+- fuel receipt -> Document / Receipt
+- hotel receipt -> Document / Receipt
+- claim letter -> Claim / Insurance / Incident
+- repair estimate -> Claim / Insurance / Incident
+- communication screenshot -> Communication Log
+
+Business:
+- office room -> Business / Commercial Space
+- commercial kitchen -> Business / Commercial Space or Kitchen Appliance for appliances
+- warehouse -> Business / Commercial Space
+- equipment item -> Equipment / Accessory
+- keys/fobs/cards -> Equipment / Accessory
+- signatures -> Signature / Acknowledgment
+
+PART 3 — UX BEHAVIOR
+
+When the user opens an item, show only the status chips relevant to that item.
+
+Example:
+Tire should show:
+- good
+- worn
+- low tread
+- flat
+- low pressure
+- sidewall damage
+- rim scratched
+- rim bent
+- not checked
+- reported
+etc.
+
+Tire should NOT show:
+- missing pillow
+- no hot water
+- signed
+- expired
+- mold/mildew unless custom issue
+
+Example:
+Hotel bed should show:
+- clean
+- dirty
+- stained
+- torn
+- odor
+- damaged
+- missing linens
+- missing pillow
+- mattress damaged
+etc.
+
+Hotel bed should NOT show:
+- low tread
+- fuel receipt attached
+- ramp issue
+
+Example:
+Rental agreement should show:
+- attached
+- missing
+- unreadable
+- incomplete
+- incorrect
+- signed
+- unsigned
+- reviewed
+etc.
+
+Rental agreement should NOT show:
+- dirty
+- dented
+- odor
+- low pressure
+
+PART 4 — CUSTOM OPTION
+
+Every item-specific menu should include:
+- custom issue
+- custom note
+
+If user selects custom issue, show:
+- custom issue title
+- custom notes
+- optional linked photos
+- optional linked documents
+- reported-to-company/receiver fields if relevant
+
+PART 5 — BACKWARD COMPATIBILITY
+
+Existing packets may already have generic statuses.
+
+Keep them loading:
+- If an old status exists, map it into statuses[].
+- If old statuses do not exist in the new item-specific menu, show them under “Legacy / previous status.”
+- Do not erase old data.
+- Do not break old packets.
+
+PART 6 — PDF / EXPORT / MANIFEST
+
+Update exports to show item-specific statuses clearly.
+
+PDF example:
+Item: Front passenger tire
+Status: Low tread, Sidewall damage, Reported
+Notes: Reported at pickup counter.
+
+PDF example:
+Item: Bed 1
+Status: Stained, Odor, Reported
+Notes: Reported to front desk.
+
+Manifest/archive:
+Include:
+- itemId
+- itemLabel
+- statusOptionGroup
+- statuses
+- customStatuses if any
+- legacyStatuses if any
+
+Dispute summaries:
+Use item-specific wording.
+
+Example:
+“Front passenger tire was marked low tread and sidewall damage at pickup.”
+
+Example:
+“Bed 1 was marked stained and odor and reported to the front desk.”
+
+PART 7 — DEVELOPMENT IMPLEMENTATION GUIDANCE
+
+If the app has a central status list, refactor it into grouped status definitions.
+
+Suggested structure:
+
+conditionStatusGroups = {
+  generalCondition: [...],
+  vehicleExterior: [...],
+  vehicleGlass: [...],
+  vehicleTiresWheels: [...],
+  vehicleInterior: [...],
+  vehicleControlsMechanical: [...],
+  fuelBatteryOdometer: [...],
+  movingTruckCargo: [...],
+  doorLockHinge: [...],
+  bathroomFixture: [...],
+  toiletSpecific: [...],
+  kitchenAppliance: [...],
+  furnitureUpholstery: [...],
+  bedBedding: [...],
+  roomSurface: [...],
+  exteriorYardPatio: [...],
+  equipmentAccessory: [...],
+  documentReceipt: [...],
+  claimInsuranceIncident: [...],
+  communicationLog: [...],
+  signatureAcknowledgment: [...],
+  businessCommercialSpace: [...]
+}
+
+Each checklist item should have:
+- id
+- label
+- category
+- phase
+- statusOptionGroup
+- statuses[]
+- notes
+- photos
+- documents
+- customEntries
+
+If no statusOptionGroup is set, fallback to generalCondition.
+
+PART 8 — ACCEPTANCE CRITERIA
+
+- The same generic status menu no longer appears everywhere.
+- Tire/wheel items have tire/wheel-specific statuses.
+- Vehicle exterior items have exterior damage statuses.
+- Bathroom items have bathroom-specific statuses.
+- Toilet tank/bowl/seat items have toilet-specific statuses.
+- Bed/rollaway/crib items have sleeping-arrangement statuses.
+- Documents/receipts have document-specific statuses.
+- Signatures have signature-specific statuses.
+- Business/commercial spaces have business-space statuses.
+- Users can still multi-select statuses like dirty + damaged.
+- Custom issue/custom note remains available everywhere.
+- Old packets still load.
+- PDFs and exports show the selected item-specific statuses.
+- No backend, accounts, cloud sync, analytics, or server verification.
