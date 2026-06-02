@@ -24,6 +24,7 @@ import { InAppCamera } from "@/components/InAppCamera";
 import type { ChecklistItem, ChecklistStatus, PhotoItem, SignatureItem, CommunicationLog } from "@/types";
 import { useTier, isRentalVehicleType } from "@/hooks/useTier";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { getStatusOptionsForItem, getIssueDocStatus, getIssueDocScore, hasDamageTriggeringStatus, DAMAGE_TRIGGERING_STATUSES, ALL_POSITIVE_STATUS_KEYS, ALL_ISSUE_STATUS_KEYS, ALL_AMBER_STATUS_KEYS, type IssueDocLevel } from "@/utils/statusGroups";
 
 // ------------------------------------------------------------------
 // STATUS HELPERS — shared across components in this file
@@ -47,13 +48,6 @@ const NOTE_HINTS_MAP: Record<string, string> = {
   dirty: "Describe the dirty area and extent…",
 };
 
-const ALL_STATUS_TAGS: string[] = [
-  'good', 'works', 'included', 'present', 'returned', 'resolved',
-  'damaged', 'dirty', 'stained', 'odor', 'missing', 'not_working',
-  'not_present', 'not_returned', 'excluded', 'reported', 'not_reported', 'needs_follow_up', 'unresolved',
-  'unknown', 'not_safe_to_check', 'not_applicable', 'not_checked',
-];
-
 function getEffectiveStatuses(item: any): string[] {
   if (item.statuses && item.statuses.length > 0) return item.statuses;
   if (item.status && item.status !== 'not_checked') return [item.status];
@@ -66,7 +60,7 @@ function isItemChecked(item: any): boolean {
 }
 
 function hasIssueStatus(item: any): boolean {
-  return getEffectiveStatuses(item).some(s => ISSUE_STATUSES.includes(s));
+  return getEffectiveStatuses(item).some(s => ISSUE_STATUSES.includes(s) || DAMAGE_TRIGGERING_STATUSES.has(s));
 }
 
 function getCardBorderColor(statuses: string[]): string {
@@ -80,11 +74,11 @@ function getCardBorderColor(statuses: string[]): string {
 function getChipStyle(tag: string, selected: boolean): string {
   const base = 'inline-flex items-center h-7 px-2.5 text-[11px] rounded-full border font-medium transition-colors cursor-pointer select-none';
   if (!selected) return `${base} border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-500 dark:hover:border-gray-500 bg-transparent`;
-  if (POSITIVE_STATUSES.includes(tag)) return `${base} bg-green-500 text-white border-green-500`;
-  if (ISSUE_STATUSES.includes(tag)) return `${base} bg-destructive text-destructive-foreground border-destructive`;
-  if (tag === 'reported' || tag === 'needs_follow_up') return `${base} bg-amber-500 text-white border-amber-500`;
-  if (tag === 'not_applicable') return `${base} bg-gray-600 text-white border-gray-600`;
-  if (tag === 'not_checked') return `${base} bg-gray-400 text-white border-gray-400`;
+  if (POSITIVE_STATUSES.includes(tag) || ALL_POSITIVE_STATUS_KEYS.has(tag)) return `${base} bg-green-500 text-white border-green-500`;
+  if (ISSUE_STATUSES.includes(tag) || ALL_ISSUE_STATUS_KEYS.has(tag)) return `${base} bg-destructive text-destructive-foreground border-destructive`;
+  if (ALL_AMBER_STATUS_KEYS.has(tag) || tag === 'reported' || tag === 'needs_follow_up') return `${base} bg-amber-500 text-white border-amber-500`;
+  if (tag === 'not_applicable' || tag === 'not_required' || tag === 'unavailable') return `${base} bg-gray-600 text-white border-gray-600`;
+  if (tag === 'not_checked' || tag === 'not_safe_to_check') return `${base} bg-gray-400 text-white border-gray-400`;
   return `${base} bg-slate-500 text-white border-slate-500`;
 }
 
@@ -149,6 +143,7 @@ export default function PacketDetail() {
           <TabsList className="w-full justify-start inline-flex h-10 bg-transparent p-0 border-none gap-2">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Overview</TabsTrigger>
             <TabsTrigger value="checklist" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Checklist</TabsTrigger>
+            <TabsTrigger value="issues" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Issues</TabsTrigger>
             <TabsTrigger value="photos" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Photos</TabsTrigger>
             <TabsTrigger value="comm" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Comm. Log</TabsTrigger>
             <TabsTrigger value="signatures" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-full px-4 text-xs shrink-0">Signatures</TabsTrigger>
@@ -237,6 +232,10 @@ export default function PacketDetail() {
 
           <TabsContent value="checklist" className="mt-0">
             <ChecklistTab packet={packet} photos={photos} />
+          </TabsContent>
+
+          <TabsContent value="issues" className="mt-0">
+            <IssuesTab packet={packet} photos={photos} />
           </TabsContent>
 
           <TabsContent value="photos" className="mt-0">
@@ -392,6 +391,231 @@ function InlineEvidenceCard({ packetId, checklistItemId, evidence, photos, isIss
             </div>
           </DialogContent>
         </Dialog>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------
+// DAMAGE PHOTO PAIR CAPTURE
+// ------------------------------------------------------------------
+function DamagePhotoPair({ item, packetId, allPhotos }: {
+  item: any; packetId: string; allPhotos: any[];
+}) {
+  const itemPhotos = allPhotos.filter((p: any) => p.checklistItemId === item.id);
+  const wideShot = itemPhotos.find((p: any) => p.photoRole === 'wide');
+  const closeup = itemPhotos.find((p: any) => p.photoRole === 'closeup');
+  const [captureRole, setCaptureRole] = useState<'wide' | 'closeup' | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [viewPhoto, setViewPhoto] = useState<any>(null);
+  const [viewUrl, setViewUrl] = useState('');
+  const complete = !!(wideShot && closeup);
+
+  const handleCapture = async (blob: Blob, fileName: string) => {
+    if (!captureRole) return;
+    setCapturing(true);
+    try {
+      const now = new Date().toISOString();
+      await storage.addPhoto({
+        packetId,
+        checklistItemId: item.id,
+        originalBlob: blob,
+        mimeType: blob.type || 'image/jpeg',
+        fileName,
+        fileSize: blob.size,
+        caption: captureRole === 'wide' ? 'Wide shot / context photo' : 'Close-up / detail photo',
+        category: 'damage',
+        phase: 'general' as any,
+        dateTaken: now,
+        appCaptured: true,
+        source: 'in_app_camera' as any,
+        verificationEligible: true,
+        capturedAt: now,
+        photoRole: captureRole,
+        linkedItemLabel: item.label,
+      } as any);
+    } finally { setCapturing(false); setCaptureRole(null); }
+  };
+
+  const openViewer = (p: any) => { setViewPhoto(p); setViewUrl(URL.createObjectURL(p.originalBlob)); };
+  const closeViewer = () => { if (viewUrl) URL.revokeObjectURL(viewUrl); setViewPhoto(null); setViewUrl(''); };
+
+  return (
+    <div className={`rounded-lg border p-2.5 space-y-2 ${complete ? 'border-green-300 dark:border-green-700 bg-green-50/40 dark:bg-green-950/20' : 'border-amber-300 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20'}`}>
+      <InAppCamera open={cameraOpen} onClose={() => { setCameraOpen(false); setCaptureRole(null); }} onCapture={handleCapture} />
+      <div className="flex items-center gap-1.5">
+        <Camera className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <p className={`text-[11px] font-semibold ${complete ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+          {complete ? 'Damage photo pair complete' : 'Damage photos needed'}
+        </p>
+      </div>
+      {!complete && <p className="text-[10px] text-muted-foreground">Wide shot shows context. Close-up shows detail.</p>}
+      <div className="grid grid-cols-2 gap-2">
+        {([
+          { role: 'wide' as const, photo: wideShot, label: 'Wide shot' },
+          { role: 'closeup' as const, photo: closeup, label: 'Close-up' },
+        ] as const).map(({ role, photo, label }) => (
+          <div key={role} className={`rounded border p-2 space-y-1.5 ${photo ? 'border-green-300 dark:border-green-600 bg-green-50/50 dark:bg-green-950/20' : 'border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-900'}`}>
+            <p className="text-[10px] font-medium">{photo ? `✓ ${label}` : `○ ${label}`}</p>
+            {photo && (
+              <button className="w-full h-14 rounded overflow-hidden border border-gray-200 dark:border-gray-700" onClick={() => openViewer(photo)}>
+                <img src={(photo as any).thumbnailData} className="w-full h-full object-cover" alt="" />
+              </button>
+            )}
+            <Button size="sm" variant={photo ? 'outline' : 'default'}
+              className={`w-full h-7 text-[10px] ${!photo ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500' : ''}`}
+              onClick={() => { setCaptureRole(role); setCameraOpen(true); }} disabled={capturing}>
+              <Camera className="w-3 h-3 mr-1" />{photo ? 'Retake' : 'Capture'}
+            </Button>
+          </div>
+        ))}
+      </div>
+      {viewPhoto && (
+        <Dialog open onOpenChange={closeViewer}>
+          <DialogContent className="sm:max-w-md w-[95vw] p-3 bg-black border-gray-800">
+            <p className="text-xs text-gray-400 mb-2">{viewPhoto.caption}</p>
+            <img src={viewUrl} className="w-full rounded max-h-[70dvh] object-contain" alt="" />
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" className="flex-1 text-white border-white/20 hover:bg-white/10" onClick={closeViewer}>Close</Button>
+              <Button size="sm" variant="destructive" onClick={async () => {
+                if (!confirm('Delete this photo?')) return;
+                await storage.deletePhoto(viewPhoto.id);
+                closeViewer();
+              }}><Trash2 className="w-3.5 h-3.5" /></Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------
+// ISSUE DOC BADGE
+// ------------------------------------------------------------------
+function IssueDocBadge({ status }: { status: IssueDocLevel }) {
+  if (status === 'no_issue') return null;
+  const cfg: Record<IssueDocLevel, { label: string; cls: string }> = {
+    fully_documented:     { label: '✓ Fully documented',      cls: 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' },
+    partially_documented: { label: '~ Partially documented',  cls: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+    missing_photos:       { label: '✗ Missing damage photos', cls: 'bg-destructive/10 text-destructive border-destructive/20' },
+    needs_followup:       { label: '⚑ Needs follow-up',       cls: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+    no_issue:             { label: '', cls: '' },
+  };
+  const { label, cls } = cfg[status];
+  return <div className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded border ${cls}`}>{label}</div>;
+}
+
+// ------------------------------------------------------------------
+// ISSUES TAB
+// ------------------------------------------------------------------
+function IssuesTab({ packet, photos }: { packet: any; photos: any[] }) {
+  const items: any[] = packet.checklistItems || [];
+  type IssueFilter = IssueDocLevel | 'all';
+  const [filter, setFilter] = useState<IssueFilter>('all');
+  const score = getIssueDocScore(items, photos);
+  const issueItems = items.filter((item: any) => hasDamageTriggeringStatus(getEffectiveStatuses(item)));
+  const filteredItems = filter === 'all' ? issueItems : issueItems.filter((item: any) => {
+    const ip = photos.filter((p: any) => p.checklistItemId === item.id);
+    return getIssueDocStatus(item, ip) === filter;
+  });
+  const catColor = score.category === 'Strong' ? 'text-green-600 dark:text-green-400'
+    : score.category === 'Good' ? 'text-amber-600 dark:text-amber-400'
+    : score.category === 'None' ? 'text-muted-foreground' : 'text-destructive';
+  const barColor = score.category === 'Strong' ? 'bg-green-500' : score.category === 'Good' ? 'bg-amber-500'
+    : score.category === 'None' ? 'bg-gray-300 dark:bg-gray-700' : 'bg-destructive';
+  const filters: { key: IssueFilter; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: issueItems.length },
+    { key: 'fully_documented', label: 'Fully documented', count: score.fullyDocumented },
+    { key: 'partially_documented', label: 'Partial', count: score.partiallyDocumented },
+    { key: 'missing_photos', label: 'Missing photos', count: score.missingPhotos },
+    { key: 'needs_followup', label: 'Needs follow-up', count: score.needsFollowup },
+  ];
+  return (
+    <div className="space-y-4 pb-20">
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Issue Documentation Score</p>
+              <p className="text-sm font-medium mt-0.5">{score.label}</p>
+            </div>
+            {score.category !== 'None' && <span className={`text-xl font-bold shrink-0 ${catColor}`}>{score.category}</span>}
+          </div>
+          {score.category !== 'None' && (
+            <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${score.scorePercent}%` }} />
+            </div>
+          )}
+          {score.total > 0 && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+              <span className="text-green-700 dark:text-green-400">✓ Fully: {score.fullyDocumented}</span>
+              <span className="text-amber-600 dark:text-amber-400">~ Partial: {score.partiallyDocumented}</span>
+              <span className="text-destructive">✗ Missing photos: {score.missingPhotos}</span>
+              <span className="text-amber-600 dark:text-amber-400">⚑ Follow-up: {score.needsFollowup}</span>
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground leading-relaxed">ConditionLock checks whether each issue has the photos and notes needed to understand it later.</p>
+        </CardContent>
+      </Card>
+      {issueItems.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+          {filters.filter(f => f.count > 0 || f.key === 'all').map(f => (
+            <Button key={f.key} variant={filter === f.key ? 'default' : 'outline'} size="sm"
+              className="rounded-full shrink-0 text-xs h-7 gap-1" onClick={() => setFilter(f.key)}>
+              {f.label}{f.key !== 'all' && <span className="opacity-70 text-[10px]">{f.count}</span>}
+            </Button>
+          ))}
+        </div>
+      )}
+      {issueItems.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <CheckSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm font-medium">No issues found</p>
+          <p className="text-xs mt-1">Items with damage or problem statuses appear here.</p>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground"><p className="text-sm">No items match this filter.</p></div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((item: any) => {
+            const sts = getEffectiveStatuses(item);
+            const ip = photos.filter((p: any) => p.checklistItemId === item.id);
+            const ds = getIssueDocStatus(item, ip);
+            const hasWide = ip.some((p: any) => p.photoRole === 'wide');
+            const hasClose = ip.some((p: any) => p.photoRole === 'closeup');
+            const evPhotos = (item.conditionEvidence || []).reduce((n: number, ev: any) => n + (ev.photoIds || []).length, 0);
+            const anyPhoto = ip.length > 0 || evPhotos > 0;
+            return (
+              <Card key={item.id} className="shadow-xs border-muted overflow-hidden">
+                <div className={`h-1 w-full ${ds === 'fully_documented' ? 'bg-green-500' : ds === 'partially_documented' ? 'bg-amber-500' : 'bg-destructive'}`} />
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium leading-tight">{item.label}</h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{item.section}</p>
+                    </div>
+                    <IssueDocBadge status={ds} />
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {sts.filter((s: string) => DAMAGE_TRIGGERING_STATUSES.has(s)).map((s: string) => (
+                      <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/20">{s.replace(/_/g, ' ')}</span>
+                    ))}
+                  </div>
+                  <div className="flex gap-4 text-[10px]">
+                    <span className={hasWide ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}>{hasWide ? '✓ Wide shot' : '○ Wide shot missing'}</span>
+                    <span className={hasClose ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}>{hasClose ? '✓ Close-up' : '○ Close-up missing'}</span>
+                    {anyPhoto && !hasWide && !hasClose && (
+                      <span className="text-amber-600 dark:text-amber-400">{ip.length + evPhotos} untagged photo{(ip.length + evPhotos) !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                  {item.notes?.trim() && <p className="text-[10px] text-muted-foreground line-clamp-2 italic">{item.notes}</p>}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -604,9 +828,9 @@ function ChecklistTab({ packet, photos }: { packet: any; photos: any[] }) {
                         {item.addedDuringInspection && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">ADDED</span>}
                       </div>
 
-                      {/* Multi-select status chips */}
+                      {/* Multi-select status chips — context-specific per item */}
                       <div className="flex flex-wrap gap-1.5">
-                        {ALL_STATUS_TAGS.map(tag => (
+                        {getStatusOptionsForItem(item.label, item.section, packet.type).map(tag => (
                           <button
                             key={tag}
                             type="button"
@@ -642,6 +866,16 @@ function ChecklistTab({ packet, photos }: { packet: any; photos: any[] }) {
                         value={item.notes}
                         onChange={(e) => updateItemNotes(item.id, e.target.value)}
                       />
+
+                      {/* Damage photo pair — shown when item has a damage-triggering status */}
+                      {hasDamageTriggeringStatus(statuses) && (
+                        <div className="pt-1">
+                          <IssueDocBadge status={getIssueDocStatus(item, photos.filter((p: any) => p.checklistItemId === item.id))} />
+                          <div className="mt-2">
+                            <DamagePhotoPair item={item} packetId={packet.id} allPhotos={photos} />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Per-condition evidence cards */}
                       {(item.conditionEvidence || []).length > 0 && (
@@ -1698,11 +1932,12 @@ function PacketReadinessCard({ packet, photos }: { packet: any; photos: any[] })
   const odometerScore = d.startingOdometer ? 10 : 0;
   const fuelScore = (d.fuelLevelPickup || d.evBatteryPickup) ? 10 : 0;
   const photoScore = photos.length >= 10 ? 15 : photos.length >= 5 ? 10 : photos.length >= 1 ? 5 : 0;
+  const issueDocScore = getIssueDocScore(items, photos);
   const damageItems = items.filter((i: any) => hasIssueStatus(i));
-  const reportedItems = damageItems.filter((i: any) => getEffectiveStatuses(i).some((s: string) => s === 'reported'));
   const damageScore = damageItems.length === 0 ? 15
-    : reportedItems.length >= damageItems.length ? 15
-    : reportedItems.length > 0 ? 8 : 0;
+    : issueDocScore.category === 'Strong' ? 15
+    : issueDocScore.category === 'Good' ? 10
+    : issueDocScore.category !== 'None' ? 5 : 0;
 
   const total = requiredScore + odometerScore + fuelScore + photoScore + damageScore;
   const label = total >= 85 ? 'Strong' : total >= 65 ? 'Good' : total >= 40 ? 'Partial' : 'Weak';
@@ -1743,6 +1978,12 @@ function PacketReadinessCard({ packet, photos }: { packet: any; photos: any[] })
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${photoScore >= 10 ? 'bg-green-500' : 'bg-gray-400'}`} />
             Photos ({photos.length} taken)
           </div>
+          {damageItems.length > 0 && (
+            <div className={`col-span-2 flex items-center gap-1.5 ${issueDocScore.category === 'Strong' ? 'text-green-700 dark:text-green-400' : issueDocScore.category === 'Good' ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${issueDocScore.category === 'Strong' ? 'bg-green-500' : issueDocScore.category === 'Good' ? 'bg-amber-500' : 'bg-gray-400'}`} />
+              Issues: {issueDocScore.label}
+            </div>
+          )}
         </div>
         {missing.length > 0 && (
           <p className="text-[10px] text-muted-foreground">

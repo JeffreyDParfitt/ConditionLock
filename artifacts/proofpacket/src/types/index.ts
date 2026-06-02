@@ -98,6 +98,8 @@ export interface PhotoItem {
   sha256Hash?: string;
   hashCreatedAt?: string;
   conditionEvidenceId?: string;
+  photoRole?: 'wide' | 'closeup' | 'supporting' | 'general';
+  linkedItemLabel?: string;
 }
 
 export interface CommunicationLog {

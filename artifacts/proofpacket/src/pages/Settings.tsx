@@ -14,7 +14,7 @@ import { templates } from "@/templates";
 import { useTier, TIER_LIMITS } from "@/hooks/useTier";
 import { useTrial, setEntitlement, resetTrial, simulateTrialExpired, clearSimulation } from "@/hooks/useTrial";
 import { useOnboarding, setUsageIntent, resetOnboarding, type UsageIntent } from "@/hooks/useOnboarding";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 export default function Settings() {
@@ -28,6 +28,70 @@ export default function Settings() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
   const [upgradeTier, setUpgradeTier] = useState<'pro' | 'business'>('pro');
+  const [, setLocation] = useLocation();
+
+  const loadDemoPacket = async () => {
+    const now = new Date().toISOString();
+    const today = now.split('T')[0];
+    const mk = () => crypto.randomUUID();
+    const item = (section: string, label: string, description: string, statuses: string[], notes = '') => ({
+      id: mk(), packetId: '', section, label, description, phase: 'both', status: statuses[0],
+      statuses, notes, photoIds: [], conditionEvidence: [], addedDuringInspection: false, createdAt: now, updatedAt: now,
+    });
+    const items = [
+      item('Required Exterior Photos', 'Front of vehicle', 'Full front view, straight on', ['good']),
+      item('Required Exterior Photos', 'Rear of vehicle', 'Full rear view', ['good']),
+      item('Required Exterior Photos', 'Driver side', 'Full driver side view', ['good']),
+      item('Required Exterior Photos', 'Passenger side', 'Full passenger side view', ['good']),
+      item('Required Exterior Photos', 'Windshield', 'Full windshield front-on', ['good']),
+      item('Required Exterior Photos', 'Wheels & Tires — all four', 'All four wheels', ['good']),
+      item('Before You Leave the Lot', 'Odometer at pickup', 'Record starting mileage', ['documented'], 'Reading: 15,482 miles — photographed'),
+      item('Before You Leave the Lot', 'Fuel gauge at pickup', 'Record fuel level', ['documented', 'full'], 'Full tank — 8/8 on gauge, photographed'),
+      item('Before You Leave the Lot', 'Rental agreement receipt', 'Photograph rental agreement', ['attached', 'reviewed'], 'Agreement No. DEMO-RA-2026-001, signed'),
+      item('Interior', 'Seats', 'All seating surfaces front and rear', ['good']),
+      item('Interior', 'Carpet & Floor mats', 'Carpet and all floor mats', ['good']),
+      item('Interior', 'Dashboard & controls', 'Dashboard panel, infotainment, key controls', ['works']),
+      item('Vehicle Accessories', 'Keys / key fob', 'All keys and fobs issued with vehicle', ['present', 'returned'], '1 key fob, 1 backup key'),
+      { ...item('Damage Reports', 'Rear passenger bumper — pre-existing scratch', 'Pre-existing damage noted before leaving lot', ['scratch', 'reported'],
+          'Pre-existing scratch approx. 4 inches on rear passenger corner bumper. Reported to counter staff before leaving lot. Noted on rental agreement. Wide shot and close-up photos needed.'),
+        addedDuringInspection: true },
+    ];
+    try {
+      const id = await storage.createPacket({
+        title: 'Demo — SUV Pickup · Example Rental Co.',
+        type: 'car_rental',
+        companyOrPerson: 'Example Rental Co.',
+        startDate: today,
+        endDate: '',
+        phase: 'general' as any,
+        location: 'Example Airport — Terminal B, Row 14',
+        referenceNumber: 'DEMO-2026-001',
+        notes: 'Demo packet for demonstrating ConditionLock features.',
+        details: {
+          rentalCompany: 'Example Rental Co.',
+          vehicleYear: '2024',
+          vehicleMake: 'Toyota',
+          vehicleModel: 'RAV4',
+          vehicleTypeBodyStyle: 'SUV / Crossover',
+          licensePlate: 'DEMO-123',
+          vin: 'DEMOVIN0000000001',
+          startingOdometer: '15,482',
+          fuelLevelPickup: 'Full (8/8)',
+          fuelType: 'gasoline',
+          rentalAgreementNumber: 'DEMO-RA-2026-001',
+          pickupLocation: 'Example Airport — Terminal B',
+          returnLocation: 'Same location',
+        },
+        checklistItems: items,
+        communicationLogs: [],
+        signatures: [],
+      } as any);
+      toast({ title: 'Demo packet created', description: 'Opening demo rental car packet…' });
+      setLocation(`/packets/${id}`);
+    } catch {
+      toast({ title: 'Failed to create demo packet', variant: 'destructive' });
+    }
+  };
 
   if (!settings) return null;
 
@@ -560,6 +624,21 @@ export default function Settings() {
               data-testid="button-clear-simulation"
             >
               <XCircle className="w-3.5 h-3.5 mr-1.5" /> Clear Simulated Unlocks
+            </Button>
+          </div>
+
+          {/* Demo Packet */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Demo Packet</p>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">Creates a sample rental car packet with pre-filled damage for demonstrating issue documentation and the Issues tab.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-9 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/20"
+              onClick={loadDemoPacket}
+              data-testid="button-load-demo"
+            >
+              <Car className="w-3.5 h-3.5 mr-1.5" /> Load Demo Packet
             </Button>
           </div>
 

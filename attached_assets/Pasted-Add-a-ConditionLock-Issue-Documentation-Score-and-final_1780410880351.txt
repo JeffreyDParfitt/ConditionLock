@@ -1,0 +1,245 @@
+Add a ConditionLock “Issue Documentation Score” and final export readiness review so the app is clearer and more demo-ready for YC.
+
+Goal:
+When users mark an item as damaged/problematic, ConditionLock should not only ask for a wide shot and close-up, but also clearly show whether that issue is fully documented, partially documented, or missing key proof.
+
+This should make the app feel less like a checklist and more like a guided proof workflow.
+
+PART 1 — ISSUE DOCUMENTATION STATUS
+
+For every checklist item, room item, vehicle item, bed item, fixture, equipment item, document, or custom issue that has issue-related statuses, calculate an issue documentation status.
+
+Statuses:
+
+1. Fully documented
+Criteria:
+- issue-related status selected
+- wide shot provided
+- close-up shot provided
+- notes added OR reported-to-company/receiver field completed if relevant
+
+Display:
+“Fully documented”
+
+2. Partially documented
+Criteria:
+- issue-related status selected
+- at least one required photo is present, but something is missing
+
+Examples:
+- wide shot present but close-up missing
+- close-up present but wide shot missing
+- photos present but no notes
+- damage marked but not reported/not explained
+
+Display:
+“Partially documented”
+
+3. Missing damage photos
+Criteria:
+- issue-related status selected
+- neither wide shot nor close-up is present
+
+Display:
+“Missing damage photos”
+
+4. Needs follow-up
+Criteria:
+- issue-related status selected
+- user selected needs follow-up, reported, unresolved, disputed, or custom issue
+- but follow-up/reporting details are incomplete
+
+Display:
+“Needs follow-up”
+
+5. No issue
+Criteria:
+- no issue-related status selected
+
+Display:
+“No issue”
+
+PART 2 — ISSUE DOCUMENTATION SCORE
+
+Add a score for each packet:
+
+“Issue Documentation Score”
+
+Calculation:
+- Count all issue-related items.
+- Count how many are fully documented.
+- Count how many are partially documented.
+- Count how many are missing damage photos.
+- Count how many need follow-up.
+
+Example:
+“Issue Documentation Score: 7 of 10 issues fully documented”
+
+Show category:
+- Strong: 85%+ fully documented
+- Good: 65%–84%
+- Partial: 35%–64%
+- Weak: below 35%
+- No issues documented: if zero issue items
+
+Do not use legal language like:
+- legally strong
+- court-ready
+- admissible
+- guaranteed proof
+
+Use only:
+- Strong
+- Good
+- Partial
+- Weak
+
+PART 3 — PACKET READINESS REVIEW
+
+Before export, add a review screen called:
+
+“Packet Readiness Review”
+
+Sections:
+1. Required shots
+2. Issue documentation
+3. Odometer/fuel/battery if vehicle packet
+4. Return proof if return/check-in phase exists
+5. Documents/receipts
+6. Reported-to-company/receiver fields
+7. Custom entries
+8. Archive/export readiness
+
+For each section, show:
+- complete
+- partial
+- missing
+- not applicable
+
+Examples:
+Required shots:
+“22 of 28 recommended shots complete”
+
+Issue documentation:
+“5 issue items fully documented, 2 missing close-up photos”
+
+Return proof:
+“Return location photo missing”
+
+Documents/receipts:
+“Fuel receipt attached, return receipt missing”
+
+PART 4 — EXPORT WARNING BUT DO NOT BLOCK
+
+Do not block export unless a setting later requires it.
+
+If packet is incomplete, show:
+
+“Your packet has missing recommended documentation. You can still export, but the record may be less complete.”
+
+Buttons:
+- Continue Editing
+- Export Anyway
+
+PART 5 — ISSUE FILTERS
+
+Add quick filters in the packet detail / issue summary screen:
+
+- All issues
+- Fully documented
+- Partially documented
+- Missing wide shot
+- Missing close-up
+- Missing both photos
+- Needs follow-up
+- Reported
+- Not reported
+
+PART 6 — PDF EXPORT
+
+In the PDF, add a section:
+
+“Issue Documentation Summary”
+
+Include:
+- total issue items
+- fully documented count
+- partially documented count
+- missing wide shot count
+- missing close-up count
+- needs follow-up count
+
+For each issue item, show:
+- item name
+- selected statuses
+- issue documentation status
+- wide shot included: yes/no
+- close-up included: yes/no
+- notes
+- reported-to-company/receiver details if present
+
+Use photo labels:
+- Wide shot / context photo
+- Close-up / detail photo
+- Supporting photo
+
+If missing:
+- “Wide shot missing”
+- “Close-up missing”
+
+PART 7 — DISPUTE SUMMARY
+
+Update Create Dispute Summary so it includes issue documentation quality.
+
+Example:
+“The packet includes 8 documented issue items. 6 include both wide/context and close-up/detail photos. 2 are missing recommended damage photo pairs.”
+
+Do not overclaim legal proof.
+
+PART 8 — YC DEMO MODE
+
+Add or improve sample/demo data if helpful.
+
+Create a realistic demo packet scenario:
+
+Demo scenario:
+Rental Car Packet
+- Company: Example Rental Company
+- Vehicle: SUV / Crossover
+- Pickup odometer and fuel documented
+- Existing scratch on rear passenger bumper
+- Issue marked: scratch, reported
+- Wide shot present
+- Close-up present
+- Return location proof included
+- PDF/manifest export available
+
+This demo should be safe placeholder data, not real company data.
+
+Label:
+“Demo Packet”
+
+Make it easy to reset or load from Developer Testing if dev mode exists.
+
+PART 9 — UX COPY
+
+Add copy:
+“Wide shot shows context. Close-up shows detail.”
+
+Add copy:
+“ConditionLock checks whether each issue has the photos and notes needed to understand it later.”
+
+Add copy:
+“Packet Readiness Review helps you find missing proof before you export.”
+
+PART 10 — ACCEPTANCE CRITERIA
+
+- Issue items show Fully documented / Partially documented / Missing damage photos / Needs follow-up
+- Packet has an Issue Documentation Score
+- Export review shows missing wide/close-up photos
+- Export is allowed with warning, not blocked
+- PDF includes issue documentation summary
+- Dispute summary includes issue documentation counts
+- Filters let user find incomplete issue documentation
+- Demo packet exists or can be loaded for YC/product demo
+- No backend, accounts, cloud sync, analytics, or server verification
