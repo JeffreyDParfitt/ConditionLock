@@ -9,6 +9,8 @@ export type StatusGroupKey =
   | 'vehicleControlsMechanical'
   | 'fuelBatteryOdometer'
   | 'movingTruckCargo'
+  | 'returnProof'
+  | 'preExistingDamage'
   | 'doorLockHinge'
   | 'bathroomFixture'
   | 'toiletSpecific'
@@ -71,6 +73,18 @@ export const STATUS_GROUPS: Record<StatusGroupKey, string[]> = {
     'hard_to_open', 'latch_issue',
     'not_checked', 'not_safe_to_check', 'not_applicable',
     'reported', 'needs_follow_up', 'custom_issue',
+  ],
+  returnProof: [
+    'photo_captured', 'receipt_obtained', 'confirmed', 'timestamped',
+    'agent_confirmed', 'key_dropped', 'screenshot_attached',
+    'no_photo', 'missing_receipt', 'not_confirmed',
+    'not_checked', 'not_applicable', 'needs_follow_up', 'custom_note',
+  ],
+  preExistingDamage: [
+    'documented', 'reported_to_agent', 'noted_on_agreement', 'agent_acknowledged',
+    'company_aware', 'pre_existing',
+    'not_reported', 'disputed_by_company', 'no_pre_existing_damage',
+    'not_checked', 'not_applicable', 'needs_follow_up', 'custom_note',
   ],
   doorLockHinge: [
     'works', 'not_working', 'loose', 'broken', 'hard_to_open', 'hard_to_close',
@@ -217,6 +231,11 @@ export const ALL_POSITIVE_STATUS_KEYS = new Set<string>([
   'full', 'provided', 'returned', 'included', 'present', 'resolved',
   'acknowledged', 'matches_agreement', 'photo_captured', 'receipt_attached',
   'witness_present', 'notes_attached', 'screenshot_attached',
+  // returnProof
+  'receipt_obtained', 'confirmed', 'timestamped', 'agent_confirmed', 'key_dropped',
+  // preExistingDamage
+  'reported_to_agent', 'noted_on_agreement', 'agent_acknowledged', 'company_aware',
+  'no_pre_existing_damage',
 ]);
 
 /** Statuses that display with amber (warning/pending) chip color */
@@ -225,6 +244,10 @@ export const ALL_AMBER_STATUS_KEYS = new Set<string>([
   'requested', 'not_provided', 'not_requested', 'does_not_match', 'missing_receipt',
   'sent', 'received', 'no_response', 'denied', 'disputed',
   'unavailable', 'not_required', 'not_reviewed', 'unknown', 'intermittent',
+  // returnProof
+  'not_confirmed',
+  // preExistingDamage
+  'pre_existing', 'disputed_by_company',
 ]);
 
 /** Statuses that display with red (issue) chip color — superset of DAMAGE_TRIGGERING_STATUSES */
@@ -264,6 +287,14 @@ export function getStatusGroupForItem(label: string, section: string, packetType
 
   // Vehicle controls / mechanical / electrical
   if (/\b(headlight|tail light|brake light|turn signal|dome light|wiper|horn\b|air conditioning|a\/c vent|hvac|backup camera|parking sensor|warning light|abs\b|airbag|engine\b|transmission|cruise control|hazard light|defroster|radio\b|usb port|bluetooth|speedometer|mirror control|power window|power lock|infotainment)\b/.test(l)) return 'vehicleControlsMechanical';
+
+  // Return proof (check before vehicle exterior — specific labels)
+  if (s === 'return proof' || s.includes('return proof') || s.includes('return documentation')) return 'returnProof';
+  if (/\b(vehicle at return|return lot|return lane|return bay|key drop|final odometer|final fuel gauge|return receipt|return confirmation|parked in return|drop.?off marker)\b/.test(l)) return 'returnProof';
+
+  // Pre-existing damage (check early — specific labels)
+  if (s === 'pre-existing damage' || s.includes('pre-existing') || s.includes('existing damage')) return 'preExistingDamage';
+  if (/\b(pre.?existing|existing damage|damage circled|walk.?around.*pre.?exist|agent or staff acknowledgment|noted on rental agreement|reported to agent|company aware|prior damage|damage on agreement)\b/.test(l)) return 'preExistingDamage';
 
   // Moving truck / cargo
   const isCargoVehicle = /moving_truck|cargo_van|trailer/.test(pt);
